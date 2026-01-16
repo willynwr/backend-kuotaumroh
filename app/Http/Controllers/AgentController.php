@@ -207,4 +207,40 @@ class AgentController extends Controller
             'data' => $agent
         ], 200);
     }
+
+    public function activate($id)
+    {
+        $agent = Agent::find($id);
+
+        if (!$agent) {
+            return response()->json(['message' => 'Agent not found'], 404);
+        }
+
+        $agent->update([
+            'is_active' => 1,
+        ]);
+
+        return response()->json([
+            'message' => 'Agent successfully activated',
+            'data' => $agent
+        ], 200);
+    }
+
+    public function deactivate($id)
+    {
+        $agent = Agent::find($id);
+
+        if (!$agent) {
+            return response()->json(['message' => 'Agent not found'], 404);
+        }
+
+        $agent->update([
+            'is_active' => 0,
+        ]);
+
+        return response()->json([
+            'message' => 'Agent successfully deactivated',
+            'data' => $agent
+        ], 200);
+    }
 }
