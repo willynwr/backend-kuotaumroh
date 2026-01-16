@@ -18,6 +18,8 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
+
+// api agent
 Route::get('/agents', [App\Http\Controllers\AgentController::class, 'index']);
 Route::get('/agents/{id}', [App\Http\Controllers\AgentController::class, 'show']);
 Route::post('/agents', [App\Http\Controllers\AgentController::class, 'store']);
