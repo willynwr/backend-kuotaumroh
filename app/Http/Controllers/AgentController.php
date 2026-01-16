@@ -37,7 +37,7 @@ class AgentController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'email' => 'required|email|unique:agents,email',
+            'email' => 'required|email',
             'jenis_agent' => 'required|in:travel agent,agent,freelance',
             'nama_pic' => 'required|string',
             'no_hp' => 'required|string',
@@ -86,7 +86,7 @@ class AgentController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'email' => 'email|unique:agents,email,' . $id,
+            'email' => 'email',
             'jenis_agent' => 'in:travel agent,agent,freelance',
             'nama_pic' => 'string',
             'no_hp' => 'string',
