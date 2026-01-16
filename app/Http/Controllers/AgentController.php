@@ -14,6 +14,7 @@ class AgentController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'email' => 'required|email|unique:agents,email',
+            'jenis_agent' => 'required|in:travel agent,agent,freelance',
             'nama_pic' => 'required|string',
             'no_hp' => 'required|string',
             'nama_travel' => 'required|string',
