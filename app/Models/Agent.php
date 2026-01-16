@@ -11,6 +11,7 @@ class Agent extends Model
 
     protected $fillable = [
         'email',
+        'jenis_agent',
         'nama_pic',
         'no_hp',
         'nama_travel',
