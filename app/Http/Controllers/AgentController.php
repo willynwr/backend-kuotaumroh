@@ -161,4 +161,50 @@ class AgentController extends Controller
 
         return response()->json(['message' => 'Agent successfully deleted'], 200);
     }
+
+    public function approve(Request $request, $id)
+    {
+        $agent = Agent::find($id);
+
+        if (!$agent) {
+            return response()->json(['message' => 'Agent not found'], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'link_referal' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        $agent->update([
+            'status' => 'approve',
+            'link_referal' => $request->link_referal,
+            'date_approve' => now()->format('Y-m-d'),
+        ]);
+
+        return response()->json([
+            'message' => 'Agent successfully approved',
+            'data' => $agent
+        ], 200);
+    }
+
+    public function reject($id)
+    {
+        $agent = Agent::find($id);
+
+        if (!$agent) {
+            return response()->json(['message' => 'Agent not found'], 404);
+        }
+
+        $agent->update([
+            'status' => 'reject',
+        ]);
+
+        return response()->json([
+            'message' => 'Agent successfully rejected',
+            'data' => $agent
+        ], 200);
+    }
 }
