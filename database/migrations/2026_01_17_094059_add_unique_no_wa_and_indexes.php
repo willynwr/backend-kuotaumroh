@@ -189,7 +189,27 @@ return new class extends Migration
      */
     private function hasUniqueConstraint($table, $column)
     {
+        $connection = DB::connection();
+
+        if (method_exists($connection, 'getDoctrineSchemaManager')) {
+            $schemaManager = $connection->getDoctrineSchemaManager();
+            $indexes = $schemaManager->listTableIndexes($table);
+
+            foreach ($indexes as $index) {
+                if (!$index->isUnique()) {
+                    continue;
+                }
+
+                if (in_array($column, $index->getColumns(), true)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         $indexes = DB::select("SHOW INDEX FROM {$table} WHERE Column_name = ? AND Non_unique = 0", [$column]);
+
         return count($indexes) > 0;
     }
 
@@ -198,7 +218,24 @@ return new class extends Migration
      */
     private function hasIndex($table, $indexName)
     {
+        $connection = DB::connection();
+
+        if (method_exists($connection, 'getDoctrineSchemaManager')) {
+            $schemaManager = $connection->getDoctrineSchemaManager();
+            $indexes = $schemaManager->listTableIndexes($table);
+            $target = strtolower((string) $indexName);
+
+            foreach ($indexes as $name => $index) {
+                if (strtolower((string) $name) === $target) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         $indexes = DB::select("SHOW INDEX FROM {$table} WHERE Key_name = ?", [$indexName]);
+
         return count($indexes) > 0;
     }
 };

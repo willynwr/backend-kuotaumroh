@@ -19,6 +19,7 @@ class Affiliate extends Model
         'date_register',
         'is_active',
         'link_referral',
+        'ref_code',
     ];
 
     protected $casts = [
