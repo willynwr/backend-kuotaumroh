@@ -29,7 +29,7 @@ class AffiliateController extends Controller
         $validator = Validator::make($request->all(), [
             'nama' => 'required|string|max:255',
             'email' => 'required|email|unique:affiliates,email',
-            'no_wa' => 'required|string',
+            'no_wa' => 'required|string|unique:affiliates,no_wa',
             'provinsi' => 'required|string',
             'kab_kota' => 'required|string',
             'alamat_lengkap' => 'required|string',
@@ -92,7 +92,7 @@ class AffiliateController extends Controller
         $validator = Validator::make($request->all(), [
             'nama' => 'string|max:255',
             'email' => 'email|unique:affiliates,email,' . $id,
-            'no_wa' => 'string',
+            'no_wa' => 'string|unique:affiliates,no_wa,' . $id,
             'provinsi' => 'string',
             'kab_kota' => 'string',
             'alamat_lengkap' => 'string',
