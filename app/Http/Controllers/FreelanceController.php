@@ -35,7 +35,7 @@ class FreelanceController extends Controller
             'alamat_lengkap' => 'required|string',
             'date_register' => 'nullable|date',
             'is_active' => 'nullable|boolean',
-            'link_referral' => 'required|string|unique:freelances,link_referral',
+            'link_referral' => 'required|string|alpha_dash:ascii|unique:freelances,link_referral',
         ]);
 
         if ($validator->fails()) {
@@ -98,7 +98,7 @@ class FreelanceController extends Controller
             'alamat_lengkap' => 'string',
             'date_register' => 'date',
             'is_active' => 'boolean',
-            'link_referal' => 'string|unique:freelances,link_referal,' . $id,
+            'link_referral' => 'string|alpha_dash:ascii|unique:freelances,link_referral,' . $id,
         ]);
 
         if ($validator->fails()) {

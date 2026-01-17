@@ -35,7 +35,7 @@ class AffiliateController extends Controller
             'alamat_lengkap' => 'required|string',
             'date_register' => 'nullable|date',
             'is_active' => 'nullable|boolean',
-            'link_referral' => 'required|string|unique:affiliates,link_referral',
+            'link_referral' => 'required|string|alpha_dash:ascii|unique:affiliates,link_referral',
         ]);
 
         if ($validator->fails()) {
@@ -98,7 +98,7 @@ class AffiliateController extends Controller
             'alamat_lengkap' => 'string',
             'date_register' => 'date',
             'is_active' => 'boolean',
-            'link_referal' => 'string|unique:affiliates,link_referal,' . $id,
+            'link_referral' => 'string|alpha_dash:ascii|unique:affiliates,link_referral,' . $id,
         ]);
 
         if ($validator->fails()) {
