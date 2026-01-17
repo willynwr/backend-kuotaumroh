@@ -30,4 +30,10 @@ Route::post('/agents/{id}/activate', [App\Http\Controllers\AgentController::clas
 Route::post('/agents/{id}/deactivate', [App\Http\Controllers\AgentController::class, 'deactivate']);
 Route::delete('/agents/{id}', [App\Http\Controllers\AgentController::class, 'destroy']);
 
+<<<<<<< HEAD
 
+=======
+// api google auth
+Route::get('/auth/google/url', [App\Http\Controllers\Api\AuthController::class, 'redirectToGoogle']);
+Route::get('/auth/google/callback', [App\Http\Controllers\Api\AuthController::class, 'handleGoogleCallback']);
+>>>>>>> 2da352e (login)
