@@ -4,33 +4,19 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use Google\Client;
-use Google\Service\Oauth2;
+use App\Services\UserGoogle; // Import the service
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
-    protected $client;
-
-    public function __construct()
-    {
-        $this->client = new Client();
-        // Use environment variables instead of file_secret.json for security and convenience
-        $this->client->setClientId(env('GOOGLE_CLIENT_ID'));
-        $this->client->setClientSecret(env('GOOGLE_CLIENT_SECRET'));
-        $this->client->setRedirectUri(env('GOOGLE_REDIRECT'));
-        $this->client->addScope('email');
-        $this->client->addScope('profile');
-        $this->client->setPrompt('select_account'); // Matches user request
-    }
-
     /**
      * Get the Google Auth URL.
      */
     public function redirectToGoogle()
     {
-        return response()->json(['url' => $this->client->createAuthUrl()]);
+        $google = new UserGoogle();
+        return response()->json(['url' => $google->getAuthUrl()]);
     }
 
     /**
@@ -45,18 +31,12 @@ class AuthController extends Controller
                 return response()->json(['error' => 'Authorization code not provided'], 400);
             }
 
-            // Exchange code for token
-            $token = $this->client->fetchAccessTokenWithAuthCode($code);
+            $google = new UserGoogle();
+            $googleUser = $google->getProfile($code);
 
-            if (isset($token['error'])) {
-                return response()->json(['error' => 'Failed to fetch access token'], 401);
+            if (!$googleUser) {
+                return response()->json(['error' => 'Failed to fetch user profile or access token'], 401);
             }
-
-            $this->client->setAccessToken($token);
-
-            // Get User Info
-            $oauth2 = new Oauth2($this->client);
-            $googleUser = $oauth2->userinfo->get();
 
             // Find or create user
             $user = User::updateOrCreate(
