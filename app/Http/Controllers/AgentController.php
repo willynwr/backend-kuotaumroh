@@ -12,7 +12,7 @@ class AgentController extends Controller
 {
     public function index()
     {
-        $agents = Agent::all();
+        $agents = Agent::with(['affiliate', 'freelance'])->get();
         
         return response()->json([
             'message' => 'Agents retrieved successfully',
@@ -22,7 +22,7 @@ class AgentController extends Controller
 
     public function show($id)
     {
-        $agent = Agent::find($id);
+        $agent = Agent::with(['affiliate', 'freelance'])->find($id);
 
         if (!$agent) {
             return response()->json(['message' => 'Agent not found'], 404);
@@ -38,7 +38,9 @@ class AgentController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
-            'jenis_agent' => 'required|in:travel agent,agent,freelance',
+            'affiliate_id' => 'nullable|exists:affiliates,id',
+            'freelance_id' => 'nullable|exists:freelances,id',
+            'kategori_agent' => 'required|in:Referral,Host',
             'nama_pic' => 'required|string',
             'no_hp' => 'required|string',
             'nama_travel' => 'nullable|string',
@@ -58,6 +60,20 @@ class AgentController extends Controller
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
+        }
+
+        // Validasi: hanya boleh salah satu dari affiliate_id atau freelance_id
+        if ($request->affiliate_id && $request->freelance_id) {
+            return response()->json([
+                'message' => 'Agent hanya bisa terhubung ke Affiliate ATAU Freelance, tidak keduanya'
+            ], 422);
+        }
+
+        // Validasi: minimal salah satu harus diisi
+        if (!$request->affiliate_id && !$request->freelance_id) {
+            return response()->json([
+                'message' => 'Agent harus terhubung ke Affiliate atau Freelance'
+            ], 422);
         }
 
         $data = $request->except(['logo', 'surat_ppiu']);
@@ -90,7 +106,9 @@ class AgentController extends Controller
 
         $validator = Validator::make($request->all(), [
             'email' => 'email',
-            'jenis_agent' => 'in:travel agent,agent,freelance',
+            'affiliate_id' => 'nullable|exists:affiliates,id',
+            'freelance_id' => 'nullable|exists:freelances,id',
+            'kategori_agent' => 'in:Referral,Host',
             'nama_pic' => 'string',
             'no_hp' => 'string',
             'nama_travel' => 'nullable|string',
