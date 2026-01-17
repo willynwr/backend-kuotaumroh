@@ -29,7 +29,7 @@ class FreelanceController extends Controller
         $validator = Validator::make($request->all(), [
             'nama' => 'required|string|max:255',
             'email' => 'required|email|unique:freelances,email',
-            'no_wa' => 'required|string',
+            'no_wa' => 'required|string|unique:freelances,no_wa',
             'provinsi' => 'required|string',
             'kab_kota' => 'required|string',
             'alamat_lengkap' => 'required|string',
@@ -92,7 +92,7 @@ class FreelanceController extends Controller
         $validator = Validator::make($request->all(), [
             'nama' => 'string|max:255',
             'email' => 'email|unique:freelances,email,' . $id,
-            'no_wa' => 'string',
+            'no_wa' => 'string|unique:freelances,no_wa,' . $id,
             'provinsi' => 'string',
             'kab_kota' => 'string',
             'alamat_lengkap' => 'string',
