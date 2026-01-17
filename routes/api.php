@@ -30,10 +30,13 @@ Route::post('/agents/{id}/activate', [App\Http\Controllers\AgentController::clas
 Route::post('/agents/{id}/deactivate', [App\Http\Controllers\AgentController::class, 'deactivate']);
 Route::delete('/agents/{id}', [App\Http\Controllers\AgentController::class, 'destroy']);
 
-<<<<<<< HEAD
+// api produk
+Route::get('/produk', [App\Http\Controllers\ProdukController::class, 'index']);
+Route::get('/produk/{id}', [App\Http\Controllers\ProdukController::class, 'show']);
+Route::post('/produk', [App\Http\Controllers\ProdukController::class, 'store']);
+Route::post('/produk/{id}', [App\Http\Controllers\ProdukController::class, 'update']);
+Route::delete('/produk/{id}', [App\Http\Controllers\ProdukController::class, 'destroy']);
 
-=======
 // api google auth
 Route::get('/auth/google/url', [App\Http\Controllers\Api\AuthController::class, 'redirectToGoogle']);
 Route::get('/auth/google/callback', [App\Http\Controllers\Api\AuthController::class, 'handleGoogleCallback']);
->>>>>>> 2da352e (login)
