@@ -24,4 +24,10 @@ Route::get('/agents', [App\Http\Controllers\AgentController::class, 'index']);
 Route::get('/agents/{id}', [App\Http\Controllers\AgentController::class, 'show']);
 Route::post('/agents', [App\Http\Controllers\AgentController::class, 'store']);
 Route::post('/agents/{id}', [App\Http\Controllers\AgentController::class, 'update']); // Menggunakan POST untuk support upload file via FormData (method spoofing)
+Route::post('/agents/{id}/approve', [App\Http\Controllers\AgentController::class, 'approve']);
+Route::post('/agents/{id}/reject', [App\Http\Controllers\AgentController::class, 'reject']);
+Route::post('/agents/{id}/activate', [App\Http\Controllers\AgentController::class, 'activate']);
+Route::post('/agents/{id}/deactivate', [App\Http\Controllers\AgentController::class, 'deactivate']);
 Route::delete('/agents/{id}', [App\Http\Controllers\AgentController::class, 'destroy']);
+
+
