@@ -11,7 +11,9 @@ class Agent extends Model
 
     protected $fillable = [
         'email',
-        'jenis_agent',
+        'affiliate_id',
+        'freelance_id',
+        'kategori_agent',
         'nama_pic',
         'no_hp',
         'nama_travel',
@@ -31,4 +33,22 @@ class Agent extends Model
         'status',
         'is_active',
     ];
+
+    /**
+     * Relasi ke Affiliate
+     * Agent bisa berasal dari Affiliate
+     */
+    public function affiliate()
+    {
+        return $this->belongsTo(Affiliate::class);
+    }
+
+    /**
+     * Relasi ke Freelance
+     * Agent bisa berasal dari Freelance
+     */
+    public function freelance()
+    {
+        return $this->belongsTo(Freelance::class);
+    }
 }
