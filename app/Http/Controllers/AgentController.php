@@ -13,7 +13,7 @@ class AgentController extends Controller
     public function index()
     {
         $agents = Agent::with(['affiliate', 'freelance'])->get();
-        
+
         return response()->json([
             'message' => 'Agents retrieved successfully',
             'data' => $agents
@@ -37,7 +37,7 @@ class AgentController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'email' => 'required|email',
+            'email' => 'required|email|unique:agents,email|unique:affiliates,email|unique:freelances,email',
             'affiliate_id' => 'nullable|exists:affiliates,id',
             'freelance_id' => 'nullable|exists:freelances,id',
             'kategori_agent' => 'required|in:Referral,Host',
@@ -105,7 +105,7 @@ class AgentController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'email' => 'email',
+            'email' => 'email|unique:agents,email,' . $id . '|unique:affiliates,email|unique:freelances,email',
             'affiliate_id' => 'nullable|exists:affiliates,id',
             'freelance_id' => 'nullable|exists:freelances,id',
             'kategori_agent' => 'in:Referral,Host',
