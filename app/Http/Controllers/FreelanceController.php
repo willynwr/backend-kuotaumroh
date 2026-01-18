@@ -14,7 +14,7 @@ class FreelanceController extends Controller
     public function index()
     {
         $freelances = Freelance::with('agents')->get();
-        
+
         return response()->json([
             'message' => 'Freelances retrieved successfully',
             'data' => $freelances
@@ -28,7 +28,7 @@ class FreelanceController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'nama' => 'required|string|max:255',
-            'email' => 'required|email|unique:freelances,email',
+            'email' => 'required|email|unique:freelances,email|unique:agents,email|unique:affiliates,email',
             'no_wa' => 'required|string|unique:freelances,no_wa',
             'provinsi' => 'required|string',
             'kab_kota' => 'required|string',
@@ -43,12 +43,12 @@ class FreelanceController extends Controller
         }
 
         $data = $request->all();
-        
+
         // Set default values
         if (!isset($data['date_register'])) {
             $data['date_register'] = now()->format('Y-m-d');
         }
-        
+
         if (!isset($data['is_active'])) {
             $data['is_active'] = true;
         }
@@ -91,7 +91,7 @@ class FreelanceController extends Controller
 
         $validator = Validator::make($request->all(), [
             'nama' => 'string|max:255',
-            'email' => 'email|unique:freelances,email,' . $id,
+            'email' => 'email|unique:freelances,email,' . $id . '|unique:agents,email|unique:affiliates,email',
             'no_wa' => 'string|unique:freelances,no_wa,' . $id,
             'provinsi' => 'string',
             'kab_kota' => 'string',
@@ -126,7 +126,7 @@ class FreelanceController extends Controller
 
         // Check if freelance has agents
         $agentCount = $freelance->agents()->count();
-        
+
         if ($agentCount > 0) {
             return response()->json([
                 'message' => 'Cannot delete freelance. There are ' . $agentCount . ' agent(s) associated with this freelance.',

@@ -14,7 +14,7 @@ class AffiliateController extends Controller
     public function index()
     {
         $affiliates = Affiliate::with('agents')->get();
-        
+
         return response()->json([
             'message' => 'Affiliates retrieved successfully',
             'data' => $affiliates
@@ -28,7 +28,7 @@ class AffiliateController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'nama' => 'required|string|max:255',
-            'email' => 'required|email|unique:affiliates,email',
+            'email' => 'required|email|unique:affiliates,email|unique:agents,email|unique:freelances,email',
             'no_wa' => 'required|string|unique:affiliates,no_wa',
             'provinsi' => 'required|string',
             'kab_kota' => 'required|string',
@@ -43,12 +43,12 @@ class AffiliateController extends Controller
         }
 
         $data = $request->all();
-        
+
         // Set default values
         if (!isset($data['date_register'])) {
             $data['date_register'] = now()->format('Y-m-d');
         }
-        
+
         if (!isset($data['is_active'])) {
             $data['is_active'] = true;
         }
@@ -91,7 +91,7 @@ class AffiliateController extends Controller
 
         $validator = Validator::make($request->all(), [
             'nama' => 'string|max:255',
-            'email' => 'email|unique:affiliates,email,' . $id,
+            'email' => 'email|unique:affiliates,email,' . $id . '|unique:agents,email|unique:freelances,email',
             'no_wa' => 'string|unique:affiliates,no_wa,' . $id,
             'provinsi' => 'string',
             'kab_kota' => 'string',
@@ -126,7 +126,7 @@ class AffiliateController extends Controller
 
         // Check if affiliate has agents
         $agentCount = $affiliate->agents()->count();
-        
+
         if ($agentCount > 0) {
             return response()->json([
                 'message' => 'Cannot delete affiliate. There are ' . $agentCount . ' agent(s) associated with this affiliate.',
