@@ -58,7 +58,10 @@ class AuthController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Authentication failed. ' . $e->getMessage()], 401);
+            return response()->json([
+                'error' => 'Authentication failed.',
+                'message' => $e->getMessage()
+            ], 401);
         }
     }
 }

@@ -11,9 +11,9 @@ class UserGoogle
     public function __construct()
     {
         $this->client = new Client();
-        $this->client->setClientId(env('GOOGLE_CLIENT_ID'));
-        $this->client->setClientSecret(env('GOOGLE_CLIENT_SECRET'));
-        $this->client->setRedirectUri(env('GOOGLE_REDIRECT'));
+        $this->client->setClientId(config('services.google.client_id'));
+        $this->client->setClientSecret(config('services.google.client_secret'));
+        $this->client->setRedirectUri(config('services.google.redirect'));
         $this->client->addScope('email');
         $this->client->addScope('profile');
         $this->client->setPrompt('select_account');
@@ -30,6 +30,7 @@ class UserGoogle
             $token = $this->client->fetchAccessTokenWithAuthCode($code);
 
             if (isset($token['error'])) {
+                \Log::error('Google OAuth Token Error: ' . json_encode($token));
                 return null;
             }
 
@@ -37,7 +38,8 @@ class UserGoogle
 
             $oauth2 = new Oauth2($this->client);
             return $oauth2->userinfo->get();
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            \Log::error('Google OAuth Exception: ' . $e->getMessage());
             return null;
         }
     }
