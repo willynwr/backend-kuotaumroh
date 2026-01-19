@@ -1216,13 +1216,12 @@
             }
 
             console.log('Success:', result);
-            this.showToast('Berhasil!', 'Pendaftaran Travel Agent berhasil. Silakan cek email Anda untuk verifikasi.');
+            this.showToast('Berhasil!', 'Pendaftaran Travel Agent berhasil. Mengarahkan ke dashboard...');
             clearReferral();
 
-            // Reset form and redirect to login page
             setTimeout(() => {
-              window.location.href = "{{ url('/login') }}";
-            }, 2000);
+              window.location.href = @json(route('agent.dashboard'));
+            }, 800);
 
           } catch (error) {
             console.error('Submission error:', error);

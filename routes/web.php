@@ -131,9 +131,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
 
 
-// Route::get('/r/{code}', [ReferralRedirectController::class, 'redirect'])
-//     ->where('code', '[A-Za-z0-9_-]+')
-//     ->middleware('throttle:referral');
+Route::get('/r/{code}', [ReferralRedirectController::class, 'redirect'])
+    ->where('code', '[A-Za-z0-9_-]+')
+    ->middleware('throttle:referral');
 
 Route::prefix('agent')->name('agent.')->group(function () {
     Route::get('/assets/{file}', [AgentController::class, 'asset'])

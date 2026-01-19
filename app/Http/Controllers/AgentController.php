@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 
 use App\Models\Agent;
+use App\Models\Affiliate;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 
@@ -129,10 +130,13 @@ class AgentController extends Controller
             ], 422);
         }
 
-        // Validasi: minimal salah satu harus diisi
         if (!$request->affiliate_id && !$request->freelance_id) {
+            $request->merge(['affiliate_id' => 1]);
+        }
+
+        if ((int) $request->affiliate_id === 1 && !Affiliate::query()->whereKey(1)->exists()) {
             return response()->json([
-                'message' => 'Agent harus terhubung ke Affiliate atau Freelance'
+                'message' => 'Affiliate default tidak ditemukan (id=1)'
             ], 422);
         }
 
