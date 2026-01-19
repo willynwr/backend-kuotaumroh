@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ReferralRedirectController;
 use App\Http\Controllers\AgentController;
+use App\Http\Controllers\DashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -18,6 +19,30 @@ use App\Http\Controllers\AgentController;
 
 Route::get('/', function () {
     return view('welcome');
+});
+
+// Dashboard Unique Routes untuk Affiliate & Freelance & Agent
+Route::prefix('dash')->name('dash.')->group(function () {
+    Route::get('/{link_referral}', [DashboardController::class, 'show'])->name('show');
+    Route::get('/{link_referral}/downlines', [DashboardController::class, 'downlines'])->name('downlines');
+    Route::get('/{link_referral}/rewards', [DashboardController::class, 'rewards'])->name('rewards');
+    Route::get('/{link_referral}/points-history', [DashboardController::class, 'pointsHistory'])->name('points-history');
+    Route::get('/{link_referral}/profile', [DashboardController::class, 'profile'])->name('profile');
+    Route::get('/{link_referral}/invite', [DashboardController::class, 'invite'])->name('invite');
+    
+    // Agent specific routes
+    Route::get('/{link_referral}/order', [DashboardController::class, 'order'])->name('order');
+    Route::get('/{link_referral}/history', [DashboardController::class, 'history'])->name('history');
+    Route::get('/{link_referral}/wallet', [DashboardController::class, 'wallet'])->name('wallet');
+    Route::get('/{link_referral}/withdraw', [DashboardController::class, 'withdraw'])->name('withdraw');
+    Route::get('/{link_referral}/referrals', [DashboardController::class, 'referrals'])->name('referrals');
+    Route::get('/{link_referral}/catalog', [DashboardController::class, 'catalog'])->name('catalog');
+});
+
+// API Routes untuk mendapatkan data dashboard
+Route::prefix('api/dash')->name('api.dash.')->group(function () {
+    Route::get('/affiliate/{link_referral}', [DashboardController::class, 'getAffiliateData'])->name('affiliate');
+    Route::get('/freelance/{link_referral}', [DashboardController::class, 'getFreelanceData'])->name('freelance');
 });
 
 // Admin Routes

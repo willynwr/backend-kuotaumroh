@@ -110,7 +110,8 @@
     function dashboardApp() {
       return {
         imageBase: @json(url('/agent/assets')),
-        referralLink: '',
+        linkReferral: '{{ $linkReferral ?? "" }}',
+        referralLink: '{{ isset($linkReferral) ? url("/dash/" . $linkReferral) : "" }}',
         stats: {
           monthlyProfit: 2450000,
           totalProfit: 15750000,
@@ -118,14 +119,14 @@
           pendingWithdrawal: 500000,
         },
         menuItems: [
-          { id: 'new-order', title: 'Pesanan Baru', href: @json(route('agent.order')), icon: 'order' },
-          { id: 'history', title: 'Riwayat Transaksi', href: @json(route('agent.history')), icon: 'history' },
-          { id: 'wallet', title: 'Dompet Saya', href: @json(route('agent.wallet')), icon: 'wallet' },
-          { id: 'referrals', title: 'Program Referral', href: @json(route('agent.referrals')), icon: 'referral' },
-          { id: 'catalog', title: 'Katalog Harga', href: @json(route('agent.catalog')), icon: 'catalog' },
+          { id: 'new-order', title: 'Pesanan Baru', href: '{{ isset($linkReferral) ? url("/dash/" . $linkReferral . "/order") : route("agent.order") }}', icon: 'order' },
+          { id: 'history', title: 'Riwayat Transaksi', href: '{{ isset($linkReferral) ? url("/dash/" . $linkReferral . "/history") : route("agent.history") }}', icon: 'history' },
+          { id: 'wallet', title: 'Dompet Saya', href: '{{ isset($linkReferral) ? url("/dash/" . $linkReferral . "/wallet") : route("agent.wallet") }}', icon: 'wallet' },
+          { id: 'referrals', title: 'Program Referral', href: '{{ isset($linkReferral) ? url("/dash/" . $linkReferral . "/referrals") : route("agent.referrals") }}', icon: 'referral' },
+          { id: 'catalog', title: 'Katalog Harga', href: '{{ isset($linkReferral) ? url("/dash/" . $linkReferral . "/catalog") : route("agent.catalog") }}', icon: 'catalog' },
         ],
         init() {
-          this.referralLink = window.location.origin + '/r/your-code';
+          // Link referral sudah diset dari controller
         },
         formatRupiah(value) {
           const n = Number(value || 0);
