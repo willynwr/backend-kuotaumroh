@@ -9,6 +9,7 @@ use App\Models\Affiliate;
 use App\Models\Freelance;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class AdminController extends Controller
 {
@@ -214,5 +215,484 @@ class AdminController extends Controller
             'success' => true,
             'status' => $status
         ]);
+    }
+
+    // ========== AFFILIATE METHODS ==========
+
+    /**
+     * Display a listing of affiliates
+     */
+    public function indexAffiliates()
+    {
+        $affiliates = Affiliate::with('agents')->paginate(10);
+        return view('admin.affiliates.index', compact('affiliates'));
+    }
+
+    /**
+     * Show the form for creating a new affiliate
+     */
+    public function createAffiliate()
+    {
+        return view('admin.affiliates.create');
+    }
+
+    /**
+     * Store a newly created affiliate in storage
+     */
+    public function storeAffiliate(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'nama' => 'required|string|max:255',
+            'email' => 'required|email|unique:affiliates,email',
+            'no_wa' => 'required|string|unique:affiliates,no_wa',
+            'provinsi' => 'required|string',
+            'kab_kota' => 'required|string',
+            'alamat_lengkap' => 'required|string',
+            'link_referral' => 'required|string|alpha_dash:ascii|unique:affiliates,link_referral',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+
+        try {
+            Affiliate::create([
+                'nama' => $request->nama,
+                'email' => $request->email,
+                'no_wa' => $request->no_wa,
+                'provinsi' => $request->provinsi,
+                'kab_kota' => $request->kab_kota,
+                'alamat_lengkap' => $request->alamat_lengkap,
+                'link_referral' => $request->link_referral,
+                'date_register' => now()->format('Y-m-d'),
+                'is_active' => true,
+            ]);
+
+            return redirect()->route('admin.affiliates.index')->with('success', 'Affiliate berhasil ditambahkan');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
+        }
+    }
+
+    /**
+     * Display the specified affiliate
+     */
+    public function showAffiliate($id)
+    {
+        $affiliate = Affiliate::with('agents')->findOrFail($id);
+        return view('admin.affiliates.show', compact('affiliate'));
+    }
+
+    /**
+     * Show the form for editing the specified affiliate
+     */
+    public function editAffiliate($id)
+    {
+        $affiliate = Affiliate::findOrFail($id);
+        return view('admin.affiliates.edit', compact('affiliate'));
+    }
+
+    /**
+     * Update the specified affiliate in storage
+     */
+    public function updateAffiliate(Request $request, $id)
+    {
+        $affiliate = Affiliate::findOrFail($id);
+
+        $validator = Validator::make($request->all(), [
+            'nama' => 'required|string|max:255',
+            'email' => 'required|email|unique:affiliates,email,' . $id,
+            'no_wa' => 'required|string|unique:affiliates,no_wa,' . $id,
+            'provinsi' => 'required|string',
+            'kab_kota' => 'required|string',
+            'alamat_lengkap' => 'required|string',
+            'link_referral' => 'required|string|alpha_dash:ascii|unique:affiliates,link_referral,' . $id,
+            'is_active' => 'boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+
+        try {
+            $affiliate->update($request->all());
+            return redirect()->route('admin.affiliates.index')->with('success', 'Affiliate berhasil diperbarui');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
+        }
+    }
+
+    /**
+     * Remove the specified affiliate from storage
+     */
+    public function destroyAffiliate($id)
+    {
+        try {
+            $affiliate = Affiliate::findOrFail($id);
+            $affiliate->delete();
+            return redirect()->route('admin.affiliates.index')->with('success', 'Affiliate berhasil dihapus');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Activate affiliate
+     */
+    public function activateAffiliate($id)
+    {
+        try {
+            $affiliate = Affiliate::findOrFail($id);
+            $affiliate->update(['is_active' => true]);
+            return redirect()->back()->with('success', 'Affiliate berhasil diaktifkan');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Deactivate affiliate
+     */
+    public function deactivateAffiliate($id)
+    {
+        try {
+            $affiliate = Affiliate::findOrFail($id);
+            $affiliate->update(['is_active' => false]);
+            return redirect()->back()->with('success', 'Affiliate berhasil dinonaktifkan');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    // ========== FREELANCE METHODS ==========
+
+    /**
+     * Display a listing of freelances
+     */
+    public function indexFreelances()
+    {
+        $freelances = Freelance::with('agents')->paginate(10);
+        return view('admin.freelances.index', compact('freelances'));
+    }
+
+    /**
+     * Show the form for creating a new freelance
+     */
+    public function createFreelance()
+    {
+        return view('admin.freelances.create');
+    }
+
+    /**
+     * Store a newly created freelance in storage
+     */
+    public function storeFreelance(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'nama' => 'required|string|max:255',
+            'email' => 'required|email|unique:freelances,email',
+            'no_wa' => 'required|string|unique:freelances,no_wa',
+            'provinsi' => 'required|string',
+            'kab_kota' => 'required|string',
+            'alamat_lengkap' => 'required|string',
+            'link_referral' => 'required|string|alpha_dash:ascii|unique:freelances,link_referral',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+
+        try {
+            Freelance::create([
+                'nama' => $request->nama,
+                'email' => $request->email,
+                'no_wa' => $request->no_wa,
+                'provinsi' => $request->provinsi,
+                'kab_kota' => $request->kab_kota,
+                'alamat_lengkap' => $request->alamat_lengkap,
+                'link_referral' => $request->link_referral,
+                'date_register' => now()->format('Y-m-d'),
+                'is_active' => true,
+            ]);
+
+            return redirect()->route('admin.freelances.index')->with('success', 'Freelance berhasil ditambahkan');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
+        }
+    }
+
+    /**
+     * Display the specified freelance
+     */
+    public function showFreelance($id)
+    {
+        $freelance = Freelance::with('agents')->findOrFail($id);
+        return view('admin.freelances.show', compact('freelance'));
+    }
+
+    /**
+     * Show the form for editing the specified freelance
+     */
+    public function editFreelance($id)
+    {
+        $freelance = Freelance::findOrFail($id);
+        return view('admin.freelances.edit', compact('freelance'));
+    }
+
+    /**
+     * Update the specified freelance in storage
+     */
+    public function updateFreelance(Request $request, $id)
+    {
+        $freelance = Freelance::findOrFail($id);
+
+        $validator = Validator::make($request->all(), [
+            'nama' => 'required|string|max:255',
+            'email' => 'required|email|unique:freelances,email,' . $id,
+            'no_wa' => 'required|string|unique:freelances,no_wa,' . $id,
+            'provinsi' => 'required|string',
+            'kab_kota' => 'required|string',
+            'alamat_lengkap' => 'required|string',
+            'link_referral' => 'required|string|alpha_dash:ascii|unique:freelances,link_referral,' . $id,
+            'is_active' => 'boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+
+        try {
+            $freelance->update($request->all());
+            return redirect()->route('admin.freelances.index')->with('success', 'Freelance berhasil diperbarui');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
+        }
+    }
+
+    /**
+     * Remove the specified freelance from storage
+     */
+    public function destroyFreelance($id)
+    {
+        try {
+            $freelance = Freelance::findOrFail($id);
+            $freelance->delete();
+            return redirect()->route('admin.freelances.index')->with('success', 'Freelance berhasil dihapus');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Activate freelance
+     */
+    public function activateFreelance($id)
+    {
+        try {
+            $freelance = Freelance::findOrFail($id);
+            $freelance->update(['is_active' => true]);
+            return redirect()->back()->with('success', 'Freelance berhasil diaktifkan');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Deactivate freelance
+     */
+    public function deactivateFreelance($id)
+    {
+        try {
+            $freelance = Freelance::findOrFail($id);
+            $freelance->update(['is_active' => false]);
+            return redirect()->back()->with('success', 'Freelance berhasil dinonaktifkan');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    // ========== AGENT METHODS ==========
+
+    /**
+     * Display a listing of agents
+     */
+    public function indexAgents()
+    {
+        $agents = Agent::paginate(10);
+        return view('admin.agents.index', compact('agents'));
+    }
+
+    /**
+     * Show the form for creating a new agent
+     */
+    public function createAgent()
+    {
+        return view('admin.agents.create');
+    }
+
+    /**
+     * Store a newly created agent in storage
+     */
+    public function storeAgent(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'jenis_agent' => 'required|in:travel agent,agent,freelance',
+            'email' => 'required|email|unique:agents,email',
+            'nama_pic' => 'required|string|max:255',
+            'no_hp' => 'required|string|unique:agents,no_hp',
+            'nama_travel' => 'required|string|max:255',
+            'jenis_travel' => 'required|string|max:100',
+            'total_traveller' => 'required|integer|min:0',
+            'provinsi' => 'required|string|max:100',
+            'kabupaten_kota' => 'required|string|max:100',
+            'alamat_lengkap' => 'required|string',
+            'status' => 'required|in:active,inactive',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+
+        try {
+            Agent::create([
+                'jenis_agent' => $request->jenis_agent,
+                'email' => $request->email,
+                'nama_pic' => $request->nama_pic,
+                'no_hp' => $request->no_hp,
+                'nama_travel' => $request->nama_travel,
+                'jenis_travel' => $request->jenis_travel,
+                'total_traveller' => $request->total_traveller,
+                'provinsi' => $request->provinsi,
+                'kabupaten_kota' => $request->kabupaten_kota,
+                'alamat_lengkap' => $request->alamat_lengkap,
+                'status' => $request->status,
+                'is_active' => true,
+            ]);
+
+            return redirect()->route('admin.agents.index')->with('success', 'Agent berhasil ditambahkan');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
+        }
+    }
+
+    /**
+     * Display the specified agent
+     */
+    public function showAgent($id)
+    {
+        $agent = Agent::findOrFail($id);
+        return view('admin.agents.show', compact('agent'));
+    }
+
+    /**
+     * Show the form for editing the specified agent
+     */
+    public function editAgent($id)
+    {
+        $agent = Agent::findOrFail($id);
+        return view('admin.agents.edit', compact('agent'));
+    }
+
+    /**
+     * Update the specified agent in storage
+     */
+    public function updateAgent(Request $request, $id)
+    {
+        $agent = Agent::findOrFail($id);
+
+        $validator = Validator::make($request->all(), [
+            'jenis_agent' => 'required|in:travel agent,agent,freelance',
+            'email' => 'required|email|unique:agents,email,' . $id,
+            'nama_pic' => 'required|string|max:255',
+            'no_hp' => 'required|string|unique:agents,no_hp,' . $id,
+            'nama_travel' => 'required|string|max:255',
+            'jenis_travel' => 'required|string|max:100',
+            'total_traveller' => 'required|integer|min:0',
+            'provinsi' => 'required|string|max:100',
+            'kabupaten_kota' => 'required|string|max:100',
+            'alamat_lengkap' => 'required|string',
+            'status' => 'required|in:active,inactive',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+
+        try {
+            $agent->update($request->all());
+            return redirect()->route('admin.agents.index')->with('success', 'Agent berhasil diperbarui');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
+        }
+    }
+
+    /**
+     * Remove the specified agent from storage
+     */
+    public function destroyAgent($id)
+    {
+        try {
+            $agent = Agent::findOrFail($id);
+            $agent->delete();
+            return redirect()->route('admin.agents.index')->with('success', 'Agent berhasil dihapus');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Approve agent
+     */
+    public function approveAgent($id)
+    {
+        try {
+            $agent = Agent::findOrFail($id);
+            $agent->update(['status' => 'active']);
+            return redirect()->back()->with('success', 'Agent berhasil disetujui');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Reject agent
+     */
+    public function rejectAgent($id)
+    {
+        try {
+            $agent = Agent::findOrFail($id);
+            $agent->update(['status' => 'inactive']);
+            return redirect()->back()->with('success', 'Agent berhasil ditolak');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Activate agent
+     */
+    public function activateAgent($id)
+    {
+        try {
+            $agent = Agent::findOrFail($id);
+            $agent->update(['is_active' => true]);
+            return redirect()->back()->with('success', 'Agent berhasil diaktifkan');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Deactivate agent
+     */
+    public function deactivateAgent($id)
+    {
+        try {
+            $agent = Agent::findOrFail($id);
+            $agent->update(['is_active' => false]);
+            return redirect()->back()->with('success', 'Agent berhasil dinonaktifkan');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
     }
 }
