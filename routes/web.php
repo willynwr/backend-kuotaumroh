@@ -19,9 +19,34 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/r/{code}', [ReferralRedirectController::class, 'redirect'])
-    ->where('code', '[A-Za-z0-9_-]+')
-    ->middleware('throttle:referral');
+// Admin Routes
+Route::prefix('admin')->name('admin.')->group(function () {
+    // Auth routes
+    Route::get('/login', [App\Http\Controllers\Admin\AuthController::class, 'showLogin'])->name('login');
+    Route::post('/login/otp', [App\Http\Controllers\Admin\AuthController::class, 'requestOtp'])->name('login.otp');
+    Route::post('/login/verify', [App\Http\Controllers\Admin\AuthController::class, 'verifyOtp'])->name('login.verify');
+    Route::post('/logout', [App\Http\Controllers\Admin\AuthController::class, 'logout'])->name('logout');
+
+    // Admin routes (auth middleware disabled temporarily)
+    Route::get('/dashboard', [App\Http\Controllers\Admin\AdminController::class, 'dashboard'])->name('dashboard');
+    Route::get('/users', [App\Http\Controllers\Admin\AdminController::class, 'users'])->name('users');
+    Route::get('/packages', [App\Http\Controllers\Admin\AdminController::class, 'packages'])->name('packages');
+    Route::get('/transactions', [App\Http\Controllers\Admin\AdminController::class, 'transactions'])->name('transactions');
+    Route::get('/withdrawals', [App\Http\Controllers\Admin\AdminController::class, 'withdrawals'])->name('withdrawals');
+    Route::get('/rewards', [App\Http\Controllers\Admin\AdminController::class, 'rewards'])->name('rewards');
+    Route::get('/reward-claims', [App\Http\Controllers\Admin\AdminController::class, 'rewardClaims'])->name('reward-claims');
+    Route::get('/analytics', [App\Http\Controllers\Admin\AdminController::class, 'analytics'])->name('analytics');
+    Route::get('/profile', [App\Http\Controllers\Admin\AdminController::class, 'profile'])->name('profile');
+
+    // User management
+    Route::post('/users/{id}/toggle-status', [App\Http\Controllers\Admin\AdminController::class, 'toggleUserStatus'])->name('users.toggle-status');
+});
+
+
+
+// Route::get('/r/{code}', [ReferralRedirectController::class, 'redirect'])
+//     ->where('code', '[A-Za-z0-9_-]+')
+//     ->middleware('throttle:referral');
 
 // agent routes
 Route::get('/agents', [App\Http\Controllers\AgentController::class, 'index']);
