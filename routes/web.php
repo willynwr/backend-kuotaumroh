@@ -51,7 +51,28 @@ Route::post('/affiliates/{id}/activate', [App\Http\Controllers\AffiliateControll
 Route::post('/affiliates/{id}/deactivate', [App\Http\Controllers\AffiliateController::class, 'deactivate']);
 Route::get('/affiliates/{id}/agents', [App\Http\Controllers\AffiliateController::class, 'agents']);
 
+// affiliate portal routes (mirrored from freelance)
+Route::prefix('affiliate')->group(function () {
+    Route::view('login', 'affiliate.login')->name('affiliate.login');
+    Route::view('dashboard', 'affiliate.dashboard')->name('affiliate.dashboard');
+    Route::view('downlines', 'affiliate.downlines')->name('affiliate.downlines');
+    Route::view('invite', 'affiliate.invite')->name('affiliate.invite');
+    Route::view('points-history', 'affiliate.points-history')->name('affiliate.points-history');
+    Route::view('profile', 'affiliate.profile')->name('affiliate.profile');
+    Route::view('rewards', 'affiliate.rewards')->name('affiliate.rewards');
+});
+
 // freelance routes
+Route::prefix('freelance')->group(function () {
+    Route::view('login', 'freelance.login')->name('freelance.login');
+    Route::view('dashboard', 'freelance.dashboard')->name('freelance.dashboard');
+    Route::view('downlines', 'freelance.downlines')->name('freelance.downlines');
+    Route::view('invite', 'freelance.invite')->name('freelance.invite');
+    Route::view('points-history', 'freelance.points-history')->name('freelance.points-history');
+    Route::view('profile', 'freelance.profile')->name('freelance.profile');
+    Route::view('rewards', 'freelance.rewards')->name('freelance.rewards');
+});
+
 Route::get('/freelances', [App\Http\Controllers\FreelanceController::class, 'index']);
 Route::get('/freelances/{id}', [App\Http\Controllers\FreelanceController::class, 'show']);
 Route::post('/freelances', [App\Http\Controllers\FreelanceController::class, 'store']);
