@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ReferralRedirectController;
+use App\Http\Controllers\AgentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -47,6 +48,21 @@ Route::prefix('admin')->name('admin.')->group(function () {
 // Route::get('/r/{code}', [ReferralRedirectController::class, 'redirect'])
 //     ->where('code', '[A-Za-z0-9_-]+')
 //     ->middleware('throttle:referral');
+
+Route::prefix('agent')->name('agent.')->group(function () {
+    Route::get('/assets/{file}', [AgentController::class, 'asset'])
+        ->where('file', '[A-Za-z0-9_\-\.]+')
+        ->name('asset');
+    Route::get('/', [AgentController::class, 'dashboard'])->name('home');
+    Route::get('/dashboard', [AgentController::class, 'dashboard'])->name('dashboard');
+    Route::get('/catalog', [AgentController::class, 'catalog'])->name('catalog');
+    Route::get('/history', [AgentController::class, 'history'])->name('history');
+    Route::get('/order', [AgentController::class, 'order'])->name('order');
+    Route::get('/wallet', [AgentController::class, 'wallet'])->name('wallet');
+    Route::get('/withdraw', [AgentController::class, 'withdraw'])->name('withdraw');
+    Route::get('/profile', [AgentController::class, 'profile'])->name('profile');
+    Route::get('/referrals', [AgentController::class, 'referrals'])->name('referrals');
+});
 
 // agent routes
 Route::get('/agents', [App\Http\Controllers\AgentController::class, 'index']);

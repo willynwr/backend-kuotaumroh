@@ -10,6 +10,66 @@ use Illuminate\Support\Facades\Storage;
 
 class AgentController extends Controller
 {
+    public function asset(string $file)
+    {
+        if (!preg_match('/\A[A-Za-z0-9_\-\.]+\z/', $file)) {
+            abort(404);
+        }
+
+        if (!str_ends_with(strtolower($file), '.png')) {
+            abort(404);
+        }
+
+        $path = resource_path('views/agent/agent123/' . $file);
+        if (!is_file($path)) {
+            abort(404);
+        }
+
+        return response()->file($path, [
+            'Cache-Control' => 'public, max-age=604800',
+        ]);
+    }
+
+    public function dashboard()
+    {
+        return view('agent.dashboard');
+    }
+
+    public function catalog()
+    {
+        return view('agent.catalog');
+    }
+
+    public function history()
+    {
+        return view('agent.history');
+    }
+
+    public function order()
+    {
+        return view('agent.order');
+    }
+
+    public function wallet()
+    {
+        return view('agent.wallet');
+    }
+
+    public function withdraw()
+    {
+        return view('agent.withdraw');
+    }
+
+    public function profile()
+    {
+        return view('agent.profile');
+    }
+
+    public function referrals()
+    {
+        return view('agent.referrals');
+    }
+
     public function index()
     {
         $agents = Agent::with(['affiliate', 'freelance'])->get();
