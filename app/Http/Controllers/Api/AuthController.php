@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Services\UserGoogle; // Import the service
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends Controller
 {
@@ -15,8 +15,9 @@ class AuthController extends Controller
      */
     public function redirectToGoogle()
     {
-        $google = new UserGoogle();
-        return response()->json(['url' => $google->getAuthUrl()]);
+        // Use stateless() to generate the URL
+        $url = Socialite::driver('google')->stateless()->redirect()->getTargetUrl();
+        return response()->json(['url' => $url]);
     }
 
     /**
@@ -25,14 +26,9 @@ class AuthController extends Controller
     public function handleGoogleCallback(Request $request)
     {
         try {
-            $code = $request->input('code');
-
-            if (!$code) {
-                return response()->json(['error' => 'Authorization code not provided'], 400);
-            }
-
-            $google = new UserGoogle();
-            $googleUser = $google->getProfile($code);
+            // Retrieve user from Google using stateless()
+            // This handles the 'code' retrieval automatically from the request
+            $googleUser = Socialite::driver('google')->stateless()->user();
 
             if (!$googleUser) {
                 return response()->json(['error' => 'Failed to fetch user profile or access token'], 401);
@@ -40,10 +36,10 @@ class AuthController extends Controller
 
             // Find or create user
             $user = User::updateOrCreate(
-                ['email' => $googleUser->email],
+                ['email' => $googleUser->getEmail()],
                 [
-                    'name' => $googleUser->name,
-                    'google_id' => $googleUser->id,
+                    'name' => $googleUser->getName(),
+                    'google_id' => $googleUser->getId(),
                     'password' => bcrypt(Str::random(16)) // Random password
                 ]
             );
@@ -58,7 +54,11 @@ class AuthController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Authentication failed. ' . $e->getMessage()], 401);
+            \Log::error('Google Login Error: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Authentication failed.',
+                'message' => $e->getMessage()
+            ], 401); // 401 Unauthorized is better than 500 for auth failures, unless it's a code error
         }
     }
 }

@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ReferralRedirectController;
+use App\Http\Controllers\AgentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -19,9 +20,49 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/r/{code}', [ReferralRedirectController::class, 'redirect'])
-    ->where('code', '[A-Za-z0-9_-]+')
-    ->middleware('throttle:referral');
+// Admin Routes
+Route::prefix('admin')->name('admin.')->group(function () {
+    // Auth routes
+    Route::get('/login', [App\Http\Controllers\Admin\AuthController::class, 'showLogin'])->name('login');
+    Route::post('/login/otp', [App\Http\Controllers\Admin\AuthController::class, 'requestOtp'])->name('login.otp');
+    Route::post('/login/verify', [App\Http\Controllers\Admin\AuthController::class, 'verifyOtp'])->name('login.verify');
+    Route::post('/logout', [App\Http\Controllers\Admin\AuthController::class, 'logout'])->name('logout');
+
+    // Admin routes (auth middleware disabled temporarily)
+    Route::get('/dashboard', [App\Http\Controllers\Admin\AdminController::class, 'dashboard'])->name('dashboard');
+    Route::get('/users', [App\Http\Controllers\Admin\AdminController::class, 'users'])->name('users');
+    Route::get('/packages', [App\Http\Controllers\Admin\AdminController::class, 'packages'])->name('packages');
+    Route::get('/transactions', [App\Http\Controllers\Admin\AdminController::class, 'transactions'])->name('transactions');
+    Route::get('/withdrawals', [App\Http\Controllers\Admin\AdminController::class, 'withdrawals'])->name('withdrawals');
+    Route::get('/rewards', [App\Http\Controllers\Admin\AdminController::class, 'rewards'])->name('rewards');
+    Route::get('/reward-claims', [App\Http\Controllers\Admin\AdminController::class, 'rewardClaims'])->name('reward-claims');
+    Route::get('/analytics', [App\Http\Controllers\Admin\AdminController::class, 'analytics'])->name('analytics');
+    Route::get('/profile', [App\Http\Controllers\Admin\AdminController::class, 'profile'])->name('profile');
+
+    // User management
+    Route::post('/users/{id}/toggle-status', [App\Http\Controllers\Admin\AdminController::class, 'toggleUserStatus'])->name('users.toggle-status');
+});
+
+
+
+// Route::get('/r/{code}', [ReferralRedirectController::class, 'redirect'])
+//     ->where('code', '[A-Za-z0-9_-]+')
+//     ->middleware('throttle:referral');
+
+Route::prefix('agent')->name('agent.')->group(function () {
+    Route::get('/assets/{file}', [AgentController::class, 'asset'])
+        ->where('file', '[A-Za-z0-9_\-\.]+')
+        ->name('asset');
+    Route::get('/', [AgentController::class, 'dashboard'])->name('home');
+    Route::get('/dashboard', [AgentController::class, 'dashboard'])->name('dashboard');
+    Route::get('/catalog', [AgentController::class, 'catalog'])->name('catalog');
+    Route::get('/history', [AgentController::class, 'history'])->name('history');
+    Route::get('/order', [AgentController::class, 'order'])->name('order');
+    Route::get('/wallet', [AgentController::class, 'wallet'])->name('wallet');
+    Route::get('/withdraw', [AgentController::class, 'withdraw'])->name('withdraw');
+    Route::get('/profile', [AgentController::class, 'profile'])->name('profile');
+    Route::get('/referrals', [AgentController::class, 'referrals'])->name('referrals');
+});
 
 // agent routes
 Route::get('/agents', [App\Http\Controllers\AgentController::class, 'index']);
