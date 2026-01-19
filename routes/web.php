@@ -41,6 +41,47 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
     // User management
     Route::post('/users/{id}/toggle-status', [App\Http\Controllers\Admin\AdminController::class, 'toggleUserStatus'])->name('users.toggle-status');
+
+    // Affiliate Management
+    Route::prefix('affiliates')->name('affiliates.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\AdminController::class, 'indexAffiliates'])->name('index');
+        Route::get('/create', [App\Http\Controllers\Admin\AdminController::class, 'createAffiliate'])->name('create');
+        Route::post('/', [App\Http\Controllers\Admin\AdminController::class, 'storeAffiliate'])->name('store');
+        Route::get('/{id}', [App\Http\Controllers\Admin\AdminController::class, 'showAffiliate'])->name('show');
+        Route::get('/{id}/edit', [App\Http\Controllers\Admin\AdminController::class, 'editAffiliate'])->name('edit');
+        Route::put('/{id}', [App\Http\Controllers\Admin\AdminController::class, 'updateAffiliate'])->name('update');
+        Route::delete('/{id}', [App\Http\Controllers\Admin\AdminController::class, 'destroyAffiliate'])->name('destroy');
+        Route::post('/{id}/activate', [App\Http\Controllers\Admin\AdminController::class, 'activateAffiliate'])->name('activate');
+        Route::post('/{id}/deactivate', [App\Http\Controllers\Admin\AdminController::class, 'deactivateAffiliate'])->name('deactivate');
+    });
+
+    // Freelance Management
+    Route::prefix('freelances')->name('freelances.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\AdminController::class, 'indexFreelances'])->name('index');
+        Route::get('/create', [App\Http\Controllers\Admin\AdminController::class, 'createFreelance'])->name('create');
+        Route::post('/', [App\Http\Controllers\Admin\AdminController::class, 'storeFreelance'])->name('store');
+        Route::get('/{id}', [App\Http\Controllers\Admin\AdminController::class, 'showFreelance'])->name('show');
+        Route::get('/{id}/edit', [App\Http\Controllers\Admin\AdminController::class, 'editFreelance'])->name('edit');
+        Route::put('/{id}', [App\Http\Controllers\Admin\AdminController::class, 'updateFreelance'])->name('update');
+        Route::delete('/{id}', [App\Http\Controllers\Admin\AdminController::class, 'destroyFreelance'])->name('destroy');
+        Route::post('/{id}/activate', [App\Http\Controllers\Admin\AdminController::class, 'activateFreelance'])->name('activate');
+        Route::post('/{id}/deactivate', [App\Http\Controllers\Admin\AdminController::class, 'deactivateFreelance'])->name('deactivate');
+    });
+
+    // Agent Management
+    Route::prefix('agents')->name('agents.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\AdminController::class, 'indexAgents'])->name('index');
+        Route::get('/create', [App\Http\Controllers\Admin\AdminController::class, 'createAgent'])->name('create');
+        Route::post('/', [App\Http\Controllers\Admin\AdminController::class, 'storeAgent'])->name('store');
+        Route::get('/{id}', [App\Http\Controllers\Admin\AdminController::class, 'showAgent'])->name('show');
+        Route::get('/{id}/edit', [App\Http\Controllers\Admin\AdminController::class, 'editAgent'])->name('edit');
+        Route::put('/{id}', [App\Http\Controllers\Admin\AdminController::class, 'updateAgent'])->name('update');
+        Route::delete('/{id}', [App\Http\Controllers\Admin\AdminController::class, 'destroyAgent'])->name('destroy');
+        Route::post('/{id}/approve', [App\Http\Controllers\Admin\AdminController::class, 'approveAgent'])->name('approve');
+        Route::post('/{id}/reject', [App\Http\Controllers\Admin\AdminController::class, 'rejectAgent'])->name('reject');
+        Route::post('/{id}/activate', [App\Http\Controllers\Admin\AdminController::class, 'activateAgent'])->name('activate');
+        Route::post('/{id}/deactivate', [App\Http\Controllers\Admin\AdminController::class, 'deactivateAgent'])->name('deactivate');
+    });
 });
 
 
