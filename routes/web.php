@@ -20,6 +20,27 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+// Auth Routes
+Route::get('/login', function () {
+    return view('auth.login');
+})->name('login');
+
+Route::get('/signup', function () {
+    return view('auth.signup');
+})->name('signup');
+
+Route::get('/callback', function () {
+    return view('auth.callback');
+})->name('callback');
+
+Route::get('/freelance/login', function () {
+    return view('auth.freelance.login');
+})->name('freelance.login');
+
+Route::get('/admin/login', function () {
+    return view('auth.admin.login');
+})->name('admin.login');
+
 // Admin Routes
 Route::prefix('admin')->name('admin.')->group(function () {
     // Auth routes
