@@ -3,9 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Models\Agent;
+use App\Models\Affiliate;
+use App\Models\Freelance;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends Controller
@@ -13,52 +14,118 @@ class AuthController extends Controller
     /**
      * Get the Google Auth URL.
      */
-    public function redirectToGoogle()
+    public function getGoogleAuthUrl()
     {
-        // Use stateless() to generate the URL
-        $url = Socialite::driver('google')->stateless()->redirect()->getTargetUrl();
-        return response()->json(['url' => $url]);
+        try {
+            $url = Socialite::driver('google')
+                ->stateless()
+                ->redirect()
+                ->getTargetUrl();
+            
+            return response()->json(['url' => $url]);
+        } catch (\Exception $e) {
+            \Log::error('Google Auth URL Error: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Failed to generate Google auth URL',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
-     * Handle the Google Webhook.
+     * Handle the Google Callback.
      */
     public function handleGoogleCallback(Request $request)
     {
         try {
-            // Retrieve user from Google using stateless()
-            // This handles the 'code' retrieval automatically from the request
+            // Get Google user
             $googleUser = Socialite::driver('google')->stateless()->user();
 
             if (!$googleUser) {
-                return response()->json(['error' => 'Failed to fetch user profile or access token'], 401);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to fetch user from Google'
+                ], 401);
             }
 
-            // Find or create user
-            $user = User::updateOrCreate(
-                ['email' => $googleUser->getEmail()],
-                [
-                    'name' => $googleUser->getName(),
-                    'google_id' => $googleUser->getId(),
-                    'password' => bcrypt(Str::random(16)) // Random password
-                ]
-            );
+            $email = $googleUser->getEmail();
+            $name = $googleUser->getName();
 
-            // Create Sanctum Token
-            $authToken = $user->createToken('auth_token')->plainTextToken;
+            // Check if user exists in any table
+            $user = null;
+            $role = null;
+
+            // 1. Check agents table
+            $agent = Agent::where('email', $email)->first();
+            if ($agent) {
+                $user = $agent;
+                $jenis = strtolower($agent->jenis_agent ?? 'agent');
+                
+                if (str_contains($jenis, 'freelance')) {
+                    $role = 'freelance';
+                } elseif (str_contains($jenis, 'affiliate')) {
+                    $role = 'affiliate';
+                } else {
+                    $role = 'agent';
+                }
+            }
+
+            // 2. Check affiliates table if not found in agents
+            if (!$user) {
+                $affiliate = Affiliate::where('email', $email)->first();
+                if ($affiliate) {
+                    $user = $affiliate;
+                    $role = 'affiliate';
+                }
+            }
+
+            // 3. Check freelances table if still not found
+            if (!$user) {
+                $freelance = Freelance::where('email', $email)->first();
+                if ($freelance) {
+                    $user = $freelance;
+                    $role = 'freelance';
+                }
+            }
+
+            // User not found
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'is_registered' => false,
+                    'user' => [
+                        'email' => $email,
+                        'name' => $name,
+                    ],
+                    'message' => 'User belum terdaftar'
+                ], 404);
+            }
+
+            // User found - generate token
+            $token = $user->createToken('auth-token')->plainTextToken;
 
             return response()->json([
-                'access_token' => $authToken,
-                'token_type' => 'Bearer',
-                'user' => $user
+                'success' => true,
+                'is_registered' => true,
+                'user' => [
+                    'id' => $user->id,
+                    'nama_pic' => $user->nama_pic ?? $user->nama ?? $name,
+                    'nama' => $user->nama_pic ?? $user->nama ?? $name,
+                    'email' => $user->email,
+                    'jenis_agent' => $user->jenis_agent ?? null,
+                    'agent_code' => $user->agent_code ?? null,
+                ],
+                'token' => $token,
+                'role' => $role
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('Google Login Error: ' . $e->getMessage());
+            \Log::error('Google Callback Error: ' . $e->getMessage());
             return response()->json([
-                'error' => 'Authentication failed.',
-                'message' => $e->getMessage()
-            ], 401); // 401 Unauthorized is better than 500 for auth failures, unless it's a code error
+                'success' => false,
+                'message' => 'Gagal autentikasi dengan Google',
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 }

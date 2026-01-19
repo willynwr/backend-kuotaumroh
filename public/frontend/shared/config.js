@@ -16,7 +16,7 @@
  * DEVELOPMENT: http://127.0.0.1:8000
  * PRODUCTION: https://api.kuotaumroh.id (ganti dengan URL production Anda)
  */
-// const API_BASE_URL = 'https://api.roamer.id';
+const API_BASE_URL = 'https://api.roamer.id';
 
 /**
  * Base URL untuk API endpoints

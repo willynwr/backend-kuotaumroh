@@ -9,7 +9,7 @@
 
 // Import konfigurasi dari config.js
 // Pastikan config.js sudah di-load sebelum file ini
-// const API_BASE = typeof API_URL !== 'undefined' ? API_URL : 'https://api.roamer.id/api';
+const API_BASE = typeof API_URL !== 'undefined' ? API_URL : 'https://api.roamer.id/api';
 
 // Mock mode for development (set to false when API is ready)
 const USE_MOCK_DATA = false;
