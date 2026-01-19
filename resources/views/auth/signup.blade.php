@@ -684,7 +684,7 @@
 
         async loadProvinces() {
           try {
-            const response = await fetch('public/wilayah/provinces.json');
+            const response = await fetch('/wilayah/provinces.json');
             const data = await response.json();
 
             if (data && data.data) {
@@ -707,7 +707,7 @@
           try {
             // Try to load from local cache first, then fall back to API with CORS proxy
             let response;
-            const localPath = `public/wilayah/regencies-${provinceCode}.json`;
+            const localPath = `/wilayah/regencies-${provinceCode}.json`;
 
             try {
               // Try local cache first
