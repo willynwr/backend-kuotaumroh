@@ -91,10 +91,10 @@
         <div class="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-5">
           <template x-for="item in menuItems" :key="item.id">
             <a :href="item.href">
-              <div class="group flex h-48 cursor-pointer items-center justify-center rounded-2xl border shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md" :class="item.variant === 'primary' ? 'border-primary bg-primary text-primary-foreground hover:bg-primary/90' : 'border-slate-200 bg-white'">
+              <div class="group flex h-48 cursor-pointer items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary hover:bg-primary hover:text-primary-foreground hover:shadow-md">
                 <div class="flex flex-col items-center justify-center gap-3 p-6 text-center">
                   <img :src="imageBase + '/' + item.icon + '.png'" :alt="item.title" class="h-24 w-24 object-contain transition-transform group-hover:scale-110" onerror="this.src = imageBase + '/kabah.png'" />
-                  <h3 class="text-xs font-bold uppercase tracking-wide leading-tight" :class="item.variant === 'primary' ? 'text-primary-foreground' : 'text-slate-700'" x-text="item.title"></h3>
+                  <h3 class="text-xs font-bold uppercase tracking-wide leading-tight text-slate-700 group-hover:text-primary-foreground" x-text="item.title"></h3>
                 </div>
               </div>
             </a>
@@ -110,7 +110,8 @@
     function dashboardApp() {
       return {
         imageBase: @json(url('/agent/assets')),
-        referralLink: '',
+        linkReferral: '{{ $linkReferral ?? "" }}',
+        referralLink: '{{ isset($linkReferral) ? url("/dash/" . $linkReferral) : "" }}',
         stats: {
           monthlyProfit: 2450000,
           totalProfit: 15750000,
@@ -118,14 +119,14 @@
           pendingWithdrawal: 500000,
         },
         menuItems: [
-          { id: 'new-order', title: 'Pesanan Baru', href: @json(route('agent.order')), icon: 'order', variant: 'primary' },
-          { id: 'history', title: 'Riwayat Transaksi', href: @json(route('agent.history')), icon: 'history', variant: 'default' },
-          { id: 'wallet', title: 'Dompet Saya', href: @json(route('agent.wallet')), icon: 'wallet', variant: 'default' },
-          { id: 'referrals', title: 'Program Referral', href: @json(route('agent.referrals')), icon: 'referral', variant: 'default' },
-          { id: 'catalog', title: 'Katalog Harga', href: @json(route('agent.catalog')), icon: 'catalog', variant: 'default' },
+          { id: 'new-order', title: 'Pesanan Baru', href: '{{ isset($linkReferral) ? url("/dash/" . $linkReferral . "/order") : route("agent.order") }}', icon: 'order' },
+          { id: 'history', title: 'Riwayat Transaksi', href: '{{ isset($linkReferral) ? url("/dash/" . $linkReferral . "/history") : route("agent.history") }}', icon: 'history' },
+          { id: 'wallet', title: 'Dompet Saya', href: '{{ isset($linkReferral) ? url("/dash/" . $linkReferral . "/wallet") : route("agent.wallet") }}', icon: 'wallet' },
+          { id: 'referrals', title: 'Program Referral', href: '{{ isset($linkReferral) ? url("/dash/" . $linkReferral . "/referrals") : route("agent.referrals") }}', icon: 'referral' },
+          { id: 'catalog', title: 'Katalog Harga', href: '{{ isset($linkReferral) ? url("/dash/" . $linkReferral . "/catalog") : route("agent.catalog") }}', icon: 'catalog' },
         ],
         init() {
-          this.referralLink = window.location.origin + '/r/your-code';
+          // Link referral sudah diset dari controller
         },
         formatRupiah(value) {
           const n = Number(value || 0);

@@ -1,6 +1,6 @@
 @extends('layouts.freelance')
 
-@section('title', 'Dashboard Affiliate - Kuotaumroh.id')
+@section('title', 'Dashboard Freelance - Kuotaumroh.id')
 
 @section('content')
 <!-- Alpine.js App -->
@@ -199,41 +199,42 @@
     function freelanceDashboard() {
         return {
             user: {
-                name: '',
-                email: '',
+                name: '{{ $user->nama ?? "" }}',
+                email: '{{ $user->email ?? "" }}',
                 initials: ''
             },
             stats: {
                 pointsBalance: 0,
                 totalPointsEarned: 0,
-                totalDownlines: 0,
+                totalDownlines: {{ $stats['totalAgents'] ?? 0 }},
                 pendingClaims: 0,
-                activeAgentsThisMonth: 0,
-                newAgentsThisMonth: 0
+                activeAgentsThisMonth: {{ $stats['activeAgentsThisMonth'] ?? 0 }},
+                newAgentsThisMonth: {{ $stats['newAgentsThisMonth'] ?? 0 }}
             },
-            portalType: 'freelance',
-            freelanceId: null,
-            referralCode: '',
-            referralLink: '',
-            shareText: '',
+            portalType: '{{ $portalType ?? "freelance" }}',
+            freelanceId: {{ $user->id ?? 'null' }},
+            linkReferral: '{{ $linkReferral ?? "" }}',
+            referralCode: '{{ $user->ref_code ?? "" }}',
+            referralLink: '{{ url("/dash/" . ($linkReferral ?? "")) }}',
+            shareText: 'Daftar sebagai Agent Kuotaumroh.id dan dapatkan penghasilan tambahan! Kunjungi dashboard saya: {{ url("/dash/" . ($linkReferral ?? "")) }}',
             menuItems: [{
                     id: 'downlines',
                     title: 'Daftar Agent',
-                    href: 'downlines',
+                    href: '{{ url("/dash/" . $linkReferral . "/downlines") }}',
                     variant: 'default',
                     iconSvg: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />'
                 },
                 {
                     id: 'rewards',
                     title: 'Tukar Hadiah',
-                    href: 'rewards',
+                    href: '{{ url("/dash/" . $linkReferral . "/rewards") }}',
                     variant: 'default',
                     iconSvg: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />'
                 },
                 {
                     id: 'history',
                     title: 'Riwayat Poin',
-                    href: 'points-history',
+                    href: '{{ url("/dash/" . $linkReferral . "/points-history") }}',
                     variant: 'default',
                     iconSvg: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />'
                 }
@@ -329,64 +330,10 @@
                 return null;
             },
 
-            updateMenuLinks() {
-                if (!this.freelanceId || typeof appendQueryParam !== 'function') return;
-                this.menuItems = this.menuItems.map(item => ({
-                    ...item,
-                    href: appendQueryParam(appendQueryParam(item.href, 'id', this.freelanceId), 'type', this.portalType)
-                }));
-            },
-
-            async fetchFreelance() {
-                const collection = this.getCollectionName();
-                const url = `${collection}/${this.freelanceId}`;
-                const res = await apiFetch(apiUrl(url));
-                if (res.ok) {
-                    const json = await res.json().catch(() => ({}));
-                    return json.data || null;
-                }
-
-                const listRes = await apiFetch(apiUrl(collection));
-                if (!listRes.ok) throw new Error('Gagal memuat data');
-                const listJson = await listRes.json().catch(() => ({}));
-                const list = Array.isArray(listJson) ? listJson : (listJson.data || []);
-                const match = list.find(p => String(p.id) === String(this.freelanceId));
-                return match || null;
-            },
-
-            async fetchAgents() {
-                const collection = this.getCollectionName();
-                const nestedUrl = `${collection}/${this.freelanceId}/agents`;
-                const res = await apiFetch(apiUrl(nestedUrl));
-                if (res.ok) {
-                    const json = await res.json().catch(() => ({}));
-                    const data = Array.isArray(json) ? json : (json.data || []);
-                    return data;
-                }
-
-                try {
-                    const partner = await this.fetchFreelance();
-                    if (partner && Array.isArray(partner.agents)) return partner.agents;
-                } catch {}
-
-                const allRes = await apiFetch(apiUrl('agents'));
-                if (!allRes.ok) throw new Error('Gagal memuat daftar agent');
-                const allJson = await allRes.json().catch(() => ({}));
-                const all = Array.isArray(allJson) ? allJson : (allJson.data || []);
-                const key = this.portalType === 'affiliate' ? 'affiliate_id' : 'freelance_id';
-                return all.filter(a => String(a?.[key] || '') === String(this.freelanceId));
-            },
-
             init() {
-                if (!requireRole(['freelance', 'affiliate'], true)) return;
-
-                const savedUser = getUser();
-                if (savedUser) {
-                    this.user = {
-                        name: savedUser.name || 'Affiliate',
-                        email: savedUser.email || '',
-                        initials: this.getInitials(savedUser.name || 'Affiliate')
-                    };
+                // Set initials dari nama user
+                if (this.user.name) {
+                    this.user.initials = this.getInitials(this.user.name);
                 }
 
                 renderHeader('dashboard');
@@ -399,47 +346,7 @@
                     }, 300);
                 }, 3000);
 
-                (async () => {
-                    try {
-                        this.freelanceId = await this.resolveFreelanceId();
-                        if (!this.freelanceId) {
-                            this.showToast('Error', 'Akun tidak ditemukan');
-                            return;
-                        }
-
-                        const freelance = await this.fetchFreelance();
-                        if (freelance) {
-                            this.user = {
-                                name: freelance.nama || this.user.name,
-                                email: freelance.email || this.user.email,
-                                initials: this.getInitials(freelance.nama || this.user.name)
-                            };
-                        }
-
-                        const agents = await this.fetchAgents();
-                        const now = new Date();
-                        const activeAgentsThisMonth = agents.filter(a => {
-                            const createdAt = new Date(a.created_at || a.createdAt || a.joinDate || Date.now());
-                            return !!(a.is_active ?? a.isActive ?? true) && this.isSameMonth(createdAt, now);
-                        }).length;
-                        const newAgentsThisMonth = agents.filter(a => {
-                            const createdAt = new Date(a.created_at || a.createdAt || a.joinDate || Date.now());
-                            return this.isSameMonth(createdAt, now);
-                        }).length;
-
-                        this.stats.totalDownlines = agents.length;
-                        this.stats.activeAgentsThisMonth = activeAgentsThisMonth;
-                        this.stats.newAgentsThisMonth = newAgentsThisMonth;
-
-                        this.referralCode = freelance?.ref_code || freelance?.link_referral || freelance?.link_referal || '';
-                        this.referralLink = `${window.location.origin}/agent/?ref=${encodeURIComponent(`${this.portalType}:${this.freelanceId}`)}`;
-                        this.shareText = 'Daftar sebagai Agent Kuotaumroh.id dan dapatkan penghasilan tambahan! Gunakan link: ' + this.referralLink;
-                        this.updateMenuLinks();
-                    } catch (e) {
-                        console.error(e);
-                        this.showToast('Error', 'Gagal memuat dashboard');
-                    }
-                })();
+                // Data sudah tersedia dari controller, tidak perlu fetch API
             }
         }
     }
