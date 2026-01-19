@@ -84,7 +84,7 @@
             handleLogout() {
                 localStorage.removeItem('user');
                 localStorage.removeItem('token');
-                window.location.href = "{{ route('freelance.login') }}";
+                window.location.href = "{{ route('login') }}";
             },
 
             init() {

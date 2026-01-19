@@ -114,6 +114,7 @@ class AuthController extends Controller
                     'email' => $user->email,
                     'jenis_agent' => $user->jenis_agent ?? null,
                     'agent_code' => $user->agent_code ?? null,
+                    'link_referral' => $user->link_referral ?? $user->link_referal ?? null,
                 ],
                 'token' => $token,
                 'role' => $role
@@ -127,5 +128,68 @@ class AuthController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Save user session
+     */
+    public function saveSession(Request $request)
+    {
+        try {
+            $request->validate([
+                'id' => 'required',
+                'email' => 'required|email',
+                'name' => 'required',
+                'role' => 'required|in:agent,affiliate,freelance,admin',
+            ]);
+
+            // Save to session
+            session([
+                'user' => [
+                    'id' => $request->id,
+                    'email' => $request->email,
+                    'name' => $request->name,
+                    'role' => $request->role,
+                    'agentCode' => $request->agentCode,
+                    'link_referral' => $request->link_referral,
+                ]
+            ]);
+
+            // Force save session immediately
+            session()->save();
+
+            // Log for debugging
+            \Log::info('Session saved for user: ' . $request->email, [
+                'session_id' => session()->getId(),
+                'user_data' => session('user')
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Session saved',
+                'session_id' => session()->getId()
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Save Session Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to save session',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Destroy user session (logout)
+     */
+    public function destroySession(Request $request)
+    {
+        session()->forget('user');
+        session()->flush();
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Session destroyed'
+        ]);
     }
 }

@@ -70,7 +70,10 @@
         statusEl.textContent = 'Mengecek status pendaftaran...';
 
         // Helper function for redirection
-        function redirectUser(user, role, type = null) {
+        async function redirectUser(user, role, type = null) {
+          statusEl.textContent = 'Menyimpan sesi...';
+          
+          // Save to localStorage
           saveUser({
             id: user.id,
             name: user.nama_pic || user.nama || userName,
@@ -80,11 +83,55 @@
             token: result.token
           });
 
-          if (role === 'agent') {
-            window.location.href = `{{ url('/') }}/agent/dashboard?id=${user.id}`;
+          // Save to server session - CRITICAL: Must succeed before redirect
+          try {
+            const sessionResponse = await fetch(apiUrl('/auth/session'), {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+              },
+              credentials: 'include',
+              body: JSON.stringify({
+                id: user.id,
+                name: user.nama_pic || user.nama || userName,
+                email: user.email,
+                role: role,
+                agentCode: user.agent_code,
+                link_referral: user.link_referral || user.link_referal
+              })
+            });
+
+            if (!sessionResponse.ok) {
+              throw new Error('Failed to save session');
+            }
+
+            const sessionData = await sessionResponse.json();
+            console.log('Session saved:', sessionData);
+
+            // Small delay to ensure session is fully written
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+          } catch (e) {
+            console.error('Failed to save session:', e);
+            throw new Error('Gagal menyimpan sesi. Silakan coba lagi.');
+          }
+
+          // Redirect to unique dashboard link based on link_referral
+          statusEl.textContent = 'Mengarahkan ke dashboard...';
+          const linkReferral = user.link_referral || user.link_referal;
+          if (linkReferral) {
+            window.location.href = `{{ url('/') }}/dash/${linkReferral}`;
           } else {
-            // For freelance/affiliate
-            window.location.href = `{{ url('/') }}/freelance/dashboard?id=${user.id}&type=${type || role}`;
+            // Fallback if no link_referral
+            if (role === 'agent') {
+              window.location.href = `{{ url('/') }}/agent/dashboard?id=${user.id}`;
+            } else if (role === 'affiliate') {
+              window.location.href = `{{ url('/') }}/affiliate/dashboard?id=${user.id}`;
+            } else if (role === 'freelance') {
+              window.location.href = `{{ url('/') }}/freelance/dashboard?id=${user.id}`;
+            }
           }
         }
 
@@ -92,7 +139,7 @@
         if (result.is_registered && result.user) {
           console.log('User found:', result.user);
           const role = result.role || 'agent';
-          redirectUser(result.user, role, role);
+          await redirectUser(result.user, role, role);
           return;
         }
 

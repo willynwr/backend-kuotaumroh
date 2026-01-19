@@ -21,8 +21,9 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-// Auth Routes
-Route::get('/login', function () {
+// Auth Routes - Unified Login for all users (Agent, Affiliate, Freelance) 
+// Agent login on /agent (before prefix group to avoid conflict)
+Route::get('/agent', function () {
     return view('auth.login');
 })->name('login');
 
@@ -34,15 +35,11 @@ Route::get('/callback', function () {
     return view('auth.callback');
 })->name('callback');
 
-Route::get('/freelance/login', function () {
-    return view('auth.freelance.login');
-})->name('freelance.login');
-
 Route::get('/admin/login', function () {
     return view('auth.admin.login');
 })->name('admin.login');
 // Dashboard Unique Routes untuk Affiliate & Freelance & Agent
-Route::prefix('dash')->name('dash.')->group(function () {
+Route::prefix('dash')->name('dash.')->middleware('web')->group(function () {
     Route::get('/{link_referral}', [DashboardController::class, 'show'])->name('show');
     Route::get('/{link_referral}/downlines', [DashboardController::class, 'downlines'])->name('downlines');
     Route::get('/{link_referral}/rewards', [DashboardController::class, 'rewards'])->name('rewards');
@@ -139,7 +136,6 @@ Route::prefix('agent')->name('agent.')->group(function () {
     Route::get('/assets/{file}', [AgentController::class, 'asset'])
         ->where('file', '[A-Za-z0-9_\-\.]+')
         ->name('asset');
-    Route::get('/', [AgentController::class, 'dashboard'])->name('home');
     Route::get('/dashboard', [AgentController::class, 'dashboard'])->name('dashboard');
     Route::get('/catalog', [AgentController::class, 'catalog'])->name('catalog');
     Route::get('/history', [AgentController::class, 'history'])->name('history');
@@ -178,26 +174,44 @@ Route::post('/affiliates/{id}/activate', [App\Http\Controllers\AffiliateControll
 Route::post('/affiliates/{id}/deactivate', [App\Http\Controllers\AffiliateController::class, 'deactivate']);
 Route::get('/affiliates/{id}/agents', [App\Http\Controllers\AffiliateController::class, 'agents']);
 
-// affiliate portal routes (mirrored from freelance)
+// affiliate portal routes
 Route::prefix('affiliate')->group(function () {
-    Route::view('login', 'affiliate.login')->name('affiliate.login');
-    Route::view('dashboard', 'affiliate.dashboard')->name('affiliate.dashboard');
-    Route::view('downlines', 'affiliate.downlines')->name('affiliate.downlines');
-    Route::view('invite', 'affiliate.invite')->name('affiliate.invite');
-    Route::view('points-history', 'affiliate.points-history')->name('affiliate.points-history');
-    Route::view('profile', 'affiliate.profile')->name('affiliate.profile');
-    Route::view('rewards', 'affiliate.rewards')->name('affiliate.rewards');
+    Route::get('dashboard', [DashboardController::class, 'affiliateDashboard'])->name('affiliate.dashboard');
+    Route::get('downlines', function () {
+        return view('affiliate.downlines');
+    })->name('affiliate.downlines');
+    Route::get('invite', function () {
+        return view('affiliate.invite');
+    })->name('affiliate.invite');
+    Route::get('points-history', function () {
+        return view('affiliate.points-history');
+    })->name('affiliate.points-history');
+    Route::get('profile', function () {
+        return view('affiliate.profile');
+    })->name('affiliate.profile');
+    Route::get('rewards', function () {
+        return view('affiliate.rewards');
+    })->name('affiliate.rewards');
 });
 
 // freelance routes
 Route::prefix('freelance')->group(function () {
-    Route::view('login', 'freelance.login')->name('freelance.login');
-    Route::view('dashboard', 'freelance.dashboard')->name('freelance.dashboard');
-    Route::view('downlines', 'freelance.downlines')->name('freelance.downlines');
-    Route::view('invite', 'freelance.invite')->name('freelance.invite');
-    Route::view('points-history', 'freelance.points-history')->name('freelance.points-history');
-    Route::view('profile', 'freelance.profile')->name('freelance.profile');
-    Route::view('rewards', 'freelance.rewards')->name('freelance.rewards');
+    Route::get('dashboard', [DashboardController::class, 'freelanceDashboard'])->name('freelance.dashboard');
+    Route::get('downlines', function () {
+        return view('freelance.downlines');
+    })->name('freelance.downlines');
+    Route::get('invite', function () {
+        return view('freelance.invite');
+    })->name('freelance.invite');
+    Route::get('points-history', function () {
+        return view('freelance.points-history');
+    })->name('freelance.points-history');
+    Route::get('profile', function () {
+        return view('freelance.profile');
+    })->name('freelance.profile');
+    Route::get('rewards', function () {
+        return view('freelance.rewards');
+    })->name('freelance.rewards');
 });
 
 Route::get('/freelances', [App\Http\Controllers\FreelanceController::class, 'index']);

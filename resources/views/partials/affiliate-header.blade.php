@@ -84,7 +84,7 @@
             handleLogout() {
                 localStorage.removeItem('user');
                 localStorage.removeItem('token');
-                window.location.href = "{{ route('affiliate.login') }}";
+                window.location.href = "{{ route('login') }}";
             },
 
             init() {
