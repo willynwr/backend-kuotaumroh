@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\AuthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -13,3 +14,7 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
+
+// Google OAuth Routes
+Route::get('/auth/google/url', [AuthController::class, 'getGoogleAuthUrl']);
+Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
