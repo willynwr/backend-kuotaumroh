@@ -13,6 +13,23 @@ use Illuminate\Support\Facades\Validator;
 
 class AdminController extends Controller
 {
+    private function normalizeIndonesianMsisdn(string $input): string
+    {
+        $digits = preg_replace('/\D+/', '', $input);
+        if ($digits === null) return '';
+        if (str_starts_with($digits, '62')) return $digits;
+        if (str_starts_with($digits, '0')) return '62' . substr($digits, 1);
+        return '62' . $digits;
+    }
+
+    private function redirectBackTo(string $fallbackRouteName, Request $request)
+    {
+        $redirectTo = $request->input('redirect_to');
+        if (is_string($redirectTo) && str_starts_with($redirectTo, '/admin/users')) {
+            return redirect($redirectTo);
+        }
+        return redirect()->route($fallbackRouteName);
+    }
     public function dashboard()
     {
         $stats = [
@@ -241,6 +258,10 @@ class AdminController extends Controller
      */
     public function storeAffiliate(Request $request)
     {
+        $request->merge([
+            'no_wa' => $this->normalizeIndonesianMsisdn((string) $request->input('no_wa', '')),
+        ]);
+
         $validator = Validator::make($request->all(), [
             'nama' => 'required|string|max:255',
             'email' => 'required|email|unique:affiliates,email',
@@ -268,7 +289,7 @@ class AdminController extends Controller
                 'is_active' => true,
             ]);
 
-            return redirect()->route('admin.affiliates.index')->with('success', 'Affiliate berhasil ditambahkan');
+            return $this->redirectBackTo('admin.affiliates.index', $request)->with('success', 'Affiliate berhasil ditambahkan');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
         }
@@ -388,6 +409,10 @@ class AdminController extends Controller
      */
     public function storeFreelance(Request $request)
     {
+        $request->merge([
+            'no_wa' => $this->normalizeIndonesianMsisdn((string) $request->input('no_wa', '')),
+        ]);
+
         $validator = Validator::make($request->all(), [
             'nama' => 'required|string|max:255',
             'email' => 'required|email|unique:freelances,email',
@@ -415,7 +440,7 @@ class AdminController extends Controller
                 'is_active' => true,
             ]);
 
-            return redirect()->route('admin.freelances.index')->with('success', 'Freelance berhasil ditambahkan');
+            return $this->redirectBackTo('admin.freelances.index', $request)->with('success', 'Freelance berhasil ditambahkan');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
         }
@@ -535,28 +560,39 @@ class AdminController extends Controller
      */
     public function storeAgent(Request $request)
     {
+        $request->merge([
+            'no_hp' => $this->normalizeIndonesianMsisdn((string) $request->input('no_hp', '')),
+        ]);
+
         $validator = Validator::make($request->all(), [
-            'jenis_agent' => 'required|in:travel agent,agent,freelance',
             'email' => 'required|email|unique:agents,email',
             'nama_pic' => 'required|string|max:255',
             'no_hp' => 'required|string|unique:agents,no_hp',
             'nama_travel' => 'required|string|max:255',
             'jenis_travel' => 'required|string|max:100',
             'total_traveller' => 'required|integer|min:0',
+            'kategori_agent' => 'required|in:Referral,Host',
             'provinsi' => 'required|string|max:100',
             'kabupaten_kota' => 'required|string|max:100',
             'alamat_lengkap' => 'required|string',
-            'status' => 'required|in:active,inactive',
+            'affiliate_id' => 'nullable|integer|exists:affiliates,id',
+            'freelance_id' => 'nullable|integer|exists:freelances,id',
         ]);
 
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
+        if ($request->filled('affiliate_id') && $request->filled('freelance_id')) {
+            return redirect()->back()->withErrors(['downline' => 'Pilih salah satu downline (affiliate atau freelance).'])->withInput();
+        }
+
         try {
             Agent::create([
-                'jenis_agent' => $request->jenis_agent,
                 'email' => $request->email,
+                'affiliate_id' => $request->affiliate_id,
+                'freelance_id' => $request->freelance_id,
+                'kategori_agent' => $request->kategori_agent,
                 'nama_pic' => $request->nama_pic,
                 'no_hp' => $request->no_hp,
                 'nama_travel' => $request->nama_travel,
@@ -565,11 +601,11 @@ class AdminController extends Controller
                 'provinsi' => $request->provinsi,
                 'kabupaten_kota' => $request->kabupaten_kota,
                 'alamat_lengkap' => $request->alamat_lengkap,
-                'status' => $request->status,
-                'is_active' => true,
+                'status' => 'pending',
+                'is_active' => 0,
             ]);
 
-            return redirect()->route('admin.agents.index')->with('success', 'Agent berhasil ditambahkan');
+            return $this->redirectBackTo('admin.agents.index', $request)->with('success', 'Travel Agent berhasil ditambahkan');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
         }
@@ -601,17 +637,17 @@ class AdminController extends Controller
         $agent = Agent::findOrFail($id);
 
         $validator = Validator::make($request->all(), [
-            'jenis_agent' => 'required|in:travel agent,agent,freelance',
             'email' => 'required|email|unique:agents,email,' . $id,
             'nama_pic' => 'required|string|max:255',
             'no_hp' => 'required|string|unique:agents,no_hp,' . $id,
             'nama_travel' => 'required|string|max:255',
             'jenis_travel' => 'required|string|max:100',
             'total_traveller' => 'required|integer|min:0',
+            'kategori_agent' => 'required|in:Referral,Host',
             'provinsi' => 'required|string|max:100',
             'kabupaten_kota' => 'required|string|max:100',
             'alamat_lengkap' => 'required|string',
-            'status' => 'required|in:active,inactive',
+            'status' => 'required|in:pending,approve,reject',
         ]);
 
         if ($validator->fails()) {
@@ -619,7 +655,21 @@ class AdminController extends Controller
         }
 
         try {
-            $agent->update($request->all());
+            $payload = $request->only([
+                'email',
+                'nama_pic',
+                'no_hp',
+                'nama_travel',
+                'jenis_travel',
+                'total_traveller',
+                'kategori_agent',
+                'provinsi',
+                'kabupaten_kota',
+                'alamat_lengkap',
+                'status',
+            ]);
+            $payload['no_hp'] = $this->normalizeIndonesianMsisdn((string) $payload['no_hp']);
+            $agent->update($payload);
             return redirect()->route('admin.agents.index')->with('success', 'Agent berhasil diperbarui');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
@@ -647,7 +697,12 @@ class AdminController extends Controller
     {
         try {
             $agent = Agent::findOrFail($id);
-            $agent->update(['status' => 'active']);
+            $agent->status = 'approve';
+            $agent->is_active = 1;
+            if (!$agent->date_approve) {
+                $agent->date_approve = now()->format('Y-m-d');
+            }
+            $agent->save();
             return redirect()->back()->with('success', 'Agent berhasil disetujui');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
@@ -661,7 +716,9 @@ class AdminController extends Controller
     {
         try {
             $agent = Agent::findOrFail($id);
-            $agent->update(['status' => 'inactive']);
+            $agent->status = 'reject';
+            $agent->is_active = 0;
+            $agent->save();
             return redirect()->back()->with('success', 'Agent berhasil ditolak');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
