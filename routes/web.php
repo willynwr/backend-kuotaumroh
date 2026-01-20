@@ -30,6 +30,9 @@ Route::get('/agent', function () {
 // Agent Signup dengan Referral Link dari Affiliate/Freelance
 Route::get('/agent/{link_referral}', [App\Http\Controllers\AgentController::class, 'signupWithReferral'])->name('agent.signup.referral');
 
+// Halaman Toko Agent - /u/{link_referal}
+Route::get('/u/{link_referal}', [App\Http\Controllers\AgentController::class, 'showStore'])->name('agent.store.view');
+
 Route::get('/signup', function () {
     return view('auth.signup');
 })->name('signup');
