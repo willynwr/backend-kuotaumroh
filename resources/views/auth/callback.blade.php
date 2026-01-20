@@ -150,7 +150,22 @@
         if (intent === 'login') {
           throw new Error('Login gagal. Akun Anda belum terdaftar. Silakan daftar terlebih dahulu atau hubungi tim support.');
         } else {
-          window.location.href = `{{ url('/signup') }}?email=${encodeURIComponent(userEmail)}`;
+          // Forward referral context to signup
+          const referral = getReferral();
+          let signupUrl = `{{ url('/signup') }}?email=${encodeURIComponent(userEmail)}`;
+          
+          if (referral && referral.source_type && referral.id) {
+            signupUrl += `&ref=${referral.source_type}:${referral.id}`;
+            
+            // Also forward referrer name if available
+            const urlParams = new URLSearchParams(window.location.search);
+            const referrerName = urlParams.get('referrer_name');
+            if (referrerName) {
+              signupUrl += `&referrer_name=${encodeURIComponent(referrerName)}`;
+            }
+          }
+          
+          window.location.href = signupUrl;
         }
 
       } catch (error) {
