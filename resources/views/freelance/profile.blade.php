@@ -8,9 +8,16 @@
 <div x-data="profileApp()">
     <main class="container mx-auto py-10 animate-fade-in px-4">
         <div class="max-w-4xl mx-auto">
-            <div class="mb-8">
-                <h1 class="text-3xl font-bold">Profil Saya</h1>
-                <p class="text-muted-foreground mt-2">Informasi akun affiliate Anda</p>
+            <div class="mb-8 flex items-start gap-4">
+                <button onclick="history.back()" class="inline-flex items-center justify-center w-10 h-10 rounded-md border border-input bg-background hover:bg-muted transition-colors" title="Kembali">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </button>
+                <div>
+                    <h1 class="text-3xl font-bold">Profil Saya</h1>
+                    <p class="text-muted-foreground mt-1">Informasi akun affiliate Anda</p>
+                </div>
             </div>
 
             <div class="rounded-lg border bg-card text-card-foreground shadow-sm">

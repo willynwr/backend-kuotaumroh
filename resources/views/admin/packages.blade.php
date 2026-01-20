@@ -8,9 +8,16 @@
 
   <main class="container mx-auto py-6 px-4">
     <div class="mb-6 flex items-center justify-between">
-      <div>
-        <h1 class="text-3xl font-bold tracking-tight">Kelola Paket</h1>
-        <p class="text-muted-foreground mt-2">Kelola paket kuota umroh dari berbagai provider</p>
+      <div class="flex items-start gap-4">
+        <button onclick="history.back()" class="inline-flex items-center justify-center w-10 h-10 rounded-md border border-input bg-background hover:bg-muted transition-colors" title="Kembali">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <div>
+          <h1 class="text-3xl font-bold tracking-tight">Kelola Paket</h1>
+          <p class="text-muted-foreground mt-1">Kelola paket kuota umroh dari berbagai provider</p>
+        </div>
       </div>
       <button @click="openAddModal()" class="h-10 px-4 bg-primary text-white rounded-md text-sm font-medium hover:bg-primary/90">
         + Tambah Paket
@@ -91,9 +98,6 @@
         return `Rp ${parseInt(amount).toLocaleString('id-ID')}`;
       },
 
-      openAddModal() {
-        window.location.href = '{{ route("admin.packages.create") }}';
-      },
 
       editPackage(pkg) {
         window.location.href = `/admin/packages/${pkg.id}/edit`;

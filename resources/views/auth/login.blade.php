@@ -128,6 +128,13 @@
             </p>
           </div>
           <div class="p-6 pt-0 space-y-4">
+            <!-- Error Message from Session -->
+            @if(session('error'))
+            <div class="p-3 rounded-md bg-red-50 border border-red-200">
+              <p class="text-sm text-red-600">{{ session('error') }}</p>
+            </div>
+            @endif
+            
             <!-- Google Login Button -->
             <button @click="handleGoogleLogin()" :disabled="loading"
               class="inline-flex items-center justify-center rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground w-full h-12 text-base gap-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
