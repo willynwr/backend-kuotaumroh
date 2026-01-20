@@ -172,16 +172,16 @@ class AdminController extends Controller
 
     public function analytics()
     {
-        $stats = [
-            'totalRevenue' => 0, // TODO: Calculate from transactions
-            'totalOrders' => 0, // TODO: Count from orders
-            'activeUsers' => User::where('status', 'active')->count(),
-            'conversionRate' => 0, // TODO: Calculate conversion
-        ];
+        // $stats = [
+        //     'totalRevenue' => 0, // TODO: Calculate from transactions
+        //     'totalOrders' => 0, // TODO: Count from orders
+        //     'activeUsers' => User::where('status', 'active')->count(),
+        //     'conversionRate' => 0, // TODO: Calculate conversion
+        // ];
 
         $recentActivity = []; // TODO: Implement activity log
         
-        return view('admin.analytics', compact('stats', 'recentActivity'));
+        return view('admin.analytics');
     }
 
     public function profile()
