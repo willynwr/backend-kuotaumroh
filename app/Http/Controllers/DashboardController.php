@@ -10,11 +10,41 @@ use App\Models\Agent;
 class DashboardController extends Controller
 {
     /**
+     * Create a new controller instance.
+     */
+    public function __construct()
+    {
+        // Custom middleware to check session authentication
+        $this->middleware(function ($request, $next) {
+            $user = session('user');
+            
+            // Log for debugging
+            \Log::info('Dashboard Middleware Check', [
+                'session_id' => session()->getId(),
+                'has_user' => !empty($user),
+                'user_data' => $user,
+                'path' => $request->path()
+            ]);
+            
+            // If no session user, redirect to login
+            if (!$user) {
+                \Log::warning('No session user found, redirecting to login');
+                return redirect()->route('login')->with('error', 'Silakan login terlebih dahulu');
+            }
+            
+            return $next($request);
+        });
+    }
+
+    /**
      * Handle dashboard akses berdasarkan link_referral
      * Route: dash/{link_referral}
      */
     public function show($linkReferral)
     {
+        // Get authenticated user from session
+        $sessionUser = session('user');
+        
         // Cek apakah link_referral adalah milik affiliate
         $affiliate = Affiliate::where('link_referral', $linkReferral)
             ->where('is_active', true)
@@ -22,6 +52,11 @@ class DashboardController extends Controller
             ->first();
 
         if ($affiliate) {
+            // Verify that authenticated user matches the dashboard owner
+            if ($sessionUser && $sessionUser['email'] !== $affiliate->email) {
+                return redirect()->route('login')->with('error', 'Anda tidak memiliki akses ke dashboard ini');
+            }
+            
             // Hitung statistik
             $totalAgents = $affiliate->agents->count();
             $activeAgents = $affiliate->agents->where('is_active', true)->count();
@@ -56,6 +91,11 @@ class DashboardController extends Controller
             ->first();
 
         if ($freelance) {
+            // Verify that authenticated user matches the dashboard owner
+            if ($sessionUser && $sessionUser['email'] !== $freelance->email) {
+                return redirect()->route('login')->with('error', 'Anda tidak memiliki akses ke dashboard ini');
+            }
+            
             // Hitung statistik
             $totalAgents = $freelance->agents->count();
             $activeAgents = $freelance->agents->where('is_active', true)->count();
@@ -89,6 +129,11 @@ class DashboardController extends Controller
             ->first();
 
         if ($agent) {
+            // Verify that authenticated user matches the dashboard owner
+            if ($sessionUser && $sessionUser['email'] !== $agent->email) {
+                return redirect()->route('login')->with('error', 'Anda tidak memiliki akses ke dashboard ini');
+            }
+            
             return view('agent.dashboard', [
                 'user' => $agent,
                 'linkReferral' => $linkReferral,
@@ -457,6 +502,104 @@ class DashboardController extends Controller
             'linkReferral' => $linkReferral,
             'portalType' => $data['portalType'],
             'stats' => $this->getStats($data['user'])
+        ]);
+    }
+
+    /**
+     * Direct Freelance Dashboard (without link_referral in URL)
+     * Used by route /freelance/dashboard
+     */
+    public function freelanceDashboard(Request $request)
+    {
+        // Get freelance ID from session or request
+        $freelanceId = $request->query('id') ?? $request->session()->get('freelance_id');
+        
+        if (!$freelanceId) {
+            return redirect('/freelance/login');
+        }
+
+        $freelance = Freelance::find($freelanceId);
+        
+        if (!$freelance || !$freelance->is_active) {
+            return redirect('/freelance/login');
+        }
+
+        // Load agents relationship
+        $freelance->load('agents');
+
+        // Hitung statistik
+        $totalAgents = $freelance->agents->count();
+        $activeAgents = $freelance->agents->where('is_active', true)->count();
+        $now = now();
+        $activeAgentsThisMonth = $freelance->agents->filter(function($agent) use ($now) {
+            $createdAt = \Carbon\Carbon::parse($agent->created_at);
+            return $agent->is_active && $createdAt->isSameMonth($now);
+        })->count();
+        $newAgentsThisMonth = $freelance->agents->filter(function($agent) use ($now) {
+            $createdAt = \Carbon\Carbon::parse($agent->created_at);
+            return $createdAt->isSameMonth($now);
+        })->count();
+
+        return view('freelance.dashboard', [
+            'user' => $freelance,
+            'linkReferral' => $freelance->link_referral ?? '',
+            'portalType' => 'freelance',
+            'agents' => $freelance->agents,
+            'stats' => [
+                'totalAgents' => $totalAgents,
+                'activeAgents' => $activeAgents,
+                'activeAgentsThisMonth' => $activeAgentsThisMonth,
+                'newAgentsThisMonth' => $newAgentsThisMonth,
+            ]
+        ]);
+    }
+
+    /**
+     * Direct Affiliate Dashboard (without link_referral in URL)
+     * Used by route /affiliate/dashboard
+     */
+    public function affiliateDashboard(Request $request)
+    {
+        // Get affiliate ID from session or request
+        $affiliateId = $request->query('id') ?? $request->session()->get('affiliate_id');
+        
+        if (!$affiliateId) {
+            return redirect('/affiliate/login');
+        }
+
+        $affiliate = Affiliate::find($affiliateId);
+        
+        if (!$affiliate || !$affiliate->is_active) {
+            return redirect('/affiliate/login');
+        }
+
+        // Load agents relationship
+        $affiliate->load('agents');
+
+        // Hitung statistik
+        $totalAgents = $affiliate->agents->count();
+        $activeAgents = $affiliate->agents->where('is_active', true)->count();
+        $now = now();
+        $activeAgentsThisMonth = $affiliate->agents->filter(function($agent) use ($now) {
+            $createdAt = \Carbon\Carbon::parse($agent->created_at);
+            return $agent->is_active && $createdAt->isSameMonth($now);
+        })->count();
+        $newAgentsThisMonth = $affiliate->agents->filter(function($agent) use ($now) {
+            $createdAt = \Carbon\Carbon::parse($agent->created_at);
+            return $createdAt->isSameMonth($now);
+        })->count();
+
+        return view('affiliate.dashboard', [
+            'user' => $affiliate,
+            'linkReferral' => $affiliate->link_referral ?? '',
+            'portalType' => 'affiliate',
+            'agents' => $affiliate->agents,
+            'stats' => [
+                'totalAgents' => $totalAgents,
+                'activeAgents' => $activeAgents,
+                'activeAgentsThisMonth' => $activeAgentsThisMonth,
+                'newAgentsThisMonth' => $newAgentsThisMonth,
+            ]
         ]);
     }
 }

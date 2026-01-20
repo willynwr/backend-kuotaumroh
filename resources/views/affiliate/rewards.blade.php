@@ -7,10 +7,19 @@
 <!-- Header handled by layout -->
 
     <main class="container mx-auto py-10 animate-fade-in px-4">
-        <!-- Page Header -->
+        <!-- Page Header with Back Button -->
         <div class="mb-6">
-            <h1 class="text-3xl font-bold tracking-tight">Tukar Hadiah</h1>
-            <p class="text-muted-foreground mt-2">Tukarkan poin Anda dengan berbagai hadiah menarik</p>
+            <div class="flex items-center gap-3 mb-4">
+                <button onclick="history.back()" class="inline-flex items-center justify-center w-10 h-10 rounded-md border border-input bg-background hover:bg-muted transition-colors" title="Kembali">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </button>
+                <div>
+                    <h1 class="text-3xl font-bold tracking-tight">Tukar Hadiah</h1>
+                    <p class="text-muted-foreground mt-1">Tukarkan poin Anda dengan berbagai hadiah menarik</p>
+                </div>
+            </div>
         </div>
 
         <!-- Tabs -->
