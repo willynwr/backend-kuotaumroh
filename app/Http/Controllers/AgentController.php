@@ -48,6 +48,26 @@ class AgentController extends Controller
         return redirect()->route('login')->with('error', 'Link referral tidak valid atau sudah tidak aktif');
     }
 
+    /**
+     * Tampilkan halaman toko agent berdasarkan link_referral
+     * Route: /u/{link_referal}
+     */
+    public function showStore($linkReferal)
+    {
+        // Cari agent berdasarkan link_referal
+        $agent = Agent::where('link_referal', $linkReferal)
+            ->where('is_active', true)
+            ->first();
+
+        // Jika agent tidak ditemukan, redirect ke home
+        if (!$agent) {
+            return redirect('/')->with('error', 'Toko tidak ditemukan atau sudah tidak aktif');
+        }
+
+        // Tampilkan halaman toko agent
+        return view('agent.store', compact('agent'));
+    }
+
     public function asset(string $file)
     {
         if (!preg_match('/\A[A-Za-z0-9_\-\.]+\z/', $file)) {
