@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kelola Paket - Admin</title>
+
+  <link rel="apple-touch-icon" sizes="180x180" href="../public/favicon/apple-icon-180x180.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../public/favicon/favicon-32x32.png">
+  <meta name="theme-color" content="#10b981">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link rel="stylesheet" href="../shared/styles.css">
+  <script src="../shared/utils.js"></script>
+  <script src="../shared/api.js"></script>
+  <script src="../shared/header.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            border: "hsl(var(--border))",
+            input: "hsl(var(--input))",
+            background: "hsl(var(--background))",
+            foreground: "hsl(var(--foreground))",
+            primary: { DEFAULT: "hsl(var(--primary))", foreground: "hsl(var(--primary-foreground))" },
+            muted: { DEFAULT: "hsl(var(--muted))", foreground: "hsl(var(--muted-foreground))" },
+            destructive: { DEFAULT: "hsl(var(--destructive))", foreground: "hsl(var(--destructive-foreground))" },
+          },
+          fontFamily: { sans: ['Figtree', 'ui-sans-serif', 'system-ui', 'sans-serif'] },
+        },
+      },
+    }
+  </script>
+</head>
+
+<body class="min-h-screen bg-background">
+  <div x-data="packagesPage()">
+    <div id="app-header"></div>
+
+    <main class="container mx-auto py-6 px-4">
+      <div class="mb-6 flex items-center justify-between">
+        <div>
+          <h1 class="text-3xl font-bold tracking-tight">Kelola Paket</h1>
+          <p class="text-muted-foreground mt-2">Kelola paket kuota umroh dari berbagai provider</p>
+        </div>
+        <button @click="showAddModal = true" class="h-10 px-4 bg-primary text-white rounded-md text-sm font-medium hover:bg-primary/90">
+          + Tambah Paket
+        </button>
+      </div>
+
+      <div class="rounded-lg border bg-white shadow-sm">
+        <div class="p-6">
+          <!-- Filters -->
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+            <div class="flex flex-wrap gap-2">
+              <button @click="providerFilter = 'all'" class="h-9 px-4 rounded-md text-sm font-medium" :class="providerFilter === 'all' ? 'bg-primary text-white' : 'border hover:bg-muted'">Semua</button>
+              <template x-for="provider in providers" :key="provider">
+                <button @click="providerFilter = provider" class="h-9 px-4 rounded-md text-sm font-medium" :class="providerFilter === provider ? 'bg-primary text-white' : 'border hover:bg-muted'" x-text="provider"></button>
+              </template>
+            </div>
+            <div class="relative w-full sm:w-auto">
+              <svg class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input type="text" x-model="search" placeholder="Cari paket..." class="flex h-10 rounded-md border border-input bg-background pl-9 pr-3 py-2 text-sm w-full sm:w-[200px]">
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr class="border-b">
+                  <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Provider</th>
+                  <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Nama Paket</th>
+                  <th class="h-12 px-4 text-center align-middle font-medium text-muted-foreground">Kuota</th>
+                  <th class="h-12 px-4 text-right align-middle font-medium text-muted-foreground">Harga Modal</th>
+                  <th class="h-12 px-4 text-right align-middle font-medium text-muted-foreground">Harga Jual</th>
+                  <th class="h-12 px-4 text-center align-middle font-medium text-muted-foreground">Status</th>
+                  <th class="h-12 px-4 text-center align-middle font-medium text-muted-foreground">Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Loading State -->
+                <template x-if="loading">
+                  <tr>
+                    <td colspan="7" class="p-8 text-center text-muted-foreground">
+                      <div class="flex items-center justify-center gap-3">
+                        <div class="spinner"></div>
+                        <span>Memuat paket dari API...</span>
+                      </div>
+                    </td>
+                  </tr>
+                </template>
+                <!-- Package List -->
+                <template x-if="!loading" x-for="pkg in filteredPackages" :key="pkg.id">
+                  <tr class="border-b transition-colors hover:bg-muted/50">
+                    <td class="p-4 align-middle font-medium" x-text="pkg.provider"></td>
+                    <td class="p-4 align-middle" x-text="pkg.name"></td>
+                    <td class="p-4 align-middle text-center" x-text="pkg.quota"></td>
+                    <td class="p-4 align-middle text-right" x-text="formatRupiah(pkg.costPrice)"></td>
+                    <td class="p-4 align-middle text-right font-semibold" x-text="formatRupiah(pkg.sellPrice)"></td>
+                    <td class="p-4 align-middle text-center">
+                      <span class="badge" :class="pkg.active ? 'badge-success' : 'badge-secondary'" x-text="pkg.active ? 'Aktif' : 'Nonaktif'"></span>
+                    </td>
+                    <td class="p-4 align-middle text-center">
+                      <div class="flex justify-center gap-2">
+                        <button @click="editPackage(pkg)" class="h-8 px-3 border rounded text-xs hover:bg-muted">Edit</button>
+                        <button @click="openConfirmModal(pkg)" class="h-8 px-3 border rounded text-xs" :class="pkg.active ? 'border-red-200 text-red-600 hover:bg-red-50' : 'border-green-200 text-green-600 hover:bg-green-50'" x-text="pkg.active ? 'Nonaktifkan' : 'Aktifkan'"></button>
+                      </div>
+                    </td>
+                  </tr>
+                </template>
+                <!-- Empty State -->
+                <template x-if="!loading && filteredPackages.length === 0">
+                  <tr><td colspan="7" class="p-8 text-center text-muted-foreground">Tidak ada paket ditemukan</td></tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Add/Edit Modal -->
+    <div x-show="showAddModal || editingPackage" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="closeModal()">
+      <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+        <h3 class="text-lg font-semibold mb-4" x-text="editingPackage ? 'Edit Paket' : 'Tambah Paket Baru'"></h3>
+        <form @submit.prevent="savePackage()">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium mb-1">Provider</label>
+              <select x-model="formData.provider" class="w-full h-10 rounded-md border px-3">
+                <template x-for="p in providers" :key="p"><option :value="p" x-text="p"></option></template>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Nama Paket</label>
+              <input type="text" x-model="formData.name" class="w-full h-10 rounded-md border px-3" required>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Kuota</label>
+              <input type="text" x-model="formData.quota" placeholder="e.g. 10GB" class="w-full h-10 rounded-md border px-3" required>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium mb-1">Harga Modal</label>
+                <input type="number" x-model="formData.costPrice" class="w-full h-10 rounded-md border px-3" required>
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-1">Harga Jual</label>
+                <input type="number" x-model="formData.sellPrice" class="w-full h-10 rounded-md border px-3" required>
+              </div>
+            </div>
+          </div>
+          <div class="flex justify-end gap-2 mt-6">
+            <button type="button" @click="closeModal()" class="h-10 px-4 border rounded-md">Batal</button>
+            <button type="submit" class="h-10 px-4 bg-primary text-white rounded-md">Simpan</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div x-show="confirmModalOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center">
+      <div class="absolute inset-0 bg-black/40" @click="closeConfirmModal()"></div>
+      <div x-transition class="relative z-10 w-full max-w-md rounded-lg bg-white shadow-lg p-6">
+        <h3 class="text-lg font-semibold text-slate-900" x-text="confirmModalTitle"></h3>
+        <p class="mt-2 text-sm text-muted-foreground" x-text="confirmModalMessage"></p>
+        <div class="mt-6 flex items-center justify-end gap-3">
+          <button @click="closeConfirmModal()" class="h-9 px-4 rounded-md border text-sm font-medium text-slate-700 hover:bg-muted transition-colors">
+            Batal
+          </button>
+          <button
+            @click="confirmToggle()"
+            :class="selectedPackage?.active ? 'bg-destructive hover:bg-destructive/90' : 'bg-primary hover:bg-primary/90'"
+            class="h-9 px-4 rounded-md text-white text-sm font-medium transition-colors"
+          >
+            Konfirmasi
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div x-show="toastVisible" x-transition class="toast">
+      <div class="font-semibold mb-1" x-text="toastTitle"></div>
+      <div class="text-sm text-muted-foreground" x-text="toastMessage"></div>
+    </div>
+  </div>
+
+  <script>
+    function packagesPage() {
+      return {
+        search: '', providerFilter: 'all', packages: [], providers: [],
+        loading: true,
+        showAddModal: false, editingPackage: null,
+        formData: { provider: '', name: '', quota: '', costPrice: '', sellPrice: '' },
+        toastVisible: false, toastTitle: '', toastMessage: '',
+        confirmModalOpen: false,
+        confirmModalTitle: '',
+        confirmModalMessage: '',
+        selectedPackage: null,
+
+        get filteredPackages() {
+          return this.packages.filter(p => {
+            const matchSearch = !this.search || p.name.toLowerCase().includes(this.search.toLowerCase());
+            const matchProvider = this.providerFilter === 'all' || p.provider === this.providerFilter;
+            return matchSearch && matchProvider;
+          });
+        },
+
+        formatRupiah(amount) { return `Rp ${Number(amount).toLocaleString('id-ID')}`; },
+        showToast(title, message) { this.toastTitle = title; this.toastMessage = message; this.toastVisible = true; setTimeout(() => { this.toastVisible = false; }, 3000); },
+
+        editPackage(pkg) { this.editingPackage = pkg; this.formData = { ...pkg }; },
+        openConfirmModal(pkg) {
+          this.selectedPackage = pkg;
+          if (pkg.active) {
+            this.confirmModalTitle = `Nonaktifkan ${pkg.name}?`;
+            this.confirmModalMessage = 'Paket tidak akan muncul di daftar aktif.';
+          } else {
+            this.confirmModalTitle = `Aktifkan ${pkg.name}?`;
+            this.confirmModalMessage = 'Paket akan tersedia untuk pemesanan.';
+          }
+          this.confirmModalOpen = true;
+        },
+
+        closeConfirmModal() {
+          this.confirmModalOpen = false;
+          this.selectedPackage = null;
+        },
+
+        toggleActive(pkg) { pkg.active = !pkg.active; this.showToast('Updated', `${pkg.name} is now ${pkg.active ? 'active' : 'inactive'}`); },
+
+        confirmToggle() {
+          if (!this.selectedPackage) return;
+          this.toggleActive(this.selectedPackage);
+          this.closeConfirmModal();
+        },
+        closeModal() { this.showAddModal = false; this.editingPackage = null; this.formData = { provider: 'Telkomsel', name: '', quota: '', costPrice: '', sellPrice: '' }; },
+        
+        savePackage() {
+          if (this.editingPackage) {
+            Object.assign(this.editingPackage, this.formData);
+            this.showToast('Updated', this.formData.name);
+          } else {
+            this.packages.push({ id: Date.now(), ...this.formData, active: true });
+            this.showToast('Added', this.formData.name);
+          }
+          this.closeModal();
+        },
+
+        async init() {
+          if (!requireRole(['admin'], true)) return;
+          renderHeader('packages');
+          await this.loadPackages();
+        },
+
+        async loadPackages() {
+          try {
+            this.loading = true;
+            const data = await fetchPackages();
+            
+            // Map API response to admin format
+            this.packages = data.map(pkg => ({
+              id: pkg.id,
+              provider: pkg.provider,
+              name: pkg.name,
+              quota: pkg.quota,
+              costPrice: pkg.price,
+              sellPrice: pkg.sellPrice,
+              active: true  // All packages from API are considered active
+            }));
+            
+            // Extract unique providers dynamically
+            this.providers = [...new Set(this.packages.map(p => p.provider))];
+            if (this.providers.length > 0) {
+              this.formData.provider = this.providers[0];
+            }
+            
+            this.showToast('Berhasil', `${this.packages.length} paket dimuat dari API`);
+          } catch (err) {
+            console.error('Failed to load packages:', err);
+            this.showToast('Error', 'Gagal memuat paket: ' + err.message);
+          } finally {
+            this.loading = false;
+          }
+        }
+      }
+    }
+  </script>
+
+</body>
+</html>
