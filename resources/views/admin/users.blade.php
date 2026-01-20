@@ -262,7 +262,8 @@
             data.data.forEach(p => { codes[p.name] = p.code; });
             this.provinceCodes = codes;
           }
-        } catch {
+        } catch (error) {
+          console.error('Error loading provinces:', error);
           this.provinces = [];
           this.provinceCodes = {};
         }
@@ -528,10 +529,6 @@
           console.error('Error:', error);
           alert('Terjadi kesalahan');
         }
-      },
-
-      init() {
-        // Initialize
       }
     }
   }

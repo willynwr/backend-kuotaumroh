@@ -2,6 +2,9 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AgentController;
+use App\Http\Controllers\AffiliateController;
+use App\Http\Controllers\FreelanceController;
 use App\Http\Controllers\Api\AuthController;
 
 /*

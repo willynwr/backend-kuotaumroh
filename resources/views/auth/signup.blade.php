@@ -684,7 +684,7 @@
 
         async loadProvinces() {
           try {
-            const response = await fetch('public/wilayah/provinces.json');
+            const response = await fetch('/wilayah/provinces.json');
             const data = await response.json();
 
             if (data && data.data) {
@@ -707,7 +707,7 @@
           try {
             // Try to load from local cache first, then fall back to API with CORS proxy
             let response;
-            const localPath = `public/wilayah/regencies-${provinceCode}.json`;
+            const localPath = `/wilayah/regencies-${provinceCode}.json`;
 
             try {
               // Try local cache first
@@ -1216,13 +1216,12 @@
             }
 
             console.log('Success:', result);
-            this.showToast('Berhasil!', 'Pendaftaran Travel Agent berhasil. Silakan cek email Anda untuk verifikasi.');
+            this.showToast('Berhasil!', 'Pendaftaran Travel Agent berhasil. Mengarahkan ke dashboard...');
             clearReferral();
 
-            // Reset form and redirect to login page
             setTimeout(() => {
-              window.location.href = "{{ url('/login') }}";
-            }, 2000);
+              window.location.href = @json(route('agent.dashboard'));
+            }, 800);
 
           } catch (error) {
             console.error('Submission error:', error);

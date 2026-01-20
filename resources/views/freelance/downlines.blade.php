@@ -767,7 +767,7 @@
             async loadCities(provinceCode) {
                 try {
                     let response;
-                    const localPath = `{{ asset('public/wilayah/regencies-') }}${provinceCode}.json`;
+                    const localPath = `/wilayah/regencies-${provinceCode}.json`;
                     try {
                         response = await fetch(localPath);
                         if (!response.ok) throw new Error('Not in cache');
