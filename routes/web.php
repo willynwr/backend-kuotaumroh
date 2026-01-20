@@ -19,7 +19,7 @@ use App\Http\Controllers\DashboardController;
 
 Route::get('/', function () {
     return view('welcome');
-});
+})->name('welcome');
 
 // Auth Routes - Unified Login for all users (Agent, Affiliate, Freelance) 
 // Agent login on /agent (before prefix group to avoid conflict)
@@ -37,6 +37,10 @@ Route::get('/signup', function () {
 Route::get('/callback', function () {
     return view('auth.callback');
 })->name('callback');
+
+Route::get('/checkout', function () {
+    return view('checkout');
+})->name('checkout');
 
 Route::get('/admin/login', function () {
     return view('auth.admin.login');
