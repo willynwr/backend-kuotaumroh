@@ -63,7 +63,6 @@
                 <th class="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Harga TP Host</th>
                 <th class="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Poin</th>
                 <th class="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Profit</th>
-                <th class="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -103,9 +102,7 @@
                   <td class="px-4 py-3 text-sm align-middle text-right" x-text="formatRupiah(pkg.harga_tp_host)"></td>
                   <td class="px-4 py-3 text-sm align-middle text-right" x-text="pkg.poin"></td>
                   <td class="px-4 py-3 text-sm align-middle text-right font-semibold" x-text="formatRupiah(pkg.profit)"></td>
-                  <td class="px-4 py-3 text-sm align-middle text-center">
-                    <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium" :class="pkg.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'" x-text="pkg.status === 'active' ? 'Aktif' : 'Nonaktif'"></span>
-                  </td>
+                </td>
                 </tr>
               </template>
               <!-- Empty State -->
