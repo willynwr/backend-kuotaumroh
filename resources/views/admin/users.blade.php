@@ -118,7 +118,8 @@
         </div>
 
         <!-- Table -->
-        <div class="overflow-x-auto">
+        <!-- Content State -->
+        <div x-show="loaded" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="overflow-x-auto">
           <div x-show="roleFilter === 'newusers'" x-cloak>
             @include('admin.partial-users.users-new-users')
           </div>
@@ -136,8 +137,20 @@
           </div>
         </div>
 
+        <!-- Skeleton Loading State -->
+        <div x-show="!loaded" class="space-y-4 p-4 animate-pulse">
+          <div class="h-10 bg-slate-100 rounded w-full mb-4"></div>
+          <div class="space-y-3">
+             <div class="h-12 bg-slate-100 rounded w-full"></div>
+             <div class="h-12 bg-slate-50 rounded w-full"></div>
+             <div class="h-12 bg-slate-100 rounded w-full"></div>
+             <div class="h-12 bg-slate-50 rounded w-full"></div>
+             <div class="h-12 bg-slate-100 rounded w-full"></div>
+          </div>
+        </div>
+
         <!-- Pagination -->
-        <div class="mt-4 flex items-center justify-between">
+        <div x-show="loaded" class="mt-4 flex items-center justify-between">
           <p class="text-sm text-muted-foreground">
             Menampilkan <span x-text="(currentPage - 1) * itemsPerPage + 1"></span> - <span x-text="Math.min(currentPage * itemsPerPage, filteredUsers.length)"></span> dari <span x-text="filteredUsers.length"></span> data
           </p>
@@ -156,8 +169,8 @@
   @include('partials.form-addtravelagent')
 
   <!-- Approve Modal -->
-  <div x-show="approveModalOpen" x-cloak class="fixed inset-0 z-[60] flex items-center justify-center bg-black/40">
-    <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+  <div x-show="approveModalOpen" x-cloak class="fixed inset-0 z-[60] flex items-center justify-center bg-black/40" x-transition.opacity>
+    <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md" @click.away="closeApproveModal()" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100">
        <h3 class="text-lg font-semibold mb-4">Approve Travel Agent</h3>
        <p class="mb-4 text-sm text-gray-600">Setujui pendaftaran <strong x-text="approvalUser?.name"></strong>. Tentukan link referral:</p>
        <div class="mb-4">
@@ -165,64 +178,124 @@
             <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 bg-gray-50 text-gray-500 text-sm">{{ url('/') }}/u/</span>
             <input type="text" x-model="referralSlug" class="flex-1 block w-full rounded-none rounded-r-md border-gray-300 text-sm" placeholder="slug-travel">
          </div>
+         <p class="mt-1 text-xs text-muted-foreground">Format slug akan otomatis disesuaikan.</p>
        </div>
        <div class="flex justify-end gap-2">
-         <button @click="closeApproveModal()" class="px-4 py-2 text-sm text-gray-600">Batal</button>
-         <button @click="submitApprove()" :disabled="!referralSlug" class="px-4 py-2 text-sm bg-green-600 text-white rounded disabled:opacity-50">Approve</button>
+         <button @click="closeApproveModal()" class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded transition-colors">Batal</button>
+         <button @click="submitApprove()" :disabled="!referralSlug" class="px-4 py-2 text-sm bg-green-600 text-white hover:bg-green-700 rounded disabled:opacity-50 transition-colors">Approve</button>
        </div>
     </div>
   </div>
 
   <!-- Reject Modal -->
-  <div x-show="rejectModalOpen" x-cloak class="fixed inset-0 z-[60] flex items-center justify-center bg-black/40">
-    <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-       <h3 class="text-lg font-semibold mb-4 text-red-600">Tolak Pendaftaran?</h3>
+  <div x-show="rejectModalOpen" x-cloak class="fixed inset-0 z-[60] flex items-center justify-center bg-black/40" x-transition.opacity>
+    <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md" @click.away="closeRejectModal()" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100">
+       <h3 class="text-lg font-semibold mb-4 text-red-600 flex items-center gap-2">
+         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+         Tolak Pendaftaran?
+       </h3>
        <p class="mb-4 text-sm text-gray-600">Yakin tolak <strong x-text="approvalUser?.name"></strong>? Status akan menjadi ditolak/banned.</p>
        <div class="flex justify-end gap-2">
-         <button @click="closeRejectModal()" class="px-4 py-2 text-sm text-gray-600">Batal</button>
-         <button @click="submitReject()" class="px-4 py-2 text-sm bg-red-600 text-white rounded">Ya, Tolak</button>
+         <button @click="closeRejectModal()" class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded transition-colors">Batal</button>
+         <button @click="submitReject()" class="px-4 py-2 text-sm bg-red-600 text-white hover:bg-red-700 rounded transition-colors">Ya, Tolak</button>
        </div>
     </div>
   </div>
 
-  <!-- File Preview & User Detail Modals Placeholders (simplified for brevity but functional) -->
-  <div x-show="fileModalOpen" x-cloak class="fixed inset-0 z-[70] flex items-center justify-center bg-black/40" @click.self="closeFileModal()">
-     <div class="bg-white p-4 rounded max-w-4xl max-h-[90vh] overflow-auto">
-        <div class="flex justify-between mb-2">
-            <h3 class="font-bold">Preview</h3>
-            <button @click="closeFileModal()">Close</button>
+  <!-- File Preview -->
+  <div x-show="fileModalOpen" x-cloak class="fixed inset-0 z-[70] flex items-center justify-center bg-black/40" @click.self="closeFileModal()" x-transition.opacity>
+     <div class="bg-white p-4 rounded-lg shadow-xl max-w-4xl max-h-[90vh] overflow-hidden flex flex-col w-full mx-4" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100">
+        <div class="flex justify-between items-center mb-3 pb-2 border-b">
+            <h3 class="font-bold text-lg">Preview</h3>
+            <button @click="closeFileModal()" class="text-gray-500 hover:text-gray-700">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
         </div>
-        <template x-if="fileModalType === 'image'">
-            <img :src="fileModalSrc" class="max-w-full">
-        </template>
-        <template x-if="fileModalType === 'pdf'">
-            <iframe :src="fileModalSrc" class="w-full h-[600px]"></iframe>
-        </template>
+        <div class="flex-1 overflow-auto bg-gray-50 p-2 rounded flex justify-center items-center">
+            <template x-if="fileModalType === 'image'">
+                <img :src="fileModalSrc" class="max-w-full max-h-full object-contain shadow-sm">
+            </template>
+            <template x-if="fileModalType === 'pdf'">
+                <iframe :src="fileModalSrc" class="w-full h-full min-h-[500px]"></iframe>
+            </template>
+        </div>
      </div>
   </div>
 
-  <div x-show="userDetailModalOpen" x-cloak class="fixed inset-0 z-[65] flex items-center justify-center bg-black/40" @click.self="closeUserDetail()">
-     <div class="bg-white p-6 rounded max-w-2xl w-full max-h-[90vh] overflow-auto relative">
-        <button @click="closeUserDetail()" class="absolute top-4 right-4 text-gray-500">Close</button>
-        <h3 class="text-xl font-bold mb-4">Detail User</h3>
-        <!-- Detail Content -->
-        <div x-show="selectedUser" class="space-y-3">
-             <div class="grid grid-cols-2 gap-4">
-                 <div><strong>Nama:</strong> <span x-text="selectedUser?.name"></span></div>
-                 <div><strong>Email:</strong> <span x-text="selectedUser?.email"></span></div>
-                 <div><strong>Phone:</strong> <span x-text="selectedUser?.phone || '-'"></span></div>
-                 <div><strong>Role:</strong> <span x-text="selectedUser?.role"></span></div>
+  <!-- User Detail -->
+  <div x-show="userDetailModalOpen" x-cloak class="fixed inset-0 z-[65] flex items-center justify-center bg-black/40" @click.self="closeUserDetail()" x-transition.opacity>
+     <div class="bg-white rounded-lg shadow-xl p-0 w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col mx-4" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
+        <div class="px-6 py-4 border-b flex justify-between items-center bg-gray-50">
+            <h3 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">Detail User</h3>
+            <button @click="closeUserDetail()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        
+        <div x-show="selectedUser" class="flex-1 overflow-y-auto p-6 space-y-6">
+             <!-- User Profile -->
+             <div class="flex items-start gap-4">
+                 <div class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-2xl font-bold text-slate-400">
+                    <span x-text="selectedUser?.name?.charAt(0) || 'U'"></span>
+                 </div>
+                 <div class="flex-1">
+                    <h4 class="text-lg font-bold text-gray-900" x-text="selectedUser?.name"></h4>
+                    <p class="text-sm text-gray-500" x-text="selectedUser?.email"></p>
+                    <div class="mt-2 flex gap-2">
+                        <span class="px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800 uppercase" x-text="selectedUser?.role"></span>
+                        <span class="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800" x-text="selectedUser?.status"></span>
+                    </div>
+                 </div>
              </div>
+
+             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-gray-50 rounded-lg border">
+                 <div>
+                     <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Phone/WA</p>
+                     <p class="mt-1 font-medium" x-text="selectedUser?.phone || '-'"> </p>
+                 </div>
+                 <div>
+                     <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Alamat</p>
+                     <p class="mt-1 font-medium" x-text="selectedUser?.address || '-'"> </p>
+                 </div>
+                  <div>
+                     <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Lokasi</p>
+                     <p class="mt-1 font-medium" x-text="`${selectedUser?.city || '-'}, ${selectedUser?.province || '-'}`"></p>
+                 </div>
+                 <div>
+                     <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Tanggal Daftar</p>
+                     <p class="mt-1 font-medium" x-text="selectedUser?.created_at?.substring(0,10) || '-'"> </p>
+                 </div>
+             </div>
+
              <template x-if="selectedUser?.role === 'agent'">
-                <div class="border-t pt-3 mt-3">
-                    <h4 class="font-semibold mb-2">Travel Info</h4>
-                     <div class="grid grid-cols-2 gap-4">
-                         <div><strong>Travel:</strong> <span x-text="selectedUser?.travel_name"></span></div>
-                         <div><strong>Izin:</strong> <span x-text="selectedUser?.ppiu ? 'Ada' : '-'"></span></div>
-                         <div><strong>Lokasi:</strong> <span x-text="(selectedUser?.city || '') + ', ' + (selectedUser?.province || '')"></span></div>
+                <div class="pt-2">
+                    <h4 class="font-bold text-lg mb-4 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                        Informasi Travel
+                    </h4>
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4">
+                         <div>
+                             <p class="text-xs text-gray-500 mb-1">Nama Travel</p>
+                             <p class="font-medium" x-text="selectedUser?.travel_name"></p>
+                         </div>
+                         <div>
+                             <p class="text-xs text-gray-500 mb-1">Jenis</p>
+                             <p class="font-medium" x-text="selectedUser?.travel_type"></p>
+                         </div>
+                         <div>
+                             <p class="text-xs text-gray-500 mb-1">PPIU/Izin</p>
+                             <span x-text="selectedUser?.ppiu ? 'Terlampir' : '-'" class="font-medium"></span>
+                         </div>
+                         <div>
+                             <p class="text-xs text-gray-500 mb-1">Kategori Agen</p>
+                             <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800" x-text="selectedUser?.agent_category"></span>
+                         </div>
                      </div>
                 </div>
              </template>
+        </div>
+        <div class="px-6 py-4 bg-gray-50 border-t flex justify-end">
+             <button @click="closeUserDetail()" class="px-4 py-2 bg-white border border-gray-300 rounded text-gray-700 hover:bg-gray-50 font-medium text-sm shadow-sm transition-colors">Tutup</button>
         </div>
      </div>
   </div>
@@ -230,11 +303,20 @@
 </div>
 @endsection
 
+@push('styles')
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
+  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<style>
+    [x-cloak] { display: none !important; }
+</style>
+@endpush
+
 @push('scripts')
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
 function usersPage() {
     return {
+        loaded: false,
         users: @json($users ?? []),
         stats: {
             affiliates: {{ $stats['affiliates'] ?? 0 }},
@@ -294,11 +376,37 @@ function usersPage() {
 
         init() {
             this.loadProvinces();
+            
+            // Tab Persistence: Check URL first, then LocalStorage
             const params = new URLSearchParams(window.location.search);
-            if(params.get('tab')) this.roleFilter = params.get('tab');
+            const urlTab = params.get('tab');
+            
+            if(urlTab && ['newusers', 'agent', 'affiliate', 'freelance'].includes(urlTab)) {
+                this.roleFilter = urlTab;
+            } else {
+                const storedTab = localStorage.getItem('admin_users_tab');
+                if(storedTab && ['newusers', 'agent', 'affiliate', 'freelance'].includes(storedTab)) {
+                    this.roleFilter = storedTab;
+                }
+            }
+            
+            // Simulate smooth loading
+            setTimeout(() => { this.loaded = true; }, 300);
             
             @if(session('success')) alert("{{ session('success') }}"); @endif
             @if(session('error')) alert("{{ session('error') }}"); @endif
+
+            // Re-open modals on validation errors
+            @if($errors->any())
+              if(@json(old('nama_travel'))) {
+                  this.changeTab('agent');
+                  this.$nextTick(() => this.openAddTravelAgentModal(true));
+              } else if(@json(old('nama')) && this.roleFilter === 'affiliate') {
+                  this.$nextTick(() => this.openAddAffiliateModal(true));
+              } else if(@json(old('nama')) && this.roleFilter === 'freelance') {
+                  this.$nextTick(() => this.openAddFreelanceModal(true));
+              }
+            @endif
         },
 
         changeTab(role) {
@@ -306,6 +414,12 @@ function usersPage() {
             this.statusFilter = 'all';
             this.search = '';
             this.currentPage = 1;
+            
+            // Save state
+            localStorage.setItem('admin_users_tab', role);
+            const url = new URL(window.location);
+            url.searchParams.set('tab', role);
+            window.history.pushState({}, '', url);
         },
 
         get filteredUsers() {
