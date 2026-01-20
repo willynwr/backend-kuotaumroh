@@ -98,9 +98,6 @@
         return `Rp ${parseInt(amount).toLocaleString('id-ID')}`;
       },
 
-      openAddModal() {
-        window.location.href = '{{ route("admin.packages.create") }}';
-      },
 
       editPackage(pkg) {
         window.location.href = `/admin/packages/${pkg.id}/edit`;

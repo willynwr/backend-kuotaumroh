@@ -75,10 +75,6 @@
     return {
       rewards: @json($rewards ?? []),
 
-      openAddModal() {
-        window.location.href = '{{ route("admin.rewards.create") }}';
-      },
-
       editReward(reward) {
         window.location.href = `/admin/rewards/${reward.id}/edit`;
       },
