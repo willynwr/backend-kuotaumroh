@@ -3,15 +3,33 @@
   x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
   x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
   <div class="absolute inset-0 bg-black/40" @click="closeAddTravelAgentModal()"></div>
-  <div class="relative z-10 w-full max-w-4xl rounded-lg bg-white shadow-lg p-6 max-h-[90vh] overflow-y-auto"
+  <div class="relative z-10 w-full max-w-5xl rounded-lg bg-white shadow-lg max-h-[90vh] overflow-y-auto"
     x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform scale-95"
     x-transition:enter-end="opacity-100 transform scale-100" x-transition:leave="transition ease-in duration-200"
     x-transition:leave-start="opacity-100 transform scale-100" x-transition:leave-end="opacity-0 transform scale-95">
-    <h3 class="text-lg font-semibold text-slate-900">Tambah Travel Agent Baru</h3>
-    <p class="mt-2 text-sm text-muted-foreground">Isi form di bawah untuk menambahkan travel agent baru.</p>
+    
+    <!-- Header -->
+    <div class="sticky top-0 z-10 bg-white border-b px-6 py-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="text-xl font-semibold text-slate-900 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+            Tambah Travel Agent Baru
+          </h3>
+          <p class="mt-1 text-sm text-muted-foreground">Isi form di bawah untuk menambahkan travel agent baru ke sistem</p>
+        </div>
+        <button @click="closeAddTravelAgentModal()" class="text-muted-foreground hover:text-foreground transition-colors">
+          <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+    </div>
 
     @if ($errors->any() && old('_form') === 'agent')
-      <div class="mt-4 rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+      <div class="mx-6 mt-4 rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
         <ul class="list-disc pl-5">
           @foreach ($errors->all() as $error)
             <li>{{ $error }}</li>
@@ -20,7 +38,7 @@
       </div>
     @endif
 
-    <form x-ref="addTravelAgentForm" method="POST" action="{{ route('admin.agents.store') }}" @submit.prevent="openConfirmAddTravelAgentModal()" class="mt-6 space-y-6">
+    <form x-ref="addTravelAgentForm" method="POST" action="{{ route('admin.agents.store') }}" @submit.prevent="openConfirmAddTravelAgentModal()" class="p-6 space-y-6">
       @csrf
       <input type="hidden" name="_form" value="agent">
       <input type="hidden" name="redirect_to" value="/admin/users?tab=agent">
@@ -28,72 +46,97 @@
       <input type="hidden" name="kategori_agent" :value="newTravelAgent.kategori_agent">
       <input type="hidden" name="provinsi" :value="newTravelAgent.province">
       <input type="hidden" name="kabupaten_kota" :value="newTravelAgent.city">
+      <input type="hidden" name="latitude" :value="newTravelAgent.latitude">
+      <input type="hidden" name="longitude" :value="newTravelAgent.longitude">
       <input type="hidden" name="affiliate_id" :value="selectedDownline && selectedDownline.type === 'Affiliate' ? selectedDownline.id : ''">
       <input type="hidden" name="freelance_id" :value="selectedDownline && selectedDownline.type === 'Freelance' ? selectedDownline.id : ''">
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="space-y-4">
-          <h4 class="font-medium text-slate-900 border-b pb-2">Informasi Kontak</h4>
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Nama PIC <span class="text-red-500">*</span></label>
-            <input type="text" name="nama_pic" x-model="newTravelAgent.full_name" required
-              class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Email <span class="text-red-500">*</span></label>
-            <input type="email" name="email" x-model="newTravelAgent.email" required
-              class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">No. HP (+62) <span class="text-red-500">*</span></label>
-            <div class="relative">
-              <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <span class="text-sm text-muted-foreground">+62</span>
-              </div>
-              <input type="tel" name="no_hp" x-model="newTravelAgent.phone" @input="newTravelAgent.phone = newTravelAgent.phone.replace(/[^0-9]/g, '')" required placeholder="81xxx"
-                class="flex h-10 w-full rounded-md border border-input bg-background pl-12 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Left Column -->
+        <div class="space-y-6">
+          <!-- Contact Information Section -->
+          <div class="space-y-4">
+            <h4 class="font-semibold text-slate-900 border-b pb-2 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+              Informasi Kontak
+            </h4>
+            
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Nama PIC <span class="text-red-500">*</span></label>
+              <input type="text" name="nama_pic" x-model="newTravelAgent.full_name" required
+                class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
             </div>
-            <p class="text-xs text-muted-foreground mt-1">Format: 81xxxxxxxx (tanpa 0 atau +62)</p>
+
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Email <span class="text-red-500">*</span></label>
+              <input type="email" name="email" x-model="newTravelAgent.email" required
+                class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">No. HP (+62) <span class="text-red-500">*</span></label>
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                  <span class="text-sm text-muted-foreground">+62</span>
+                </div>
+                <input type="tel" name="no_hp" x-model="newTravelAgent.phone" @input="newTravelAgent.phone = newTravelAgent.phone.replace(/[^0-9]/g, '')" required placeholder="81xxx"
+                  class="flex h-10 w-full rounded-md border border-input bg-background pl-12 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">Format: 81xxxxxxxx (tanpa 0 atau +62)</p>
+            </div>
           </div>
         </div>
 
-        <div class="space-y-4">
-          <h4 class="font-medium text-slate-900 border-b pb-2">Detail Travel</h4>
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Nama Travel <span class="text-red-500">*</span></label>
-            <input type="text" name="nama_travel" x-model="newTravelAgent.travel_name" required
-              class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
-          </div>
+        <!-- Right Column -->
+        <div class="space-y-6">
+          <!-- Travel Details Section -->
+          <div class="space-y-4">
+            <h4 class="font-semibold text-slate-900 border-b pb-2 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+              Detail Travel
+            </h4>
 
-          <div x-data="{ travelTypeOpen: false }">
-            <label class="block text-sm font-medium text-slate-700 mb-1">Jenis Travel <span class="text-red-500">*</span></label>
-            <div class="relative" @click.away="travelTypeOpen = false">
-              <button type="button" @click="travelTypeOpen = !travelTypeOpen"
-                class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
-                <span :class="!newTravelAgent.travel_type && 'text-muted-foreground'" x-text="newTravelAgent.travel_type || 'Pilih jenis travel'"></span>
-                <svg class="h-4 w-4 transition-transform" :class="travelTypeOpen && 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              <div x-show="travelTypeOpen" x-transition class="absolute z-50 mt-1 w-full rounded-md border border-input bg-white shadow-lg" style="display: none;">
-                <div class="py-1">
-                  <button type="button" @click="newTravelAgent.travel_type = 'UMROH'; travelTypeOpen = false" class="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors" :class="newTravelAgent.travel_type === 'UMROH' && 'bg-primary/10 text-primary'">UMROH</button>
-                  <button type="button" @click="newTravelAgent.travel_type = 'LEISURE'; travelTypeOpen = false" class="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors" :class="newTravelAgent.travel_type === 'LEISURE' && 'bg-primary/10 text-primary'">LEISURE</button>
-                  <button type="button" @click="newTravelAgent.travel_type = 'UMROH LEISURE'; travelTypeOpen = false" class="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors" :class="newTravelAgent.travel_type === 'UMROH LEISURE' && 'bg-primary/10 text-primary'">UMROH & LEISURE</button>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Nama Travel <span class="text-red-500">*</span></label>
+              <input type="text" name="nama_travel" x-model="newTravelAgent.travel_name" required
+                class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+            </div>
+
+            <div x-data="{ travelTypeOpen: false }">
+              <label class="block text-sm font-medium text-slate-700 mb-1">Jenis Travel <span class="text-red-500">*</span></label>
+              <div class="relative" @click.away="travelTypeOpen = false">
+                <button type="button" @click="travelTypeOpen = !travelTypeOpen"
+                  class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+                  <span :class="!newTravelAgent.travel_type && 'text-muted-foreground'" x-text="newTravelAgent.travel_type || 'Pilih jenis travel'"></span>
+                  <svg class="h-4 w-4 transition-transform" :class="travelTypeOpen && 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                <div x-show="travelTypeOpen" x-transition class="absolute z-50 mt-1 w-full rounded-md border border-input bg-white shadow-lg" style="display: none;">
+                  <div class="py-1">
+                    <button type="button" @click="newTravelAgent.travel_type = 'UMROH'; travelTypeOpen = false" class="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors" :class="newTravelAgent.travel_type === 'UMROH' && 'bg-primary/10 text-primary'">UMROH</button>
+                    <button type="button" @click="newTravelAgent.travel_type = 'LEISURE'; travelTypeOpen = false" class="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors" :class="newTravelAgent.travel_type === 'LEISURE' && 'bg-primary/10 text-primary'">LEISURE</button>
+                    <button type="button" @click="newTravelAgent.travel_type = 'UMROH LEISURE'; travelTypeOpen = false" class="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors" :class="newTravelAgent.travel_type === 'UMROH LEISURE' && 'bg-primary/10 text-primary'">UMROH & LEISURE</button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Total Traveller per Bulan <span class="text-red-500">*</span></label>
-            <input type="number" name="total_traveller" x-model="newTravelAgent.travel_member" required min="0"
-              class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Total Traveller per Bulan <span class="text-red-500">*</span></label>
+              <input type="number" name="total_traveller" x-model="newTravelAgent.travel_member" required min="0"
+                class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4">
+      <!-- Agent Category & Downline Section -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-6">
         <div x-data="{ kategoriOpen: false }">
           <label class="block text-sm font-medium text-slate-700 mb-1">Kategori Agent <span class="text-red-500">*</span></label>
           <div class="relative" @click.away="kategoriOpen = false">
@@ -142,8 +185,16 @@
         </div>
       </div>
 
-      <div class="border-t pt-4">
-        <h4 class="font-medium text-slate-900 mb-4">Informasi Alamat</h4>
+      <!-- Address Information Section -->
+      <div class="space-y-4 border-t pt-6">
+        <h4 class="font-semibold text-slate-900 border-b pb-2 flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          Informasi Alamat
+        </h4>
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div x-data="{ provinceDropdownOpen: false, provinceSearch: '' }">
             <label class="block text-sm font-medium text-slate-700 mb-1">Provinsi <span class="text-red-500">*</span></label>
@@ -175,7 +226,7 @@
                 <div class="p-2 border-b"><input type="text" x-ref="citySearchInputAgent" x-model="citySearch" @click.stop placeholder="Cari kota/kabupaten..." class="w-full rounded-md border border-input px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"></div>
                 <div class="max-h-60 overflow-y-auto">
                   <template x-for="city in citiesTravelAgent.filter(c => c.toLowerCase().includes(citySearch.toLowerCase()))" :key="city">
-                    <button type="button" @click="newTravelAgent.city = city; cityDropdownOpen = false; citySearch = ''" class="w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors" :class="newTravelAgent.city === city && 'bg-muted'" x-text="city"></button>
+                    <button type="button" @click="newTravelAgent.city = city; handleCityChangeTravelAgent(); cityDropdownOpen = false; citySearch = ''" class="w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors" :class="newTravelAgent.city === city && 'bg-muted'" x-text="city"></button>
                   </template>
                   <div x-show="citiesTravelAgent.filter(c => c.toLowerCase().includes(citySearch.toLowerCase())).length === 0" class="px-3 py-2 text-sm text-muted-foreground">Tidak ada kota ditemukan</div>
                 </div>
@@ -184,20 +235,48 @@
           </div>
         </div>
 
-        <div class="mt-4">
+        <div>
           <label class="block text-sm font-medium text-slate-700 mb-1">Alamat Lengkap <span class="text-red-500">*</span></label>
           <textarea name="alamat_lengkap" x-model="newTravelAgent.address" required rows="3" placeholder="Jl. Contoh No. 123" class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"></textarea>
         </div>
+
+        <!-- Map Section -->
+        <div x-show="newTravelAgent.city" class="space-y-2">
+          <label class="text-sm font-medium text-slate-700">Tandai Lokasi di Peta</label>
+          <p class="text-xs text-muted-foreground">Klik pada peta untuk menandai lokasi Anda</p>
+          
+          <!-- Map Container -->
+          <div :id="'map-agent'" class="w-full h-80 rounded-md border border-input overflow-hidden"
+            x-init="$nextTick(() => { if (newTravelAgent.city && !mapAgentInitialized) initializeMapAgent(); })"></div>
+
+          <!-- Coordinates Input -->
+          <div class="grid grid-cols-2 gap-4 pt-2">
+            <div class="space-y-2">
+              <label class="text-sm font-medium text-slate-700">Latitude</label>
+              <input type="number" step="any" x-model.number="newTravelAgent.latitude"
+                @input="updateMapFromCoordinatesAgent()" placeholder="-6.xxxxx"
+                class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+            </div>
+            <div class="space-y-2">
+              <label class="text-sm font-medium text-slate-700">Longitude</label>
+              <input type="number" step="any" x-model.number="newTravelAgent.longitude"
+                @input="updateMapFromCoordinatesAgent()" placeholder="106.xxxxx"
+                class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div class="flex items-center justify-end gap-3 pt-4">
-        <button type="button" @click="closeAddTravelAgentModal()" class="h-9 px-4 rounded-md border text-sm font-medium text-slate-700 hover:bg-muted transition-colors">Batal</button>
-        <button type="submit" class="h-9 px-4 rounded-md bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors">Simpan</button>
+      <!-- Footer -->
+      <div class="sticky bottom-0 bg-white border-t -mx-6 -mb-6 px-6 py-4 flex items-center justify-end gap-3">
+        <button type="button" @click="closeAddTravelAgentModal()" class="h-10 px-6 rounded-md border text-sm font-medium text-slate-700 hover:bg-muted transition-colors">Batal</button>
+        <button type="submit" class="h-10 px-6 rounded-md bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors">Simpan</button>
       </div>
     </form>
   </div>
 </div>
 
+<!-- Confirmation Modal -->
 <div x-show="confirmAddTravelAgentModalOpen" x-cloak class="fixed inset-0 z-[60] flex items-center justify-center"
   x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
   x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"

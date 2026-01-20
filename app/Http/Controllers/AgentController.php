@@ -6,11 +6,48 @@ use Illuminate\Http\Request;
 
 use App\Models\Agent;
 use App\Models\Affiliate;
+use App\Models\Freelance;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 
 class AgentController extends Controller
 {
+    /**
+     * Handle agent signup dengan referral link dari affiliate/freelance
+     * Route: /agent/{link_referral}
+     */
+    public function signupWithReferral($linkReferral)
+    {
+        // Cek apakah link_referral milik affiliate
+        $affiliate = Affiliate::where('link_referral', $linkReferral)
+            ->where('is_active', true)
+            ->first();
+
+        if ($affiliate) {
+            // Redirect ke login dengan affiliate referral
+            return redirect()->route('login', [
+                'ref' => 'affiliate:' . $affiliate->id,
+                'referrer_name' => $affiliate->nama
+            ]);
+        }
+
+        // Cek apakah link_referral milik freelance
+        $freelance = Freelance::where('link_referral', $linkReferral)
+            ->where('is_active', true)
+            ->first();
+
+        if ($freelance) {
+            // Redirect ke login dengan freelance referral
+            return redirect()->route('login', [
+                'ref' => 'freelance:' . $freelance->id,
+                'referrer_name' => $freelance->nama
+            ]);
+        }
+
+        // Jika link_referral tidak valid, redirect ke login biasa
+        return redirect()->route('login')->with('error', 'Link referral tidak valid atau sudah tidak aktif');
+    }
+
     public function asset(string $file)
     {
         if (!preg_match('/\A[A-Za-z0-9_\-\.]+\z/', $file)) {

@@ -693,18 +693,31 @@ class AdminController extends Controller
     /**
      * Approve agent
      */
-    public function approveAgent($id)
+    public function approveAgent(Request $request, $id)
     {
         try {
             $agent = Agent::findOrFail($id);
+            
+            if ($request->filled('link_referral')) {
+                $agent->link_referal = $request->link_referral;
+            }
+
             $agent->status = 'approve';
             $agent->is_active = 1;
             if (!$agent->date_approve) {
                 $agent->date_approve = now()->format('Y-m-d');
             }
             $agent->save();
+
+            if ($request->wantsJson()) {
+                return response()->json(['success' => true, 'message' => 'Agent berhasil disetujui']);
+            }
+
             return redirect()->back()->with('success', 'Agent berhasil disetujui');
         } catch (\Exception $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
+            }
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
@@ -712,15 +725,23 @@ class AdminController extends Controller
     /**
      * Reject agent
      */
-    public function rejectAgent($id)
+    public function rejectAgent(Request $request, $id)
     {
         try {
             $agent = Agent::findOrFail($id);
             $agent->status = 'reject';
             $agent->is_active = 0;
             $agent->save();
+
+            if ($request->wantsJson()) {
+                return response()->json(['success' => true, 'message' => 'Agent berhasil ditolak']);
+            }
+
             return redirect()->back()->with('success', 'Agent berhasil ditolak');
         } catch (\Exception $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
+            }
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }

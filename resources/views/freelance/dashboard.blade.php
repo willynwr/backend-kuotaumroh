@@ -215,8 +215,8 @@
             freelanceId: {{ $user->id ?? 'null' }},
             linkReferral: '{{ $linkReferral ?? "" }}',
             referralCode: '{{ $user->ref_code ?? "" }}',
-            referralLink: '{{ !empty($linkReferral) ? url("/dash/" . $linkReferral) : "#" }}',
-            shareText: 'Daftar sebagai Agent Kuotaumroh.id dan dapatkan penghasilan tambahan! Kunjungi dashboard saya: {{ !empty($linkReferral) ? url("/dash/" . $linkReferral) : "" }}',
+            referralLink: '{{ !empty($linkReferral) ? url("/agent/" . $linkReferral) : "#" }}',
+            shareText: 'Daftar sebagai Agent Kuotaumroh.id di bawah referral saya dan dapatkan penghasilan tambahan! {{ !empty($linkReferral) ? url("/agent/" . $linkReferral) : "" }}',
             menuItems: [{
                     id: 'downlines',
                     title: 'Daftar Agent',

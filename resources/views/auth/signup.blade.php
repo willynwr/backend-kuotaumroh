@@ -164,7 +164,8 @@
       <!-- Registration Form -->
       <div class="rounded-lg border bg-white shadow-sm">
         <div class="p-6">
-          <form @submit.prevent="handleSubmit" class="space-y-8">
+          <form @submit.prevent="handleSubmit" class="space-y-8" enctype="multipart/form-data">
+            @csrf
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
               <!-- Left Column: Contact & Basic Info -->
@@ -642,6 +643,7 @@
           const ref = urlParams.get('ref');
           const affiliateId = urlParams.get('affiliate_id');
           const freelanceId = urlParams.get('freelance_id');
+          const referrerName = urlParams.get('referrer_name');
 
           if (email) {
             this.formData.email = email;
@@ -679,7 +681,14 @@
 
           this.referralContext = getReferral();
 
+          // Show referral banner if coming from referral link
+          if (this.referralContext && referrerName) {
+            const referrerType = this.referralContext.source_type === 'affiliate' ? 'Affiliate' : 'Freelance';
+            this.showToast('Referral Aktif', `Anda akan terdaftar sebagai downline ${referrerType}: ${decodeURIComponent(referrerName)}`);
+          }
+
           console.log('Signup form initialized with email:', this.formData.email);
+          console.log('Referral context:', this.referralContext);
         },
 
         async loadProvinces() {
@@ -1133,9 +1142,12 @@
 
           try {
             const formDataToSend = new FormData();
+            
+            // Get CSRF token
+            const csrfToken = document.querySelector('input[name="_token"]').value;
+            formDataToSend.append('_token', csrfToken);
 
             // Map keys according to backend validation rules
-            // 'email' => 'required|email|unique:agents,email', 
             formDataToSend.append('email', this.formData.email);
 
             const ref = this.referralContext;
@@ -1148,15 +1160,10 @@
               formDataToSend.append('affiliate_id', '1');
             }
 
-
-
-            // 'nama_pic' => 'required|string', 
             formDataToSend.append('nama_pic', this.formData.full_name);
 
-            // 'no_hp' => 'required|string', 
-            // Prepend 62 if not present (UI shows +62)
+            // Phone number
             let phone = this.formData.phone;
-            // Remove leading 0 or 62 if user typed it, though regex in input handles some
             if (phone.startsWith('0')) phone = phone.substring(1);
             if (phone.startsWith('62')) phone = phone.substring(2);
             formDataToSend.append('no_hp', '62' + phone);
@@ -1166,43 +1173,30 @@
 
             if (this.formData.travel_member) formDataToSend.append('total_traveller', this.formData.travel_member);
             formDataToSend.append('provinsi', this.formData.province);
-
-            // 'kabupaten_kota' => 'required|string', 
             formDataToSend.append('kabupaten_kota', this.formData.city);
-
-            // 'alamat_lengkap' => 'required|string', 
             formDataToSend.append('alamat_lengkap', this.formData.address);
 
-            // 'lat' => 'nullable|numeric', 
             if (this.formData.latitude) formDataToSend.append('lat', this.formData.latitude);
-
-            // 'long' => 'nullable|numeric', 
             if (this.formData.longitude) formDataToSend.append('long', this.formData.longitude);
 
-            // 'link_gmaps' => 'nullable|string', 
             if (this.formData.latitude && this.formData.longitude) {
               const link = `https://www.google.com/maps?q=${this.formData.latitude},${this.formData.longitude}`;
               formDataToSend.append('link_gmaps', link);
             }
 
-            // 'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048', 
             if (this.logoFile) {
               formDataToSend.append('logo', this.logoFile);
             }
 
-            // 'surat_ppiu' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048', 
             if (this.cooperationLetterFile) {
               formDataToSend.append('surat_ppiu', this.cooperationLetterFile);
             }
 
-            // Send to API
-            // ✅ Menggunakan apiUrl() dari config.js (FormData requires direct fetch)
-            let response = await fetch(apiUrl('agents'), {
+            // Submit to Laravel route (not API)
+            let response = await fetch('{{ route("agent.store") }}', {
               method: 'POST',
-              headers: {
-                'Accept': 'application/json',
-              },
-              body: formDataToSend
+              body: formDataToSend,
+              credentials: 'same-origin'
             });
 
             let result = await response.json();
@@ -1216,11 +1210,11 @@
             }
 
             console.log('Success:', result);
-            this.showToast('Berhasil!', 'Pendaftaran Travel Agent berhasil. Mengarahkan ke dashboard...');
+            this.showToast('Berhasil!', 'Pendaftaran Travel Agent berhasil. Mengarahkan ke login...');
             clearReferral();
 
             setTimeout(() => {
-              window.location.href = @json(route('agent.dashboard'));
+              window.location.href = '{{ route("login") }}';
             }, 800);
 
           } catch (error) {
