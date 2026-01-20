@@ -6,8 +6,15 @@
   <div x-data="walletApp()">
     <main class="container mx-auto py-6 animate-fade-in px-4">
       <div class="mb-6">
-        <h1 class="text-3xl font-bold tracking-tight">Dompet Saya</h1>
-        <p class="text-muted-foreground mt-2">Kelola saldo dan riwayat transaksi</p>
+        <div class="flex items-start gap-4">
+          <a href="{{ isset($linkReferral) ? url('/dash/' . $linkReferral) : route('agent.dashboard') }}" class="inline-flex h-10 w-10 items-center justify-center rounded-md border bg-white hover:bg-muted transition-colors" aria-label="Kembali">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+          </a>
+          <div>
+            <h1 class="text-3xl font-bold tracking-tight">Dompet Saya</h1>
+            <p class="text-muted-foreground mt-2">Kelola saldo dan riwayat transaksi</p>
+          </div>
+        </div>
       </div>
 
       <div class="rounded-2xl border-slate-200 bg-white shadow-sm mb-6 relative overflow-hidden">
@@ -23,7 +30,7 @@
             <span>Pending penarikan</span>
             <span class="ml-2 font-semibold text-slate-900" x-text="formatRupiah(walletBalance.pendingWithdrawal)"></span>
           </div>
-          <a href="{{ route('agent.withdraw') }}" class="mt-6 inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 w-full h-11 text-base font-medium transition-colors">
+          <a href="{{ isset($linkReferral) ? url('/dash/' . $linkReferral . '/withdraw') : route('agent.withdraw') }}" class="mt-6 inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 w-full h-11 text-base font-medium transition-colors">
             <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12" />
             </svg>
@@ -105,7 +112,7 @@
   <script>
     function walletApp() {
       return {
-        imageBase: @json(url('/agent/assets')),
+        imageBase: @json(asset('images')),
         walletBalance: { balance: 3250000, pendingWithdrawal: 500000 },
         incomeHistory: [
           { id: '1', date: new Date('2024-01-15'), type: 'commission', description: 'Komisi Batch #ORD-2024-0115', amount: 450000 },

@@ -6,13 +6,20 @@
   <div x-data="withdrawApp()">
     <main class="container mx-auto py-6 animate-fade-in px-4 max-w-2xl">
       <div class="mb-6">
-        <div class="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-          <a href="{{ route('agent.wallet') }}" class="hover:text-foreground">Dompet</a>
-          <span>/</span>
-          <span class="text-foreground">Tarik Saldo</span>
+        <div class="flex items-start gap-4">
+          <a href="{{ isset($linkReferral) ? url('/dash/' . $linkReferral . '/wallet') : route('agent.wallet') }}" class="inline-flex h-10 w-10 items-center justify-center rounded-md border bg-white hover:bg-muted transition-colors" aria-label="Kembali">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+          </a>
+          <div>
+            <div class="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+              <a href="{{ isset($linkReferral) ? url('/dash/' . $linkReferral . '/wallet') : route('agent.wallet') }}" class="hover:text-foreground">Dompet</a>
+              <span>/</span>
+              <span class="text-foreground">Tarik Saldo</span>
+            </div>
+            <h1 class="text-3xl font-bold tracking-tight">Tarik Saldo</h1>
+            <p class="text-muted-foreground mt-1">Tarik saldo ke rekening bank Anda</p>
+          </div>
         </div>
-        <h1 class="text-3xl font-bold tracking-tight">Tarik Saldo</h1>
-        <p class="text-muted-foreground mt-2">Tarik saldo ke rekening bank Anda</p>
       </div>
 
       <div class="mb-6 relative overflow-hidden rounded-2xl border-slate-200 bg-white shadow-sm">
@@ -91,7 +98,7 @@
             </template>
 
             <div class="flex gap-3 pt-4">
-              <a href="{{ route('agent.wallet') }}" class="flex-1 inline-flex items-center justify-center rounded-md border bg-background h-10 px-4 py-2 hover:bg-muted transition-colors">Batal</a>
+              <a href="{{ isset($linkReferral) ? url('/dash/' . $linkReferral . '/wallet') : route('agent.wallet') }}" class="flex-1 inline-flex items-center justify-center rounded-md border bg-background h-10 px-4 py-2 hover:bg-muted transition-colors">Batal</a>
               <button type="submit" :disabled="!isValidAmount" :class="isValidAmount ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'bg-muted text-muted-foreground cursor-not-allowed'" class="flex-1 inline-flex items-center justify-center rounded-md h-10 px-4 py-2 font-medium transition-colors">Ajukan Penarikan</button>
             </div>
           </div>
@@ -146,7 +153,7 @@
   <script>
     function withdrawApp() {
       return {
-        imageBase: @json(url('/agent/assets')),
+        imageBase: @json(asset('images')),
         walletBalance: 3250000,
         minWithdrawal: 100000,
         amount: '',
@@ -191,7 +198,7 @@
         handleSubmit() {
           if (!this.isValidAmount) return;
           this.showToast('Permintaan Penarikan Dikirim', `Penarikan sebesar ${this.formatRupiah(this.numericAmount)} sedang diproses.`);
-          setTimeout(() => { window.location.href = @json(route('agent.wallet')); }, 1500);
+          setTimeout(() => { window.location.href = @json(isset($linkReferral) ? url('/dash/' . $linkReferral . '/wallet') : route('agent.wallet')); }, 1500);
         },
         openAddAccountDialog() {
           this.addAccountDialogOpen = true;

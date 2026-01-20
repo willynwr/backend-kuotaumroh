@@ -5,7 +5,6 @@
 @section('head')
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <style>
     .flatpickr-calendar { border-radius: 0.5rem; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); border: 1px solid #e2e8f0; }
     .flatpickr-months { border-radius: 0.5rem 0.5rem 0 0; }
@@ -25,8 +24,15 @@
   <div x-data="referralsApp()">
     <main class="container mx-auto py-10 animate-fade-in px-4">
       <div class="mb-6">
-        <h1 class="text-3xl font-bold tracking-tight">Program Referral</h1>
-        <p class="text-muted-foreground mt-2">Undang agen baru dan dapatkan komisi dari setiap transaksi mereka</p>
+        <div class="flex items-start gap-4">
+          <a href="{{ isset($linkReferral) ? url('/dash/' . $linkReferral) : route('agent.dashboard') }}" class="inline-flex h-10 w-10 items-center justify-center rounded-md border bg-white hover:bg-muted transition-colors" aria-label="Kembali">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+          </a>
+          <div>
+            <h1 class="text-3xl font-bold tracking-tight">Program Referral</h1>
+            <p class="text-muted-foreground mt-2">Undang agen baru dan dapatkan komisi dari setiap transaksi mereka</p>
+          </div>
+        </div>
       </div>
 
       <div class="mb-6 grid gap-4 lg:grid-cols-3">
@@ -37,13 +43,17 @@
                 <label class="text-sm font-medium">QR Code</label>
                 <div class="flex items-center gap-4">
                   <div class="flex items-center gap-2">
-                    <div id="qrcode" class="h-32 w-32 p-2 flex items-center justify-center rounded-lg border bg-white"></div>
+                    <!-- Updated to match dashboard QR implementation -->
+                    <div class="h-32 w-32 rounded-lg border bg-white p-2">
+                        <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(agentData.referralLink)" 
+                             alt="QR Referral" 
+                             class="w-full h-full object-contain">
+                    </div>
+                    
                     <div class="flex flex-col gap-2">
-                      <button @click="copyQR()" class="inline-flex items-center justify-center rounded-md border bg-white h-10 w-10 hover:bg-muted transition-colors" title="Copy QR Code">
+                         <!-- Simplified Copy Button -->
+                      <button @click="copyToClipboard(agentData.referralLink, 'link')" class="inline-flex items-center justify-center rounded-md border bg-white h-10 w-10 hover:bg-muted transition-colors" title="Copy Link">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                      </button>
-                      <button @click="downloadQR()" class="inline-flex items-center justify-center rounded-md border bg-white h-10 w-10 hover:bg-muted transition-colors" title="Download QR Code">
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                       </button>
                     </div>
                   </div>
@@ -168,8 +178,8 @@
   <script>
     function referralsApp() {
       return {
-        user: { name: 'Agent Demo', email: 'agent@kuotaumroh.id', agentCode: 'AGN-2024-001', initials: 'AD' },
-        agentData: { agentCode: 'AGN-2024-001', referralLink: '', totalCommission: 0, pendingCommission: 0 },
+        user: {},
+        agentData: { agentCode: '', referralLink: '', totalCommission: 0, pendingCommission: 0 },
         packages: [
           { id: 1, provider: 'TELKOMSEL', name: 'Internet 12 Hari 50GB', feeAffiliate: 9400 },
           { id: 2, provider: 'INDOSAT', name: 'Spesial 12 Hari', feeAffiliate: 8400 },
@@ -184,33 +194,46 @@
         toastTitle: '',
         toastMessage: '',
         init() {
-          this.agentData.agentCode = this.user.agentCode || this.agentData.agentCode;
-          this.agentData.referralLink = window.location.origin + '/r/' + (this.agentData.agentCode || 'AGN-DEMO');
-          this.generateQRCode();
-          this.generateDemoReferralData();
-          this.$nextTick(() => {
-            flatpickr('#dateRangePicker', {
-              mode: 'range',
-              dateFormat: 'd M Y',
-              locale: { rangeSeparator: ' - ' },
-              onChange: (selectedDates) => {
-                if (selectedDates.length === 2) {
-                  this.dateFrom = selectedDates[0].toISOString().split('T')[0];
-                  this.dateTo = selectedDates[1].toISOString().split('T')[0];
-                } else if (selectedDates.length === 0) {
-                  this.dateFrom = '';
-                  this.dateTo = '';
+            // Get user data (similar to dashboard)
+            this.user = typeof getUser === 'function' ? getUser() : JSON.parse(localStorage.getItem('user') || '{}');
+            this.agentData.agentCode = this.user.agentCode || 'AGN-DEMO';
+            
+            // Logic Sync with Dashboard: Prioritize PHP link, else build manual
+            const phpLink = '{{ isset($linkReferral) ? url("/dash/" . $linkReferral) : "" }}';
+            
+            if (phpLink) {
+                this.agentData.referralLink = phpLink;
+            } else {
+                // Fallback attempt to match dashboard URL structure
+                const code = this.user.link_referral || this.user.agentCode || 'demo-code';
+                this.agentData.referralLink = window.location.origin + '/dash/' + code;
+            }
+
+            this.generateDemoReferralData(); // Dummy data remains for now
+            
+            this.$nextTick(() => {
+                flatpickr('#dateRangePicker', {
+                mode: 'range',
+                dateFormat: 'd M Y',
+                locale: { rangeSeparator: ' - ' },
+                onChange: (selectedDates) => {
+                    if (selectedDates.length === 2) {
+                    this.dateFrom = selectedDates[0].toISOString().split('T')[0];
+                    this.dateTo = selectedDates[1].toISOString().split('T')[0];
+                    } else if (selectedDates.length === 0) {
+                    this.dateFrom = '';
+                    this.dateTo = '';
+                    }
+                },
+                onClose: (selectedDates, _dateStr, instance) => {
+                    if (selectedDates.length === 1) {
+                    instance.clear();
+                    this.dateFrom = '';
+                    this.dateTo = '';
+                    }
                 }
-              },
-              onClose: (selectedDates, _dateStr, instance) => {
-                if (selectedDates.length === 1) {
-                  instance.clear();
-                  this.dateFrom = '';
-                  this.dateTo = '';
-                }
-              }
+                });
             });
-          });
         },
         generateDemoReferralData() {
           const demoMSISDNs = [
@@ -229,12 +252,6 @@
           });
           this.agentData.totalCommission = this.referredAgents.reduce((sum, r) => sum + r.commission, 0);
           this.agentData.pendingCommission = Math.round(this.agentData.totalCommission * 0.15);
-        },
-        generateQRCode() {
-          const qrContainer = document.getElementById('qrcode');
-          if (!qrContainer || !window.QRCode) return;
-          qrContainer.innerHTML = '';
-          new QRCode(qrContainer, { text: this.agentData.referralLink, width: 112, height: 112, colorDark: '#1f2937', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H });
         },
         get filteredAgents() {
           return this.referredAgents.filter(agent => {
@@ -257,35 +274,6 @@
           const picker = input ? input._flatpickr : null;
           if (picker) picker.clear();
           else if (input) input.value = '';
-        },
-        downloadQR() {
-          const canvas = document.querySelector('#qrcode canvas');
-          if (!canvas) {
-            this.showToast('Gagal', 'QR code belum tersedia');
-            return;
-          }
-          const url = canvas.toDataURL('image/png');
-          const link = document.createElement('a');
-          link.download = `qr-referral-${this.user.agentCode || 'code'}.png`;
-          link.href = url;
-          link.click();
-          this.showToast('QR Code Disimpan', 'QR code berhasil diunduh');
-        },
-        async copyQR() {
-          const canvas = document.querySelector('#qrcode canvas');
-          if (!canvas) return;
-          try {
-            canvas.toBlob(async (blob) => {
-              try {
-                await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-                this.showToast('QR Code Disalin', 'QR code berhasil disalin ke clipboard');
-              } catch (_err) {
-                this.showToast('Gagal Menyalin', 'Browser tidak mendukung copy image');
-              }
-            });
-          } catch (_err) {
-            this.showToast('Gagal', 'Tidak dapat menyalin QR code');
-          }
         },
         async copyToClipboard(text, type) {
           try {
