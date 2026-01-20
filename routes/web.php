@@ -27,6 +27,9 @@ Route::get('/agent', function () {
     return view('auth.login');
 })->name('login');
 
+// Agent Signup dengan Referral Link dari Affiliate/Freelance
+Route::get('/agent/{link_referral}', [App\Http\Controllers\AgentController::class, 'signupWithReferral'])->name('agent.signup.referral');
+
 Route::get('/signup', function () {
     return view('auth.signup');
 })->name('signup');
@@ -149,7 +152,7 @@ Route::prefix('agent')->name('agent.')->group(function () {
 // agent routes
 Route::get('/agents', [App\Http\Controllers\AgentController::class, 'index']);
 Route::get('/agents/{id}', [App\Http\Controllers\AgentController::class, 'show']);
-Route::post('/agents', [App\Http\Controllers\AgentController::class, 'store']);
+Route::post('/agents', [App\Http\Controllers\AgentController::class, 'store'])->name('agent.store');
 Route::post('/agents/{id}', [App\Http\Controllers\AgentController::class, 'update']);
 Route::post('/agents/{id}/approve', [App\Http\Controllers\AgentController::class, 'approve']);
 Route::post('/agents/{id}/reject', [App\Http\Controllers\AgentController::class, 'reject']);

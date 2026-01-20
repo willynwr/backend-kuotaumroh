@@ -123,9 +123,15 @@
         <div class="rounded-lg bg-card text-card-foreground border-0 shadow-lg">
           <div class="p-6 text-center">
             <h3 class="text-2xl font-semibold leading-none tracking-tight">Portal Agen</h3>
-            <p class="text-sm text-muted-foreground mt-2">
+            <p class="text-sm text-muted-foreground mt-2" x-show="!referrerName">
               Gunakan akun Google yang terdaftar sebagai agen
             </p>
+            <!-- Referral Banner -->
+            <div x-show="referrerName" class="mt-3 p-3 rounded-lg bg-primary/10 border border-primary/20">
+              <p class="text-sm font-medium text-primary">📢 Undangan dari</p>
+              <p class="text-base font-bold text-primary" x-text="referrerName"></p>
+              <p class="text-xs text-muted-foreground mt-1">Login untuk melanjutkan pendaftaran</p>
+            </div>
           </div>
           <div class="p-6 pt-0 space-y-4">
             <!-- Error Message from Session -->
@@ -202,6 +208,7 @@
     function loginApp() {
       return {
         loading: false,
+        referrerName: '',
         toast: {
           visible: false,
           title: '',
@@ -225,6 +232,12 @@
             const ref = params.get('ref');
             const affiliateId = params.get('affiliate_id');
             const freelanceId = params.get('freelance_id');
+            const referrerName = params.get('referrer_name');
+
+            // Display referrer name if present
+            if (referrerName) {
+              this.referrerName = decodeURIComponent(referrerName);
+            }
 
             if (affiliateId) {
               setReferral({ source_type: 'affiliate', id: parseInt(affiliateId, 10) });
