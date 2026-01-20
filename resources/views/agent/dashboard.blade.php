@@ -75,7 +75,7 @@
                 <span>Pending penarikan</span>
                 <span class="ml-2 font-semibold text-slate-900" x-text="formatRupiah(stats.pendingWithdrawal)"></span>
               </div>
-              <a href="{{ route('agent.withdraw') }}" class="mt-6 inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 w-full h-11 text-base font-medium transition-colors">
+              <a href="{{ isset($linkReferral) ? url('/dash/' . $linkReferral . '/withdraw') : route('agent.withdraw') }}" class="mt-6 inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 w-full h-11 text-base font-medium transition-colors">
                 Tarik Saldo
               </a>
             </div>
@@ -109,7 +109,7 @@
   <script>
     function dashboardApp() {
       return {
-        imageBase: @json(url('/agent/assets')),
+        imageBase: @json(asset('images')),
         linkReferral: '{{ $linkReferral ?? "" }}',
         referralLink: '{{ isset($linkReferral) ? url("/dash/" . $linkReferral) : "" }}',
         stats: {
