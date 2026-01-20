@@ -19,7 +19,7 @@ use App\Http\Controllers\DashboardController;
 
 Route::get('/', function () {
     return view('welcome');
-});
+})->name('welcome');
 
 // Auth Routes - Unified Login for all users (Agent, Affiliate, Freelance) 
 // Agent login on /agent (before prefix group to avoid conflict)
@@ -30,6 +30,9 @@ Route::get('/agent', function () {
 // Agent Signup dengan Referral Link dari Affiliate/Freelance
 Route::get('/agent/{link_referral}', [App\Http\Controllers\AgentController::class, 'signupWithReferral'])->name('agent.signup.referral');
 
+// Halaman Toko Agent - /u/{link_referal}
+Route::get('/u/{link_referal}', [App\Http\Controllers\AgentController::class, 'showStore'])->name('agent.store.view');
+
 Route::get('/signup', function () {
     return view('auth.signup');
 })->name('signup');
@@ -37,6 +40,10 @@ Route::get('/signup', function () {
 Route::get('/callback', function () {
     return view('auth.callback');
 })->name('callback');
+
+Route::get('/checkout', function () {
+    return view('checkout');
+})->name('checkout');
 
 Route::get('/admin/login', function () {
     return view('auth.admin.login');

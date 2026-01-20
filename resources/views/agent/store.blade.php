@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kuotaumroh.id - Paket Internet Umroh & Haji</title>
+    <title>{{ $agent->nama_travel ?? 'Toko Agent' }} - Kuotaumroh.id</title>
 
     <!-- Favicon -->
     <link rel="apple-touch-icon" sizes="57x57" href="{{ asset('favicon/apple-icon-57x57.png') }}">
@@ -98,12 +98,19 @@
 <body class="min-h-screen bg-background">
     <div x-data="publicOrderApp()">
 
-        <!-- Header -->
+        <!-- Header dengan Info Agent -->
         <header class="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
             <div class="container mx-auto flex h-16 items-center justify-between px-4">
-                <div class="flex items-center gap-2">
-                    <img src="{{ asset('images/kabah.png') }}" alt="Kuotaumroh.id" class="h-9 w-9 object-contain">
-                    <span class="text-xl font-semibold">Kuotaumroh.id</span>
+                <div class="flex items-center gap-3">
+                    @if($agent->logo)
+                        <img src="{{ Storage::url($agent->logo) }}" alt="{{ $agent->nama_travel }}" class="h-10 w-10 object-contain rounded-full border">
+                    @else
+                        <img src="{{ asset('images/kabah.png') }}" alt="Kuotaumroh.id" class="h-9 w-9 object-contain">
+                    @endif
+                    <div>
+                        <span class="text-lg font-semibold">{{ $agent->nama_travel ?? 'Toko Agent' }}</span>
+                        <p class="text-xs text-muted-foreground">{{ $agent->nama_pic }}</p>
+                    </div>
                 </div>
                 <a href="{{ route('login') }}"
                     class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground h-9 px-4 text-sm font-medium hover:bg-primary/90 transition-colors">
@@ -121,16 +128,21 @@
         <!-- Main Content -->
         <main class="container mx-auto py-8 px-4 max-w-6xl animate-fade-in -mt-[50px] relative z-10">
 
-            <!-- Hero Section -->
+            <!-- Hero Section dengan Info Agent -->
             <div class="text-center mb-12">
                 <h1 class="text-4xl font-bold tracking-tight mb-4">Paket Internet Umroh & Haji</h1>
                 <p class="text-lg text-muted-foreground max-w-2xl mx-auto">
-                    Dapatkan kuota internet terbaik untuk perjalanan umroh dan haji Anda. Proses cepat, harga
-                    terjangkau.
+                    Dapatkan kuota internet terbaik untuk perjalanan umroh dan haji Anda. Proses cepat, harga terjangkau.
                 </p>
+                <div class="mt-4 inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full text-sm text-primary">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Dilayani oleh: {{ $agent->nama_travel }}
+                </div>
             </div>
 
-            <!-- Order Form -->
+            <!-- Order Form (sama dengan welcome.blade.php) -->
             <div class="grid gap-6 lg:grid-cols-3">
 
                 <!-- Form Section (2/3) -->
@@ -140,8 +152,7 @@
                     <div class="rounded-lg border bg-white shadow-sm">
                         <div class="p-6 border-b">
                             <h2 class="text-xl font-semibold flex items-center gap-2">
-                                <span
-                                    class="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-bold">1</span>
+                                <span class="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-bold">1</span>
                                 Nomor HP
                             </h2>
                         </div>
@@ -157,8 +168,7 @@
                             <!-- Provider Badge -->
                             <div x-show="provider" class="flex items-center gap-2">
                                 <span class="text-sm text-muted-foreground">Provider:</span>
-                                <span
-                                    class="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary"
+                                <span class="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary"
                                     x-text="provider"></span>
                             </div>
                         </div>
@@ -169,8 +179,7 @@
                         :class="!provider && 'opacity-50 pointer-events-none'">
                         <div class="p-6 border-b">
                             <h2 class="text-xl font-semibold flex items-center gap-2">
-                                <span
-                                    class="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-bold">2</span>
+                                <span class="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-bold">2</span>
                                 Pilih Paket
                             </h2>
                         </div>
@@ -219,7 +228,7 @@
                                         </div>
                                     </div>
 
-                                    <!-- Package Cards -->
+                                    <!-- Package Cards (sama dengan welcome.blade.php) -->
                                     <div class="p-4">
                                         <template x-if="filteredPackages.length === 0">
                                             <div class="text-center py-8 text-muted-foreground">
@@ -345,8 +354,7 @@
                         :class="!selectedPackage && 'opacity-50 pointer-events-none'">
                         <div class="p-6 border-b">
                             <h2 class="text-xl font-semibold flex items-center gap-2">
-                                <span
-                                    class="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-bold">3</span>
+                                <span class="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-bold">3</span>
                                 Waktu Aktivasi
                             </h2>
                         </div>
@@ -449,7 +457,7 @@
             </div>
 
             <!-- Benefits Section -->
-            <h2 class="text-2xl font-bold text-center mb-8 mt-16">Kenapa harus membeli Kuota Umroh Haji di Kuotaumroh.id?</h2>
+            <h2 class="text-2xl font-bold text-center mb-8 mt-16">Kenapa harus membeli Kuota Umroh Haji di {{ $agent->nama_travel }}?</h2>
             <div class="mt-16 grid gap-6 md:grid-cols-3">
                 <div class="text-center">
                     <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-4">
@@ -483,128 +491,6 @@
                 </div>
             </div>
 
-            <!-- FAQ Section -->
-            <div class="mt-16 max-w-4xl mx-auto">
-                <h2 class="text-2xl font-bold text-center mb-8">Pertanyaan yang Sering Diajukan</h2>
-                <div class="space-y-4">
-                    <div class="bg-white rounded-lg shadow-sm border" x-data="{ open: false }">
-                        <button @click="open = !open" class="w-full flex justify-between items-center p-6 text-left focus:outline-none">
-                            <span class="font-semibold text-lg">Apakah semua nomor bisa membeli Kuota Umroh Haji?</span>
-                            <svg class="h-5 w-5 transform transition-transform duration-200 text-muted-foreground" :class="open ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
-                        <div x-show="open" x-collapse>
-                            <div class="px-6 pb-6 text-muted-foreground border-t pt-4">
-                                Kuota Umroh Haji hanya berlaku untuk nomor prabayar. Kecuali provider XL, Axis, Smartfren, dan Indosat.
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white rounded-lg shadow-sm border" x-data="{ open: false }">
-                        <button @click="open = !open" class="w-full flex justify-between items-center p-6 text-left focus:outline-none">
-                            <span class="font-semibold text-lg">Kenapa saya tidak bisa membeli Kuota Umroh Haji?</span>
-                            <svg class="h-5 w-5 transform transition-transform duration-200 text-muted-foreground" :class="open ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
-                        <div x-show="open" x-collapse>
-                            <div class="px-6 pb-6 text-muted-foreground border-t pt-4">
-                                <p class="mb-2">Beberapa kemungkinan penyebab:</p>
-                                <ul class="list-disc list-inside ml-2">
-                                    <li>Nomor HP yang dimasukkan salah atau sudah tidak aktif</li>
-                                    <li>Terjadi gangguan sementara pada sistem operator</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white rounded-lg shadow-sm border" x-data="{ open: false }">
-                        <button @click="open = !open" class="w-full flex justify-between items-center p-6 text-left focus:outline-none">
-                            <span class="font-semibold text-lg">Setelah pembayaran, Kuota Umroh Haji belum masuk. Apa yang harus saya lakukan?</span>
-                            <svg class="h-5 w-5 transform transition-transform duration-200 text-muted-foreground" :class="open ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
-                        <div x-show="open" x-collapse>
-                            <div class="px-6 pb-6 text-muted-foreground border-t pt-4">
-                                Mohon tunggu maksimal 90 menit setelah pembayaran terverifikasi. Jika Anda memilih Aktifkan Sesuai Jadwal, maka paket akan otomatis aktif pada tanggal dan waktu yang telah Anda tentukan. Jika paket belum aktif di luar jadwal tersebut, silakan lakukan pengecekan manual sesuai provider Anda.
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white rounded-lg shadow-sm border" x-data="{ open: false }">
-                        <button @click="open = !open" class="w-full flex justify-between items-center p-6 text-left focus:outline-none">
-                            <span class="font-semibold text-lg">Bagaimana cara cek Kuota Umroh Haji saya?</span>
-                            <svg class="h-5 w-5 transform transition-transform duration-200 text-muted-foreground" :class="open ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
-                        <div x-show="open" x-collapse>
-                            <div class="px-6 pb-6 text-muted-foreground border-t pt-4">
-                                <ul class="space-y-1">
-                                    <li><span class="font-medium text-gray-700">Telkomsel / by.U:</span> *888#</li>
-                                    <li><span class="font-medium text-gray-700">Indosat / Tri:</span> *123#</li>
-                                    <li><span class="font-medium text-gray-700">XL / AXIS:</span> *808#</li>
-                                    <li><span class="font-medium text-gray-700">Smartfren:</span> *995#</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white rounded-lg shadow-sm border" x-data="{ open: false }">
-                        <button @click="open = !open" class="w-full flex justify-between items-center p-6 text-left focus:outline-none">
-                            <span class="font-semibold text-lg">Transaksi gagal, apakah dana saya hangus?</span>
-                            <svg class="h-5 w-5 transform transition-transform duration-200 text-muted-foreground" :class="open ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
-                        <div x-show="open" x-collapse>
-                            <div class="px-6 pb-6 text-muted-foreground border-t pt-4">
-                                Tidak. Jika transaksi gagal, dana akan dikembalikan sesuai metode pembayaran yang digunakan maksimal 1x24 jam hari kerja.
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white rounded-lg shadow-sm border" x-data="{ open: false }">
-                        <button @click="open = !open" class="w-full flex justify-between items-center p-6 text-left focus:outline-none">
-                            <span class="font-semibold text-lg">Bagaimana jika Kuota Umroh Haji masih belum masuk setelah dicek?</span>
-                            <svg class="h-5 w-5 transform transition-transform duration-200 text-muted-foreground" :class="open ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
-                        <div x-show="open" x-collapse>
-                            <div class="px-6 pb-6 text-muted-foreground border-t pt-4">
-                                Silakan hubungi Customer Service Kuota Umroh melalui WhatsApp untuk bantuan lebih lanjut.
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white rounded-lg shadow-sm border" x-data="{ open: false }">
-                        <button @click="open = !open" class="w-full flex justify-between items-center p-6 text-left focus:outline-none">
-                            <span class="font-semibold text-lg">Operator apa saja yang tersedia untuk Kuota Umroh Haji?</span>
-                            <svg class="h-5 w-5 transform transition-transform duration-200 text-muted-foreground" :class="open ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
-                        <div x-show="open" x-collapse>
-                            <div class="px-6 pb-6 text-muted-foreground border-t pt-4">
-                                <p class="mb-2">Kuota Umroh Haji tersedia untuk operator berikut:</p>
-                                <ul class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                    <li>• Telkomsel</li>
-                                    <li>• Indosat</li>
-                                    <li>• XL</li>
-                                    <li>• AXIS</li>
-                                    <li>• Tri (3)</li>
-                                    <li>• Smartfren</li>
-                                    <li>• by.U</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
         </main>
 
         <!-- Footer -->
@@ -612,18 +498,24 @@
             <div class="container mx-auto px-4 py-10 grid gap-8 md:grid-cols-3">
                 <div class="space-y-3">
                     <div class="flex items-center gap-2">
-                        <img src="{{ asset('images/kabah.png') }}" alt="Kuotaumroh.id" class="h-10 w-10 object-contain">
+                        @if($agent->logo)
+                            <img src="{{ Storage::url($agent->logo) }}" alt="{{ $agent->nama_travel }}" class="h-10 w-10 object-contain rounded-full border border-white">
+                        @else
+                            <img src="{{ asset('images/kabah.png') }}" alt="Kuotaumroh.id" class="h-10 w-10 object-contain">
+                        @endif
                         <div>
-                            <p class="text-lg font-semibold">Kuotaumroh.id</p>
-                            <p class="text-sm opacity-80">Solusi kuota terbaik untuk perjalanan suci Anda.</p>
+                            <p class="text-lg font-semibold">{{ $agent->nama_travel }}</p>
+                            <p class="text-sm opacity-80">{{ $agent->nama_pic }}</p>
                         </div>
                     </div>
                 </div>
                 <div class="space-y-2">
                     <h3 class="font-semibold text-lg">Kontak</h3>
-                    <p class="text-sm opacity-90">Email: support@kuotaumroh.id</p>
-                    <p class="text-sm opacity-90">WhatsApp: +62 812-3456-7890</p>
-                    <p class="text-sm opacity-90">Jl. Harmoni No. 123, Jakarta</p>
+                    <p class="text-sm opacity-90">Email: {{ $agent->email }}</p>
+                    <p class="text-sm opacity-90">WhatsApp: {{ $agent->no_hp }}</p>
+                    @if($agent->alamat_lengkap)
+                        <p class="text-sm opacity-90">{{ $agent->alamat_lengkap }}</p>
+                    @endif
                 </div>
                 <div class="space-y-2">
                     <h3 class="font-semibold text-lg">Layanan</h3>
@@ -634,18 +526,18 @@
             </div>
             <div class="border-t border-white/20">
                 <div class="container mx-auto px-4 py-4 text-center text-sm opacity-80">
-                    © 2026 Kuotaumroh.id. All rights reserved.
+                    © 2026 {{ $agent->nama_travel }} - Powered by Kuotaumroh.id
                 </div>
             </div>
         </footer>
 
         <!-- Floating WhatsApp Button -->
-        <a href="https://wa.me/6281234567890" target="_blank"
+        <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $agent->no_hp) }}" target="_blank"
             class="fixed bottom-6 right-6 z-50 inline-flex items-center gap-2 bg-green-500 text-white px-4 py-3 rounded-full shadow-lg hover:bg-green-600 transition">
             <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M12 2.04c-5.5 0-9.96 4.46-9.96 9.96 0 1.76.46 3.47 1.34 4.99L2 22l5.12-1.35c1.46.8 3.1 1.22 4.78 1.22h.01c5.5 0 9.96-4.46 9.96-9.96S17.5 2.04 12 2.04Zm4.93 13.96c-.21.6-1.23 1.16-1.7 1.22-.44.06-1 .08-1.62-.1-.37-.12-.85-.28-1.45-.55-2.55-1.1-4.2-3.67-4.33-3.85-.12-.18-1.03-1.37-1.03-2.62 0-1.25.65-1.86.88-2.11.23-.25.51-.31.68-.31.17 0 .34 0 .49.01.16.01.37-.06.58.44.21.5.72 1.73.78 1.85.06.12.1.26.02.42-.08.16-.12.26-.23.4-.12.14-.26.31-.37.42-.12.12-.24.25-.1.5.14.25.62 1.02 1.33 1.65.92.82 1.7 1.08 1.95 1.2.25.12.39.1.53-.06.14-.16.61-.71.77-.95.16-.25.33-.2.55-.12.22.08 1.4.66 1.64.78.24.12.4.18.46.28.06.1.06.58-.15 1.18Z" />
             </svg>
-            <span class="text-sm font-semibold">Butuh bantuan?</span>
+            <span class="text-sm font-semibold">Hubungi Kami</span>
         </a>
 
         <!-- Toast Notification -->
@@ -655,38 +547,28 @@
         </div>
     </div>
 
-    <!-- Page Script -->
+    <!-- Page Script (sama dengan welcome.blade.php) -->
     <script>
         function publicOrderApp() {
             return {
-                // Phone number
                 msisdn: '',
                 provider: null,
-
-                // Packages
                 packages: [],
                 packagesLoading: true,
                 selectedPackage: null,
-
-                // Filters
                 packageSearch: '',
                 selectedDurationFilter: 'all',
                 durationFilters: [{ value: 'all', label: 'Durasi: Semua' }],
                 selectedSubTypeFilter: 'all',
                 subTypeFilters: [{ value: 'all', label: 'Jenis: Semua' }],
-
-                // Activation time
                 activationTime: 'now',
                 scheduledDate: '',
                 scheduledTime: '',
-
-                // Toast
                 toastVisible: false,
                 toastTitle: '',
                 toastMessage: '',
 
                 async init() {
-                    // Load all packages
                     try {
                         this.packages = await fetchPackages();
                         this.packagesLoading = false;
@@ -697,26 +579,21 @@
                 },
 
                 handleMsisdnInput(event) {
-                    // Ensure msisdn is always a string value, not an element reference.
                     if (event && event.target && typeof event.target.value === 'string') {
                         this.msisdn = event.target.value;
                     } else if (this.msisdn && typeof this.msisdn !== 'string' && this.msisdn.value !== undefined) {
                         this.msisdn = this.msisdn.value;
                     }
 
-                    // Validate and detect provider
                     const cleaned = String(this.msisdn || '').replace(/\D/g, '');
                     this.msisdn = cleaned;
 
                     if (validateMsisdn(cleaned)) {
                         const detectedProvider = detectProvider(cleaned);
-                        // Normalize provider name for API (Telkomsel → SIMPATI, etc.)
                         this.provider = detectedProvider ? normalizeProviderForApi(detectedProvider) : null;
-                        // Reset selected package when provider changes
                         if (this.selectedPackage && this.selectedPackage.provider !== this.provider) {
                             this.selectedPackage = null;
                         }
-                        // Regenerate filters when provider changes
                         this.generateDurationFilters();
                         this.generateSubTypeFilters();
                     } else {
@@ -773,7 +650,6 @@
                 selectPackage(pkg) {
                     this.selectedPackage = {
                         ...pkg,
-                        // Use sell price for public users
                         displayPrice: pkg.sellPrice || pkg.price
                     };
                 },
@@ -808,7 +684,6 @@
                 handleCheckout() {
                     if (!this.canCheckout) return;
 
-                    // Format schedule date if scheduled
                     let scheduleDate = null;
                     if (this.activationTime === 'scheduled' && this.scheduledDate) {
                         const date = new Date(this.scheduledDate);
@@ -819,7 +694,6 @@
                         scheduleDate = date.toISOString();
                     }
 
-                    // Prepare order data
                     const orderData = {
                         items: [{
                             msisdn: this.msisdn,
@@ -839,7 +713,6 @@
                         createdAt: new Date().toISOString(),
                     };
 
-                    // Store in localStorage and redirect to payment
                     localStorage.setItem('pendingOrder', JSON.stringify(orderData));
                     window.location.href = '{{ route('checkout') }}';
                 },
