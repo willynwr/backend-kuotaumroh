@@ -175,83 +175,61 @@
                 <div class="overflow-x-auto">
                     <table class="w-full">
                         <thead>
-                            <tr class="border-b">
-                                <th @click="sortBy('name')"
-                                    class="h-12 px-4 text-left align-middle font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
-                                    <div class="flex items-center gap-2">
-                                        <span>Nama</span>
-                                        <svg class="h-4 w-4" :class="sortColumn === 'name' ? 'text-primary' : 'text-muted-foreground/50'"
-                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                :d="sortColumn === 'name' && sortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M19 9l-7 7-7-7'" />
-                                        </svg>
-                                    </div>
-                                </th>
-                                <th @click="sortBy('email')"
-                                    class="h-12 px-4 text-left align-middle font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
-                                    <div class="flex items-center gap-2">
-                                        <span>Email</span>
-                                        <svg class="h-4 w-4" :class="sortColumn === 'email' ? 'text-primary' : 'text-muted-foreground/50'"
-                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                :d="sortColumn === 'email' && sortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M19 9l-7 7-7-7'" />
-                                        </svg>
-                                    </div>
-                                </th>
-                                <th @click="sortBy('joinDate')"
-                                    class="h-12 px-4 text-left align-middle font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
-                                    <div class="flex items-center gap-2">
-                                        <span>Tanggal Daftar</span>
-                                        <svg class="h-4 w-4"
-                                            :class="sortColumn === 'joinDate' ? 'text-primary' : 'text-muted-foreground/50'" fill="none"
-                                            stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                :d="sortColumn === 'joinDate' && sortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M19 9l-7 7-7-7'" />
-                                        </svg>
-                                    </div>
-                                </th>
-                                <th @click="sortBy('totalOrders')"
-                                    class="h-12 px-4 text-center align-middle font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
-                                    <div class="flex items-center justify-center gap-2">
-                                        <span>Total Order</span>
-                                        <svg class="h-4 w-4"
-                                            :class="sortColumn === 'totalOrders' ? 'text-primary' : 'text-muted-foreground/50'" fill="none"
-                                            stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                :d="sortColumn === 'totalOrders' && sortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M19 9l-7 7-7-7'" />
-                                        </svg>
-                                    </div>
-                                </th>
-                                <th @click="sortBy('status')"
-                                    class="h-12 px-4 text-center align-middle font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
-                                    <div class="flex items-center justify-center gap-2">
-                                        <span>Status</span>
-                                        <svg class="h-4 w-4"
-                                            :class="sortColumn === 'status' ? 'text-primary' : 'text-muted-foreground/50'" fill="none"
-                                            stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                :d="sortColumn === 'status' && sortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M19 9l-7 7-7-7'" />
-                                        </svg>
-                                    </div>
-                                </th>
+                            <tr class="border-b whitespace-nowrap">
+                                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Nama PIC</th>
+                                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Email</th>
+                                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Kategori Agent</th>
+                                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">No. HP</th>
+                                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Nama Travel</th>
+                                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Jenis Travel</th>
+                                <th class="h-12 px-4 text-right align-middle font-medium text-muted-foreground">Total Travel/Bulan</th>
+                                <th class="h-12 px-4 text-center align-middle font-medium text-muted-foreground">Logo</th>
+                                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Provinsi</th>
+                                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Kota/Kab</th>
+                                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Detail Alamat</th>
+                                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Koordinat</th>
+                                <th class="h-12 px-4 text-center align-middle font-medium text-muted-foreground">Status</th>
+                                <th class="h-12 px-4 text-center align-middle font-medium text-muted-foreground">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
                             <template x-for="agent in filteredAgents" :key="agent.id">
-                                <tr class="border-b transition-colors hover:bg-muted/50">
-                                    <td class="p-4 align-middle font-medium" x-text="agent.name"></td>
+                                <tr class="border-b transition-colors hover:bg-muted/50 whitespace-nowrap">
+                                    <td class="p-4 align-middle font-medium" x-text="agent.nama_pic"></td>
                                     <td class="p-4 align-middle text-muted-foreground" x-text="agent.email"></td>
-                                    <td class="p-4 align-middle" x-text="formatDate(agent.joinDate)"></td>
-                                    <td class="p-4 align-middle text-center" x-text="agent.totalOrders"></td>
+                                    <td class="p-4 align-middle text-muted-foreground" x-text="agent.kategori_agent || 'Host'"></td>
+                                    <td class="p-4 align-middle text-muted-foreground" x-text="agent.no_hp || '-'"></td>
+                                    <td class="p-4 align-middle text-muted-foreground" x-text="agent.nama_travel || '-'"></td>
+                                    <td class="p-4 align-middle text-muted-foreground" x-text="agent.jenis_travel || '-'"></td>
+                                    <td class="p-4 align-middle text-right" x-text="(agent.total_traveller ?? 0).toLocaleString('id-ID')"></td>
                                     <td class="p-4 align-middle text-center">
-                                        <span class="badge" :class="agent.status === 'active' ? 'badge-success' : 'badge-secondary'"
-                                            x-text="agent.status === 'active' ? 'Aktif' : 'Tidak Aktif'"></span>
+                                        <button x-show="agent.logo" @click="openFileModal(agent.logo)" class="text-sm text-primary hover:underline">Lihat</button>
+                                        <span x-show="!agent.logo" class="text-muted-foreground">-</span>
+                                    </td>
+                                    <td class="p-4 align-middle text-muted-foreground" x-text="agent.provinsi || '-'"></td>
+                                    <td class="p-4 align-middle text-muted-foreground" x-text="agent.kabupaten_kota || '-'"></td>
+                                    <td class="p-4 align-middle text-muted-foreground" x-text="agent.alamat_lengkap || '-'"></td>
+                                    <td class="p-4 align-middle text-muted-foreground">
+                                        <template x-if="agent.lat && agent.long">
+                                            <a :href="`https://www.google.com/maps?q=${agent.lat},${agent.long}`" target="_blank" class="text-primary hover:underline" x-text="`${agent.lat}, ${agent.long}`"></a>
+                                        </template>
+                                        <span x-show="!agent.lat || !agent.long" class="text-muted-foreground">-</span>
+                                    </td>
+                                    <td class="p-4 align-middle text-center">
+                                        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium" :class="{
+                                            'bg-green-100 text-green-800': agent.status === 'approve',
+                                            'bg-red-100 text-red-800': agent.status === 'reject',
+                                            'bg-yellow-100 text-yellow-800': agent.status === 'pending'
+                                        }" x-text="agent.status === 'approve' ? 'Approve' : (agent.status === 'reject' ? 'Reject' : 'Pending')"></span>
+                                    </td>
+                                    <td class="p-4 align-middle text-center">
+                                        <button @click="openAgentDetail(agent)" class="text-sm text-primary hover:underline">Detail</button>
                                     </td>
                                 </tr>
                             </template>
                             <template x-if="filteredAgents.length === 0">
                                 <tr>
-                                    <td colspan="5" class="p-8 text-center text-muted-foreground">Tidak ada agent ditemukan</td>
+                                    <td colspan="14" class="p-8 text-center text-muted-foreground">Tidak ada agent ditemukan</td>
                                 </tr>
                             </template>
                         </tbody>
@@ -287,7 +265,8 @@
                 </div>
 
                 <div class="px-6 py-6 overflow-y-auto flex-1">
-                    <form id="addAgentForm" @submit.prevent="submitAddAgent()" class="space-y-6">
+                    <form id="addAgentForm" @submit.prevent="showConfirmModal()" class="space-y-6">
+                        @csrf
                         <div class="grid gap-6 lg:grid-cols-2">
                             <div class="rounded-lg border bg-white shadow-sm p-6 space-y-4">
                                 <h2 class="text-lg font-semibold border-b pb-2 flex items-center gap-2">
@@ -604,6 +583,80 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal Konfirmasi -->
+    <div x-show="confirmModalOpen" x-cloak class="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4"
+        @click.self="confirmModalOpen = false">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-md">
+            <div class="flex items-center justify-between border-b px-6 py-4">
+                <h3 class="text-lg font-semibold">Konfirmasi Data Agent</h3>
+                <button @click="confirmModalOpen = false" class="h-9 w-9 inline-flex items-center justify-center rounded-md hover:bg-muted transition-colors">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="px-6 py-4 space-y-3 max-h-[60vh] overflow-y-auto">
+                <p class="text-sm text-muted-foreground mb-4">Pastikan data berikut sudah benar sebelum menyimpan:</p>
+                
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between py-2 border-b">
+                        <span class="font-medium text-muted-foreground">Email:</span>
+                        <span class="font-semibold" x-text="addFormData.email"></span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b">
+                        <span class="font-medium text-muted-foreground">Nama PIC:</span>
+                        <span class="font-semibold" x-text="addFormData.full_name"></span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b">
+                        <span class="font-medium text-muted-foreground">No. HP:</span>
+                        <span class="font-semibold" x-text="'+62' + addFormData.phone"></span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b" x-show="addFormData.travel_name">
+                        <span class="font-medium text-muted-foreground">Nama Travel:</span>
+                        <span class="font-semibold" x-text="addFormData.travel_name || '-'"></span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b" x-show="addFormData.travel_type">
+                        <span class="font-medium text-muted-foreground">Jenis Travel:</span>
+                        <span class="font-semibold" x-text="addFormData.travel_type || '-'"></span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b">
+                        <span class="font-medium text-muted-foreground">Provinsi:</span>
+                        <span class="font-semibold" x-text="addFormData.province"></span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b">
+                        <span class="font-medium text-muted-foreground">Kota/Kab:</span>
+                        <span class="font-semibold" x-text="addFormData.city"></span>
+                    </div>
+                    <div class="py-2 border-b">
+                        <span class="font-medium text-muted-foreground">Alamat:</span>
+                        <p class="mt-1 text-foreground" x-text="addFormData.address"></p>
+                    </div>
+                    <div class="flex justify-between py-2">
+                        <span class="font-medium text-muted-foreground">Kategori Agent:</span>
+                        <span class="font-semibold text-primary">Host</span>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center justify-end gap-2 border-t px-6 py-4">
+                <button type="button" @click="confirmModalOpen = false"
+                    class="inline-flex items-center justify-center rounded-md border bg-transparent hover:bg-muted h-10 px-4 text-sm font-medium transition-colors">
+                    Batal
+                </button>
+                <button type="button" @click="submitAddAgent()" :disabled="isSubmitting"
+                    class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 text-sm font-medium transition-colors disabled:opacity-50">
+                    <span x-show="!isSubmitting">Ya, Simpan</span>
+                    <span x-show="isSubmitting" class="flex items-center gap-2">
+                        <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Menyimpan...
+                    </span>
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection
 
@@ -620,7 +673,7 @@
             dateTo: '',
             sortColumn: 'joinDate',
             sortDirection: 'desc',
-            agents: [],
+            agents: {!! json_encode($agents) !!},
             stats: {
                 total: 0,
                 activeThisMonth: 0,
@@ -634,6 +687,7 @@
 
             freelanceId: null,
             addModalOpen: false,
+            confirmModalOpen: false,
             isSubmitting: false,
             addFormData: {
                 email: '',
@@ -675,9 +729,16 @@
                 }, 3000);
             },
 
-            openAddModal() {
+            async openAddModal() {
+                console.log('Opening add modal, current provinces count:', this.provinces.length);
                 this.resetAddForm();
                 this.addErrors = {};
+                // Ensure provinces are loaded
+                if (this.provinces.length === 0) {
+                    console.log('Provinces empty, loading...');
+                    await this.loadProvinces();
+                    console.log('Provinces loaded:', this.provinces.length);
+                }
                 this.addModalOpen = true;
             },
 
@@ -752,16 +813,17 @@
 
             async loadProvinces() {
                 try {
-                    const response = await fetch("{{ asset('wilayah/provinces.json') }}");
+                    const response = await fetch('/wilayah/provinces.json');
                     if (!response.ok) throw new Error('Gagal memuat provinsi');
                     const data = await response.json();
                     if (data && data.data) {
                         this.provinces = data.data.map(p => p.name).sort();
                         this.provinceCodes = new Map();
                         data.data.forEach(p => this.provinceCodes.set(p.name, p.code));
+                        console.log('Loaded', this.provinces.length, 'provinces');
                     }
                 } catch (e) {
-                    console.error(e);
+                    console.error('Error loading provinces:', e);
                     this.showToast('Error', 'Gagal memuat data provinsi');
                 }
             },
@@ -781,10 +843,12 @@
                         this.cities = data.data.map(c => c.name).sort();
                         this.cityCodes = new Map();
                         data.data.forEach(c => this.cityCodes.set(c.name, c.code));
+                        console.log('Loaded', this.cities.length, 'cities for province', provinceCode);
                     }
                 } catch (e) {
-                    console.error(e);
+                    console.error('Error loading cities:', e);
                     this.showToast('Error', 'Gagal memuat data kota/kabupaten');
+                    this.cities = [];
                 }
             },
 
@@ -1100,14 +1164,11 @@
                 this.stats.pointsEarned = 0;
             },
 
-            async submitAddAgent() {
+            showConfirmModal() {
+                // Validasi
                 this.addErrors = {};
-                if (!this.freelanceId) {
-                    this.showToast('Error', 'Freelance tidak ditemukan');
-                    return;
-                }
-
                 let hasError = false;
+                
                 if (!this.addFormData.email) {
                     this.addErrors.email = 'Email wajib diisi';
                     hasError = true;
@@ -1135,54 +1196,73 @@
 
                 if (hasError) return;
 
+                // Tampilkan modal konfirmasi
+                this.confirmModalOpen = true;
+            },
+
+            async submitAddAgent() {
+                this.confirmModalOpen = false;
+
                 this.isSubmitting = true;
                 try {
-                    const buildFormData = () => {
-                        const fd = new FormData();
-                        fd.append('email', this.addFormData.email);
-                        fd.append('kategori_agent', 'Host');
-                        fd.append(this.getDownlineForeignKey(), String(this.freelanceId));
-                        fd.append('nama_pic', this.addFormData.full_name);
+                    // Build FormData
+                    const formData = new FormData();
+                    formData.append('_token', document.querySelector('input[name="_token"]').value);
+                    formData.append('email', this.addFormData.email);
+                    formData.append('nama_pic', this.addFormData.full_name);
 
-                        let phone = String(this.addFormData.phone);
-                        if (phone.startsWith('0')) phone = phone.substring(1);
-                        if (phone.startsWith('62')) phone = phone.substring(2);
-                        fd.append('no_hp', '62' + phone);
+                    // Format phone number
+                    let phone = String(this.addFormData.phone);
+                    if (phone.startsWith('0')) phone = phone.substring(1);
+                    if (phone.startsWith('62')) phone = phone.substring(2);
+                    formData.append('no_hp', '62' + phone);
 
-                        if (this.addFormData.travel_name) fd.append('nama_travel', this.addFormData.travel_name);
-                        if (this.addFormData.travel_type) fd.append('jenis_travel', this.addFormData.travel_type);
-                        if (this.addFormData.travel_member !== '' && this.addFormData.travel_member !== null) fd.append('total_traveller', String(this.addFormData.travel_member));
-
-                        fd.append('provinsi', this.addFormData.province);
-                        fd.append('kabupaten_kota', this.addFormData.city);
-                        fd.append('alamat_lengkap', this.addFormData.address);
-
-                        if (this.addFormData.latitude) fd.append('lat', String(this.addFormData.latitude));
-                        if (this.addFormData.longitude) fd.append('long', String(this.addFormData.longitude));
-                        if (this.addFormData.latitude && this.addFormData.longitude) {
-                            fd.append('link_gmaps', `https://www.google.com/maps?q=${this.addFormData.latitude},${this.addFormData.longitude}`);
-                        }
-
-                        if (this.addLogoFile) fd.append('logo', this.addLogoFile);
-                        return fd;
-                    };
-
-                    const collection = this.getCollectionName();
-                    let res = await fetch(apiUrl(`${collection}/${this.freelanceId}/agents`), {
-                        method: 'POST',
-                        body: buildFormData()
-                    });
-
-                    if (res.status === 404 || res.status === 405) {
-                        res = await fetch(apiUrl('agents'), {
-                            method: 'POST',
-                            body: buildFormData()
-                        });
+                    // Optional fields
+                    if (this.addFormData.travel_name) {
+                        formData.append('nama_travel', this.addFormData.travel_name);
+                    }
+                    if (this.addFormData.travel_type) {
+                        formData.append('jenis_travel', this.addFormData.travel_type);
+                    }
+                    if (this.addFormData.travel_member !== '' && this.addFormData.travel_member !== null) {
+                        formData.append('total_traveller', String(this.addFormData.travel_member));
                     }
 
-                    const json = await res.json().catch(() => ({}));
-                    if (!res.ok) {
+                    // Location fields
+                    formData.append('provinsi', this.addFormData.province);
+                    formData.append('kabupaten_kota', this.addFormData.city);
+                    formData.append('alamat_lengkap', this.addFormData.address);
+
+                    if (this.addFormData.latitude) {
+                        formData.append('lat', String(this.addFormData.latitude));
+                    }
+                    if (this.addFormData.longitude) {
+                        formData.append('long', String(this.addFormData.longitude));
+                    }
+                    if (this.addFormData.latitude && this.addFormData.longitude) {
+                        formData.append('link_gmaps', `https://www.google.com/maps?q=${this.addFormData.latitude},${this.addFormData.longitude}`);
+                    }
+
+                    // Logo file
+                    if (this.addLogoFile) {
+                        formData.append('logo', this.addLogoFile);
+                    }
+
+                    // Submit to Laravel route
+                    const response = await fetch('{{ route("dash.downlines.store-agent", ["link_referral" => $linkReferral]) }}', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    const json = await response.json();
+
+                    if (!response.ok) {
                         const msg = json?.message || 'Gagal menambahkan agent';
+                        
+                        // Handle validation errors
                         if (json?.errors && typeof json.errors === 'object') {
                             const mapped = {};
                             if (json.errors.email) mapped.email = json.errors.email[0];
@@ -1194,6 +1274,7 @@
                             if (json.errors.logo) mapped.logo = json.errors.logo[0];
                             this.addErrors = mapped;
                         }
+                        
                         this.showToast('Error', msg);
                         this.isSubmitting = false;
                         return;
@@ -1202,24 +1283,33 @@
                     this.showToast('Berhasil', 'Agent berhasil ditambahkan');
                     this.closeAddModal();
                     this.resetAddForm();
-                    await this.loadAgents();
+                    
+                    // Reload page to show new agent
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                    
                 } catch (e) {
-                    console.error(e);
-                    this.showToast('Error', 'Gagal menambahkan agent');
+                    console.error('Error submitting agent:', e);
+                    this.showToast('Error', 'Gagal menambahkan agent. Silakan coba lagi.');
                 } finally {
                     this.isSubmitting = false;
                 }
             },
 
             get filteredAgents() {
+                if (!Array.isArray(this.agents)) return [];
+                
                 let filtered = this.agents.filter(a => {
-                    const matchSearch = !this.search || a.name.toLowerCase().includes(this.search.toLowerCase()) || a.email.toLowerCase().includes(this.search.toLowerCase());
+                    const matchSearch = !this.search || 
+                        (a.nama_pic && a.nama_pic.toLowerCase().includes(this.search.toLowerCase())) || 
+                        (a.email && a.email.toLowerCase().includes(this.search.toLowerCase()));
                     const matchStatus = this.statusFilter === 'all' || a.status === this.statusFilter;
 
                     // Date range filter
                     let matchDate = true;
                     if (this.dateFrom || this.dateTo) {
-                        const joinDate = new Date(a.joinDate);
+                        const joinDate = new Date(a.created_at);
                         if (this.dateFrom) {
                             matchDate = matchDate && joinDate >= new Date(this.dateFrom);
                         }
@@ -1231,32 +1321,7 @@
                     return matchSearch && matchStatus && matchDate;
                 });
 
-                // Sort
-                return filtered.sort((a, b) => {
-                    let aVal = a[this.sortColumn];
-                    let bVal = b[this.sortColumn];
-
-                    // Handle date sorting
-                    if (this.sortColumn === 'joinDate') {
-                        aVal = new Date(aVal);
-                        bVal = new Date(bVal);
-                    }
-
-                    // Handle number sorting
-                    if (typeof aVal === 'number' && typeof bVal === 'number') {
-                        return this.sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
-                    }
-
-                    // Handle string sorting
-                    aVal = String(aVal).toLowerCase();
-                    bVal = String(bVal).toLowerCase();
-
-                    if (this.sortDirection === 'asc') {
-                        return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
-                    } else {
-                        return aVal > bVal ? -1 : aVal < bVal ? 1 : 0;
-                    }
-                });
+                return filtered;
             },
 
             sortBy(column) {
@@ -1291,6 +1356,17 @@
                     month: 'short',
                     year: 'numeric'
                 });
+            },
+
+            openFileModal(fileUrl) {
+                if (!fileUrl) return;
+                window.open(fileUrl, '_blank');
+            },
+
+            openAgentDetail(agent) {
+                // TODO: Implement detail modal or navigate to detail page
+                console.log('Opening detail for agent:', agent);
+                this.showToast('Info', 'Detail agent: ' + agent.name);
             },
 
             init() {
@@ -1330,18 +1406,30 @@
 
                 (async () => {
                     await this.loadProvinces();
-                    this.freelanceId = await this.resolveFreelanceId();
-                    if (!this.freelanceId) {
-                        this.showToast('Error', 'Freelance tidak ditemukan');
-                        return;
-                    }
-                    try {
-                        await this.loadAgents();
-                    } catch (e) {
-                        console.error(e);
-                        this.showToast('Error', 'Gagal memuat daftar agent');
+                    
+                    // Hitung stats langsung dari agents
+                    if (Array.isArray(this.agents)) {
+                        const now = new Date();
+                        this.stats.total = this.agents.length;
+                        this.stats.activeThisMonth = this.agents.filter(a => {
+                            const createdAt = new Date(a.created_at);
+                            return a.status === 'approve' && 
+                                   createdAt.getFullYear() === now.getFullYear() && 
+                                   createdAt.getMonth() === now.getMonth();
+                        }).length;
                     }
                 })();
+            },
+
+            openFileModal(fileUrl) {
+                if (!fileUrl) return;
+                window.open(fileUrl, '_blank');
+            },
+
+            openAgentDetail(agent) {
+                // TODO: Implement detail modal or navigate to detail page
+                console.log('Opening detail for agent:', agent);
+                this.showToast('Info', 'Detail agent: ' + agent.name);
             }
         }
     }
