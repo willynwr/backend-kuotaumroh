@@ -316,6 +316,15 @@ class DashboardController extends Controller
             abort(404, 'Dashboard tidak ditemukan atau tidak aktif');
         }
 
+        // Debug: Log agents data
+        \Log::info('Downlines Page - User Type: ' . $data['portalType']);
+        \Log::info('Downlines Page - User ID: ' . $data['user']->id);
+        \Log::info('Downlines Page - Agents Count: ' . $data['user']->agents->count());
+        
+        if ($data['user']->agents->count() > 0) {
+            \Log::info('Downlines Page - First Agent:', $data['user']->agents->first()->toArray());
+        }
+
         return view($data['viewPath'] . '.downlines', [
             'user' => $data['user'],
             'linkReferral' => $linkReferral,
@@ -601,5 +610,101 @@ class DashboardController extends Controller
                 'newAgentsThisMonth' => $newAgentsThisMonth,
             ]
         ]);
+    }
+
+    /**
+     * Store new agent from downlines page
+     * Route: POST /dash/{link_referral}/downlines/agent
+     */
+    public function storeDownlineAgent(Request $request, $linkReferral)
+    {
+        // Validate request
+        $validated = $request->validate([
+            'email' => 'required|email|unique:agents,email',
+            'nama_pic' => 'required|string|max:255',
+            'no_hp' => 'required|string|max:20',
+            'provinsi' => 'required|string|max:255',
+            'kabupaten_kota' => 'required|string|max:255',
+            'alamat_lengkap' => 'required|string',
+            'nama_travel' => 'nullable|string|max:255',
+            'jenis_travel' => 'nullable|string|max:255',
+            'total_traveller' => 'nullable|integer',
+            'lat' => 'nullable|numeric',
+            'long' => 'nullable|numeric',
+            'link_gmaps' => 'nullable|string',
+            'logo' => 'nullable|image|mimes:png,jpg,jpeg,gif|max:2048',
+        ]);
+
+        // Cari affiliate atau freelance berdasarkan link_referral
+        $affiliate = Affiliate::where('link_referral', $linkReferral)
+            ->where('is_active', true)
+            ->first();
+
+        $freelance = null;
+        if (!$affiliate) {
+            $freelance = Freelance::where('link_referral', $linkReferral)
+                ->where('is_active', true)
+                ->first();
+        }
+
+        // Jika tidak ditemukan affiliate maupun freelance
+        if (!$affiliate && !$freelance) {
+            return response()->json([
+                'message' => 'Affiliate atau Freelance tidak ditemukan'
+            ], 404);
+        }
+
+        // Siapkan data agent
+        $agentData = [
+            'email' => $validated['email'],
+            'nama_pic' => $validated['nama_pic'],
+            'no_hp' => $validated['no_hp'],
+            'provinsi' => $validated['provinsi'],
+            'kabupaten_kota' => $validated['kabupaten_kota'],
+            'alamat_lengkap' => $validated['alamat_lengkap'],
+            'kategori_agent' => 'Host', // Otomatis set ke Host
+            'status' => 'pending', // Status pending, perlu approval
+        ];
+
+        // Set affiliate_id atau freelance_id
+        if ($affiliate) {
+            $agentData['affiliate_id'] = $affiliate->id;
+        } else {
+            $agentData['freelance_id'] = $freelance->id;
+        }
+
+        // Optional fields
+        if (!empty($validated['nama_travel'])) {
+            $agentData['nama_travel'] = $validated['nama_travel'];
+        }
+        if (!empty($validated['jenis_travel'])) {
+            $agentData['jenis_travel'] = $validated['jenis_travel'];
+        }
+        if (isset($validated['total_traveller'])) {
+            $agentData['total_traveller'] = $validated['total_traveller'];
+        }
+        if (!empty($validated['lat'])) {
+            $agentData['lat'] = $validated['lat'];
+        }
+        if (!empty($validated['long'])) {
+            $agentData['long'] = $validated['long'];
+        }
+        if (!empty($validated['link_gmaps'])) {
+            $agentData['link_gmaps'] = $validated['link_gmaps'];
+        }
+
+        // Handle logo upload
+        if ($request->hasFile('logo')) {
+            $logoPath = $request->file('logo')->store('agents/logos', 'public');
+            $agentData['logo'] = $logoPath;
+        }
+
+        // Create agent
+        $agent = Agent::create($agentData);
+
+        return response()->json([
+            'message' => 'Agent berhasil ditambahkan',
+            'agent' => $agent
+        ], 201);
     }
 }

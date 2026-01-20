@@ -52,6 +52,7 @@ Route::get('/admin/login', function () {
 Route::prefix('dash')->name('dash.')->middleware('web')->group(function () {
     Route::get('/{link_referral}', [DashboardController::class, 'show'])->name('show');
     Route::get('/{link_referral}/downlines', [DashboardController::class, 'downlines'])->name('downlines');
+    Route::post('/{link_referral}/downlines/agent', [DashboardController::class, 'storeDownlineAgent'])->name('downlines.store-agent');
     Route::get('/{link_referral}/rewards', [DashboardController::class, 'rewards'])->name('rewards');
     Route::get('/{link_referral}/points-history', [DashboardController::class, 'pointsHistory'])->name('points-history');
     Route::get('/{link_referral}/profile', [DashboardController::class, 'profile'])->name('profile');
