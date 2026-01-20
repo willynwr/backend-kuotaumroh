@@ -100,20 +100,21 @@
             <select x-model="statusFilter" class="h-10 rounded-md border border-input bg-background px-3 text-sm">
               <option value="all">Semua Status</option>
               <option value="active">Aktif</option>
+              <option value="pending">Pending</option>
               <option value="reject">Ditolak</option>
             </select>
           </div>
         </div>
 
         <div class="mb-6 flex gap-2 border-b">
-          <button @click="roleFilter = 'affiliate'; currentPage = 1" class="px-4 py-2 text-sm font-medium border-b-2 transition-colors" :class="roleFilter === 'affiliate' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'">Affiliate</button>
-          <button @click="roleFilter = 'agent'; currentPage = 1" class="px-4 py-2 text-sm font-medium border-b-2 transition-colors" :class="roleFilter === 'agent' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'">Travel Agent</button>
-          <button @click="roleFilter = 'freelance'; currentPage = 1" class="px-4 py-2 text-sm font-medium border-b-2 transition-colors" :class="roleFilter === 'freelance' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'">Freelance</button>
+          <button @click="roleFilter = 'affiliate'; statusFilter = 'all'; search = ''; currentPage = 1" class="px-4 py-2 text-sm font-medium border-b-2 transition-colors" :class="roleFilter === 'affiliate' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'">Affiliate</button>
+          <button @click="roleFilter = 'agent'; statusFilter = 'all'; search = ''; currentPage = 1" class="px-4 py-2 text-sm font-medium border-b-2 transition-colors" :class="roleFilter === 'agent' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'">Travel Agent</button>
+          <button @click="roleFilter = 'freelance'; statusFilter = 'all'; search = ''; currentPage = 1" class="px-4 py-2 text-sm font-medium border-b-2 transition-colors" :class="roleFilter === 'freelance' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'">Freelance</button>
         </div>
 
         <!-- Table -->
         <div class="overflow-x-auto">
-          <table class="w-full">
+          <table x-show="roleFilter !== 'agent'" x-cloak class="w-full">
             <thead>
               <tr class="border-b whitespace-nowrap">
                 <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Nama</th>
@@ -143,7 +144,7 @@
                   </td>
                   <td class="p-4 align-middle text-center">
                     <div class="flex items-center justify-center gap-2">
-                      <button @click="viewUser(user)" class="text-sm text-primary hover:underline">Detail</button>
+                      <button @click="openUserDetail(user)" class="text-sm text-primary hover:underline">Detail</button>
                       <button x-show="user.status !== 'reject'" @click="toggleBan(user)" class="text-sm text-destructive hover:underline" x-text="user.status === 'active' ? 'Ban' : 'Aktifkan'"></button>
                     </div>
                   </td>
@@ -151,6 +152,79 @@
               </template>
               <tr x-show="paginatedUsers.length === 0">
                 <td colspan="6" class="p-8 text-center text-muted-foreground">Tidak ada data user</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <table x-show="roleFilter === 'agent'" x-cloak class="w-full">
+            <thead>
+              <tr class="border-b whitespace-nowrap">
+                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Nama PIC</th>
+                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Email</th>
+                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Kategori Agent</th>
+                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">No. HP</th>
+                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Nama Travel</th>
+                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Jenis Travel</th>
+                <th class="h-12 px-4 text-right align-middle font-medium text-muted-foreground">Total Travel/Bulan</th>
+                <th class="h-12 px-4 text-center align-middle font-medium text-muted-foreground">Logo</th>
+                <th class="h-12 px-4 text-center align-middle font-medium text-muted-foreground">Surat PPIU</th>
+                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Provinsi</th>
+                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Kota/Kab</th>
+                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Detail Alamat</th>
+                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Koordinat</th>
+                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Link Referral</th>
+                <th class="h-12 px-4 text-center align-middle font-medium text-muted-foreground">Status</th>
+                <th class="h-12 px-4 text-center align-middle font-medium text-muted-foreground">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template x-for="user in paginatedUsers" :key="user.id">
+                <tr class="border-b transition-colors hover:bg-muted/50 whitespace-nowrap">
+                  <td class="p-4 align-middle font-medium" x-text="user.name"></td>
+                  <td class="p-4 align-middle text-muted-foreground" x-text="user.email"></td>
+                  <td class="p-4 align-middle text-muted-foreground" x-text="user.agent_category || '-'"> </td>
+                  <td class="p-4 align-middle text-muted-foreground" x-text="user.phone || '-'"> </td>
+                  <td class="p-4 align-middle text-muted-foreground" x-text="user.travel_name || '-'"> </td>
+                  <td class="p-4 align-middle text-muted-foreground" x-text="user.travel_type || '-'"> </td>
+                  <td class="p-4 align-middle text-right" x-text="(user.monthly_travellers ?? 0).toLocaleString('id-ID')"></td>
+                  <td class="p-4 align-middle text-center">
+                    <button x-show="user.logo" @click="openFileModal(user.logo)" class="text-sm text-primary hover:underline">Lihat</button>
+                    <span x-show="!user.logo" class="text-muted-foreground">-</span>
+                  </td>
+                  <td class="p-4 align-middle text-center">
+                    <button x-show="user.ppiu" @click="openFileModal(user.ppiu)" class="text-sm text-primary hover:underline">Lihat</button>
+                    <span x-show="!user.ppiu" class="text-muted-foreground">-</span>
+                  </td>
+                  <td class="p-4 align-middle text-muted-foreground" x-text="user.province || '-'"> </td>
+                  <td class="p-4 align-middle text-muted-foreground" x-text="user.city || '-'"> </td>
+                  <td class="p-4 align-middle text-muted-foreground" x-text="user.address || '-'"> </td>
+                  <td class="p-4 align-middle text-muted-foreground">
+                    <template x-if="user.latitude && user.longitude">
+                      <a :href="`https://www.google.com/maps?q=${user.latitude},${user.longitude}`" target="_blank" class="text-primary hover:underline" x-text="`${user.latitude}, ${user.longitude}`"></a>
+                    </template>
+                    <span x-show="!user.latitude || !user.longitude" class="text-muted-foreground">-</span>
+                  </td>
+                  <td class="p-4 align-middle text-sm">
+                    <a x-show="user.referral_code" :href="getReferralLink(user)" target="_blank" x-text="user.referral_code" class="text-primary hover:underline"></a>
+                    <span x-show="!user.referral_code" class="text-muted-foreground">-</span>
+                  </td>
+                  <td class="p-4 align-middle text-center">
+                    <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium" :class="{
+                      'bg-green-100 text-green-800': user.status === 'active',
+                      'bg-red-100 text-red-800': user.status === 'reject',
+                      'bg-yellow-100 text-yellow-800': user.status === 'pending'
+                    }" x-text="user.status === 'active' ? 'Approve' : (user.status === 'reject' ? 'Reject' : 'Pending')"></span>
+                  </td>
+                  <td class="p-4 align-middle text-center">
+                    <div class="flex items-center justify-center gap-2">
+                      <button @click="openUserDetail(user)" class="text-sm text-primary hover:underline">Detail</button>
+                      <button x-show="user.status !== 'reject'" @click="toggleBan(user)" class="text-sm text-destructive hover:underline" x-text="user.status === 'active' ? 'Ban' : 'Aktifkan'"></button>
+                    </div>
+                  </td>
+                </tr>
+              </template>
+              <tr x-show="paginatedUsers.length === 0">
+                <td colspan="16" class="p-8 text-center text-muted-foreground">Tidak ada data user</td>
               </tr>
             </tbody>
           </table>
@@ -173,6 +247,128 @@
       </div>
     </div>
   </main>
+
+  <div x-show="fileModalOpen" x-cloak class="fixed inset-0 z-[70] flex items-center justify-center"
+    x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
+    x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
+    x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+    <div class="absolute inset-0 bg-black/40" @click="closeFileModal()"></div>
+    <div class="relative z-10 w-full max-w-5xl rounded-lg bg-white shadow-lg p-4 max-h-[90vh] overflow-hidden"
+      x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform scale-95"
+      x-transition:enter-end="opacity-100 transform scale-100" x-transition:leave="transition ease-in duration-200"
+      x-transition:leave-start="opacity-100 transform scale-100" x-transition:leave-end="opacity-0 transform scale-95">
+      <div class="flex items-center justify-between gap-4 pb-3 border-b">
+        <div class="font-semibold text-slate-900">Preview File</div>
+        <div class="flex items-center gap-3">
+          <a :href="fileModalSrc" target="_blank" class="text-sm text-primary hover:underline">Buka tab baru</a>
+          <button @click="closeFileModal()" class="h-9 px-4 rounded-md border text-sm font-medium text-slate-700 hover:bg-muted transition-colors">Tutup</button>
+        </div>
+      </div>
+      <div class="mt-4 h-[75vh] overflow-auto">
+        <template x-if="fileModalType === 'pdf'">
+          <iframe :src="fileModalSrc" class="w-full h-[75vh]" frameborder="0"></iframe>
+        </template>
+        <template x-if="fileModalType === 'image'">
+          <img :src="fileModalSrc" class="max-w-full h-auto mx-auto" alt="Preview">
+        </template>
+      </div>
+    </div>
+  </div>
+
+  <div x-show="userDetailModalOpen" x-cloak class="fixed inset-0 z-[65] flex items-center justify-center"
+    x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
+    x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
+    x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+    <div class="absolute inset-0 bg-black/40" @click="closeUserDetail()"></div>
+    <div class="relative z-10 w-full max-w-3xl rounded-lg bg-white shadow-lg p-6 max-h-[90vh] overflow-y-auto"
+      x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform scale-95"
+      x-transition:enter-end="opacity-100 transform scale-100" x-transition:leave="transition ease-in duration-200"
+      x-transition:leave-start="opacity-100 transform scale-100" x-transition:leave-end="opacity-0 transform scale-95">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h3 class="text-lg font-semibold text-slate-900">Detail User</h3>
+          <p class="mt-1 text-sm text-muted-foreground" x-text="selectedUser ? (selectedUser.role.toUpperCase() + ' • ' + selectedUser.name) : ''"></p>
+        </div>
+        <button @click="closeUserDetail()" class="h-9 px-4 rounded-md border text-sm font-medium text-slate-700 hover:bg-muted transition-colors">Tutup</button>
+      </div>
+
+      <div class="mt-6 space-y-4" x-show="selectedUser">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <div class="text-xs text-muted-foreground">Email</div>
+            <div class="text-sm font-medium" x-text="selectedUser?.email || '-'"> </div>
+          </div>
+          <div>
+            <div class="text-xs text-muted-foreground">No. HP/WA</div>
+            <div class="text-sm font-medium" x-text="selectedUser?.phone || '-'"> </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <div class="text-xs text-muted-foreground">Provinsi</div>
+            <div class="text-sm font-medium" x-text="selectedUser?.province || '-'"> </div>
+          </div>
+          <div>
+            <div class="text-xs text-muted-foreground">Kota/Kab</div>
+            <div class="text-sm font-medium" x-text="selectedUser?.city || '-'"> </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="text-xs text-muted-foreground">Alamat</div>
+          <div class="text-sm font-medium" x-text="selectedUser?.address || '-'"> </div>
+        </div>
+
+        <template x-if="selectedUser?.role === 'agent'">
+          <div class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <div class="text-xs text-muted-foreground">Kategori Agent</div>
+                <div class="text-sm font-medium" x-text="selectedUser?.agent_category || '-'"> </div>
+              </div>
+              <div>
+                <div class="text-xs text-muted-foreground">Total Travel/Bulan</div>
+                <div class="text-sm font-medium" x-text="(selectedUser?.monthly_travellers ?? 0).toLocaleString('id-ID')"></div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <div class="text-xs text-muted-foreground">Nama Travel</div>
+                <div class="text-sm font-medium" x-text="selectedUser?.travel_name || '-'"> </div>
+              </div>
+              <div>
+                <div class="text-xs text-muted-foreground">Jenis Travel</div>
+                <div class="text-sm font-medium" x-text="selectedUser?.travel_type || '-'"> </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="text-xs text-muted-foreground">Koordinat</div>
+              <template x-if="selectedUser?.latitude && selectedUser?.longitude">
+                <a :href="`https://www.google.com/maps?q=${selectedUser.latitude},${selectedUser.longitude}`" target="_blank" class="text-sm text-primary hover:underline" x-text="`${selectedUser.latitude}, ${selectedUser.longitude}`"></a>
+              </template>
+              <div x-show="!selectedUser?.latitude || !selectedUser?.longitude" class="text-sm text-muted-foreground">-</div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <div class="text-xs text-muted-foreground">Logo</div>
+                <button x-show="selectedUser?.logo" @click="openFileModal(selectedUser.logo)" class="text-sm text-primary hover:underline">Lihat Logo</button>
+                <div x-show="!selectedUser?.logo" class="text-sm text-muted-foreground">-</div>
+              </div>
+              <div>
+                <div class="text-xs text-muted-foreground">Surat PPIU</div>
+                <button x-show="selectedUser?.ppiu" @click="openFileModal(selectedUser.ppiu)" class="text-sm text-primary hover:underline">Lihat Surat PPIU</button>
+                <div x-show="!selectedUser?.ppiu" class="text-sm text-muted-foreground">-</div>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+  </div>
 
   @include('partials.form-addaffiliate')
   @include('partials.form-addfreelance')
@@ -204,6 +400,11 @@
       addAffiliateModalOpen: false,
       addFreelanceModalOpen: false,
       addTravelAgentModalOpen: false,
+      userDetailModalOpen: false,
+      selectedUser: null,
+      fileModalOpen: false,
+      fileModalType: 'image',
+      fileModalSrc: '',
       confirmAddModalOpen: false,
       confirmAddFreelanceModalOpen: false,
       confirmAddTravelAgentModalOpen: false,
@@ -250,6 +451,38 @@
         this.toastMessage = message;
         this.toastVisible = true;
         setTimeout(() => { this.toastVisible = false; }, 3000);
+      },
+
+      buildStorageUrl(path) {
+        if (!path) return '';
+        if (String(path).startsWith('http')) return String(path);
+        const clean = String(path).replace(/^public\//, '').replace(/^\//, '');
+        return `/storage/${clean}`;
+      },
+
+      openFileModal(path) {
+        const url = this.buildStorageUrl(path);
+        if (!url) return;
+        const ext = url.split('.').pop().toLowerCase();
+        this.fileModalType = ext === 'pdf' ? 'pdf' : 'image';
+        this.fileModalSrc = url;
+        this.fileModalOpen = true;
+      },
+
+      closeFileModal() {
+        this.fileModalOpen = false;
+        this.fileModalSrc = '';
+        this.fileModalType = 'image';
+      },
+
+      openUserDetail(user) {
+        this.selectedUser = user;
+        this.userDetailModalOpen = true;
+      },
+
+      closeUserDetail() {
+        this.userDetailModalOpen = false;
+        this.selectedUser = null;
       },
 
       async loadProvinces() {
@@ -499,7 +732,7 @@
       
 
       viewUser(user) {
-        window.location.href = `/admin/users/${user.id}`;
+        this.openUserDetail(user);
       },
 
       async toggleBan(user) {
