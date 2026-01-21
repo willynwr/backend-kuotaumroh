@@ -45,7 +45,6 @@
 
     <!-- Shared Scripts -->
     <script src="{{ asset('shared/utils.js') }}"></script>
-    <script src="{{ asset('shared/public-api.js') }}"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -575,12 +574,25 @@
                 toastMessage: '',
 
                 async init() {
+                    // Packages will be loaded when provider is detected
+                },
+
+                async loadPackagesByProvider(provider) {
                     try {
-                        this.packages = await fetchPackages();
+                        this.packagesLoading = true;
+                        const response = await fetch(`/packages/by-provider/${provider}`);
+                        if (!response.ok) {
+                            throw new Error('Failed to fetch packages');
+                        }
+                        
+                        const data = await response.json();
+                        this.packages = data.data || [];
                         this.packagesLoading = false;
                     } catch (error) {
                         console.error('Error loading packages:', error);
+                        this.packages = [];
                         this.packagesLoading = false;
+                        this.showToast('Error', 'Gagal memuat data paket');
                     }
                 },
 
@@ -597,6 +609,12 @@
                     if (validateMsisdn(cleaned)) {
                         const detectedProvider = detectProvider(cleaned);
                         this.provider = detectedProvider ? normalizeProviderForApi(detectedProvider) : null;
+                        
+                        if (this.provider) {
+                            // Load packages for this provider
+                            this.loadPackagesByProvider(this.provider);
+                        }
+                        
                         if (this.selectedPackage && this.selectedPackage.provider !== this.provider) {
                             this.selectedPackage = null;
                         }
