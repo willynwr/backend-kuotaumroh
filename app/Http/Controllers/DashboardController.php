@@ -138,6 +138,7 @@ class DashboardController extends Controller
                 'user' => $agent,
                 'linkReferral' => $linkReferral,
                 'portalType' => 'agent',
+                'jenisTravelAgent' => $agent->jenis_travel ?? '',
                 'stats' => [
                     'totalOrders' => 0, // TODO: implement orders count
                     'totalRevenue' => 0, // TODO: implement revenue
