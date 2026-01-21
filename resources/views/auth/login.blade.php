@@ -111,9 +111,9 @@
       <div class="w-full max-w-md space-y-8 animate-fade-in">
 
         <!-- Logo -->
-        <div class="flex flex-col items-center space-y-2">
-          <img src="{{ asset('images/LOGO.png') }}" alt="Kuotaumroh.id Logo" class="h-24 w-24 object-contain" />
-          <h1 class="text-xl font-bold">Kuotaumroh.id</h1>
+        <div class="flex flex-col items-center space-y-2 ">
+          <img src="{{ asset('images/LOGO.png') }}" alt="Kuotaumroh.id Logo" class="h-40 w-40 object-contain"/>
+          <!-- <h1 class="text-xl font-bold">Kuotaumroh.id</h1> -->
           <p class="text-muted-foreground text-center">
             Tambah cuan jual paket roaming umroh & haji anti ribet
           </p>
