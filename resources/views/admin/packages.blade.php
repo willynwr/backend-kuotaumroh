@@ -133,28 +133,28 @@
             <input type="text" x-model="formData.tipe_paket" class="w-full h-10 rounded-md border px-3" required>
           </div>
           <div>
-            <label class="block text-sm font-medium mb-1">Masa Aktif</label>
-            <input type="text" x-model="formData.masa_aktif" placeholder="e.g. 30 Hari" class="w-full h-10 rounded-md border px-3" required>
+            <label class="block text-sm font-medium mb-1">Masa Aktif (hari)</label>
+            <input type="number" x-model="formData.masa_aktif" placeholder="30" class="w-full h-10 rounded-md border px-3" required>
           </div>
           <div>
             <label class="block text-sm font-medium mb-1">Total Kuota</label>
-            <input type="text" x-model="formData.total_kuota" class="w-full h-10 rounded-md border px-3" required>
+            <input type="number" x-model="formData.total_kuota" class="w-full h-10 rounded-md border px-3" required>
           </div>
           <div>
             <label class="block text-sm font-medium mb-1">Kuota Utama</label>
-            <input type="text" x-model="formData.kuota_utama" class="w-full h-10 rounded-md border px-3" required>
+            <input type="number" x-model="formData.kuota_utama" class="w-full h-10 rounded-md border px-3" required>
           </div>
           <div>
             <label class="block text-sm font-medium mb-1">Kuota Bonus</label>
-            <input type="text" x-model="formData.kuota_bonus" class="w-full h-10 rounded-md border px-3" required>
+            <input type="number" x-model="formData.kuota_bonus" class="w-full h-10 rounded-md border px-3" required>
           </div>
           <div>
             <label class="block text-sm font-medium mb-1">Telp (menit)</label>
-            <input type="text" x-model="formData.telp" class="w-full h-10 rounded-md border px-3" required>
+            <input type="number" x-model="formData.telp" class="w-full h-10 rounded-md border px-3" required>
           </div>
           <div>
             <label class="block text-sm font-medium mb-1">SMS</label>
-            <input type="text" x-model="formData.sms" class="w-full h-10 rounded-md border px-3" required>
+            <input type="number" x-model="formData.sms" class="w-full h-10 rounded-md border px-3" required>
           </div>
           <div>
             <label class="block text-sm font-medium mb-1">Harga Modal</label>
@@ -163,6 +163,10 @@
           <div>
             <label class="block text-sm font-medium mb-1">Harga EUP</label>
             <input type="number" x-model="formData.harga_eup" class="w-full h-10 rounded-md border px-3" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">% Margin Star</label>
+            <input type="number" step="0.01" x-model="formData.persentase_margin_star" class="w-full h-10 rounded-md border px-3" required>
           </div>
           <div>
             <label class="block text-sm font-medium mb-1">Margin Star</label>
@@ -177,8 +181,20 @@
             <input type="number" x-model="formData.fee_travel" class="w-full h-10 rounded-md border px-3" required>
           </div>
           <div>
+            <label class="block text-sm font-medium mb-1">% Fee Travel</label>
+            <input type="number" step="0.01" x-model="formData.persentase_fee_travel" class="w-full h-10 rounded-md border px-3" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">% Fee Affiliate</label>
+            <input type="number" step="0.01" x-model="formData.persentase_fee_affiliate" class="w-full h-10 rounded-md border px-3" required>
+          </div>
+          <div>
             <label class="block text-sm font-medium mb-1">Fee Affiliate</label>
             <input type="number" x-model="formData.fee_affiliate" class="w-full h-10 rounded-md border px-3" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">% Fee Host</label>
+            <input type="number" step="0.01" x-model="formData.persentase_fee_host" class="w-full h-10 rounded-md border px-3" required>
           </div>
           <div>
             <label class="block text-sm font-medium mb-1">Fee Host</label>
@@ -195,6 +211,10 @@
           <div>
             <label class="block text-sm font-medium mb-1">Poin</label>
             <input type="number" x-model="formData.poin" class="w-full h-10 rounded-md border px-3" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Profit</label>
+            <input type="number" x-model="formData.profit" class="w-full h-10 rounded-md border px-3" required>
           </div>
         </div>
         <div class="flex justify-end gap-2 mt-6">
@@ -254,14 +274,19 @@
         sms: '',
         harga_modal: '',
         harga_eup: '',
+        persentase_margin_star: '',
         margin_star: '',
         margin_total: '',
         fee_travel: '',
+        persentase_fee_travel: '',
+        persentase_fee_affiliate: '',
         fee_affiliate: '',
+        persentase_fee_host: '',
         fee_host: '',
         harga_tp_travel: '',
         harga_tp_host: '',
-        poin: ''
+        poin: '',
+        profit: ''
       },
       toastVisible: false,
       toastTitle: '',
@@ -335,14 +360,19 @@
           sms: '',
           harga_modal: '',
           harga_eup: '',
+          persentase_margin_star: '',
           margin_star: '',
           margin_total: '',
           fee_travel: '',
+          persentase_fee_travel: '',
+          persentase_fee_affiliate: '',
           fee_affiliate: '',
+          persentase_fee_host: '',
           fee_host: '',
           harga_tp_travel: '',
           harga_tp_host: '',
-          poin: ''
+          poin: '',
+          profit: ''
         };
       },
 

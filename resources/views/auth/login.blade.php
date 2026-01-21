@@ -112,10 +112,10 @@
 
         <!-- Logo -->
         <div class="flex flex-col items-center space-y-2">
-          <img src="{{ asset('images/kabah.png') }}" alt="Kuotaumroh.id Logo" class="h-24 w-24 object-contain" />
+          <img src="{{ asset('images/LOGO.png') }}" alt="Kuotaumroh.id Logo" class="h-24 w-24 object-contain" />
           <h1 class="text-xl font-bold">Kuotaumroh.id</h1>
           <p class="text-muted-foreground text-center">
-            Kelola kuota internet untuk umroh dan haji dengan mudah
+            Tambah cuan jual paket roaming umroh & haji anti ribet
           </p>
         </div>
 
