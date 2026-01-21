@@ -360,13 +360,19 @@ class AdminController extends Controller
     /**
      * Activate affiliate
      */
-    public function activateAffiliate($id)
+    public function activateAffiliate($id, Request $request)
     {
         try {
             $affiliate = Affiliate::findOrFail($id);
             $affiliate->update(['is_active' => true]);
+            if ($request->wantsJson()) {
+                return response()->json(['success' => true, 'message' => 'Affiliate berhasil diaktifkan']);
+            }
             return redirect()->back()->with('success', 'Affiliate berhasil diaktifkan');
         } catch (\Exception $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
+            }
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
@@ -374,13 +380,19 @@ class AdminController extends Controller
     /**
      * Deactivate affiliate
      */
-    public function deactivateAffiliate($id)
+    public function deactivateAffiliate($id, Request $request)
     {
         try {
             $affiliate = Affiliate::findOrFail($id);
             $affiliate->update(['is_active' => false]);
+            if ($request->wantsJson()) {
+                return response()->json(['success' => true, 'message' => 'Affiliate berhasil dinonaktifkan']);
+            }
             return redirect()->back()->with('success', 'Affiliate berhasil dinonaktifkan');
         } catch (\Exception $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
+            }
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
@@ -511,13 +523,19 @@ class AdminController extends Controller
     /**
      * Activate freelance
      */
-    public function activateFreelance($id)
+    public function activateFreelance($id, Request $request)
     {
         try {
             $freelance = Freelance::findOrFail($id);
             $freelance->update(['is_active' => true]);
+            if ($request->wantsJson()) {
+                return response()->json(['success' => true, 'message' => 'Freelance berhasil diaktifkan']);
+            }
             return redirect()->back()->with('success', 'Freelance berhasil diaktifkan');
         } catch (\Exception $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
+            }
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
@@ -525,13 +543,19 @@ class AdminController extends Controller
     /**
      * Deactivate freelance
      */
-    public function deactivateFreelance($id)
+    public function deactivateFreelance($id, Request $request)
     {
         try {
             $freelance = Freelance::findOrFail($id);
             $freelance->update(['is_active' => false]);
+            if ($request->wantsJson()) {
+                return response()->json(['success' => true, 'message' => 'Freelance berhasil dinonaktifkan']);
+            }
             return redirect()->back()->with('success', 'Freelance berhasil dinonaktifkan');
         } catch (\Exception $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
+            }
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
@@ -762,13 +786,19 @@ class AdminController extends Controller
     /**
      * Activate agent
      */
-    public function activateAgent($id)
+    public function activateAgent($id, Request $request)
     {
         try {
             $agent = Agent::findOrFail($id);
             $agent->update(['is_active' => true]);
+            if ($request->wantsJson()) {
+                return response()->json(['success' => true, 'message' => 'Agent berhasil diaktifkan']);
+            }
             return redirect()->back()->with('success', 'Agent berhasil diaktifkan');
         } catch (\Exception $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
+            }
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
@@ -776,13 +806,19 @@ class AdminController extends Controller
     /**
      * Deactivate agent
      */
-    public function deactivateAgent($id)
+    public function deactivateAgent($id, Request $request)
     {
         try {
             $agent = Agent::findOrFail($id);
             $agent->update(['is_active' => false]);
+            if ($request->wantsJson()) {
+                return response()->json(['success' => true, 'message' => 'Agent berhasil dinonaktifkan']);
+            }
             return redirect()->back()->with('success', 'Agent berhasil dinonaktifkan');
         } catch (\Exception $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
+            }
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }

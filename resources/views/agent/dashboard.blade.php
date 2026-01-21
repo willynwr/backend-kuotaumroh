@@ -6,6 +6,7 @@
   <div x-data="dashboardApp()">
     <main class="container mx-auto py-10 animate-fade-in px-4">
       <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-12">
+        <!-- Box 1: Profit Bulan Ini -->
         <div>
           <div class="relative overflow-hidden rounded-2xl border-slate-200 bg-white shadow-sm h-full">
             <div class="pointer-events-none absolute right-0 top-0 h-40 w-40 -translate-y-1/3 translate-x-1/3 rounded-full bg-primary/5"></div>
@@ -36,51 +37,78 @@
           </div>
         </div>
 
-        <div>
-          <div class="rounded-2xl border-slate-200 bg-white shadow-sm h-full">
-            <div class="flex flex-row items-center justify-between p-6 pb-4">
-              <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">Link Referral</h3>
-            </div>
-            <div class="p-6 pt-0">
-              <div class="flex flex-col gap-4 sm:flex-row sm:items-start">
-                <div class="sm:w-24 sm:shrink-0">
-                  <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(referralLink)" alt="QR Referral" class="w-full aspect-square rounded-lg border bg-white object-contain p-2">
-                </div>
-                <div class="space-y-2 sm:flex-1">
-                  <label class="text-xs font-medium text-muted-foreground">Link Pendaftaran</label>
-                  <div class="flex flex-col gap-2 sm:flex-row">
-                    <input type="text" readonly :value="referralLink" class="flex h-9 w-full min-w-0 rounded-md border border-input bg-muted px-3 py-2 text-xs">
-                    <button @click="copyReferralLink()" class="h-9 w-full px-3 bg-primary text-white rounded-md text-xs font-medium hover:bg-primary/90 transition-colors sm:w-auto">
-                      Salin
-                    </button>
+        <!-- Dynamic Link Toko Box(es) based on jenis_travel -->
+        <template x-if="hasUmroh">
+          <div>
+            <div class="rounded-2xl border-slate-200 bg-white shadow-sm h-full">
+              <div class="flex flex-row items-center justify-between p-6 pb-4">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">Link Toko: Kuotaumroh.id</h3>
+              </div>
+              <div class="p-6 pt-0">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-start">
+                  <div class="sm:w-24 sm:shrink-0">
+                    <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(referralLinkUmroh)" alt="QR Kuotaumroh" class="w-full aspect-square rounded-lg border bg-white object-contain p-2">
                   </div>
-                  <p class="text-xs text-slate-500">Bagikan link ini untuk dapatkan bonus referral.</p>
+                  <div class="space-y-2 sm:flex-1">
+                    <label class="text-xs font-medium text-muted-foreground">Link Toko Umroh</label>
+                    <div class="flex flex-col gap-2 sm:flex-row">
+                      <input type="text" readonly :value="referralLinkUmroh" class="flex h-9 w-full min-w-0 rounded-md border border-input bg-muted px-3 py-2 text-xs">
+                      <button @click="copyLink(referralLinkUmroh)" class="h-9 w-full px-3 bg-primary text-white rounded-md text-xs font-medium hover:bg-primary/90 transition-colors sm:w-auto">
+                        Salin
+                      </button>
+                    </div>
+                    <p class="text-xs text-slate-500">Link untuk pemesanan paket Umroh.</p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </template>
 
-        <div>
-          <div class="rounded-2xl border-slate-200 bg-white shadow-sm h-full">
-            <div class="flex flex-row items-center justify-between p-6 pb-4">
-              <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">Saldo Dompet Saat Ini</h3>
-            </div>
-            <div class="p-6 pt-0">
-              <div class="flex items-center gap-3">
-                <img :src="imageBase + '/wallet.png'" alt="Wallet" class="h-12 w-12 object-contain" onerror="this.style.display='none'" />
-                <div class="text-3xl font-bold text-slate-900 tracking-tight" x-text="formatRupiah(stats.walletBalance)"></div>
+        <template x-if="hasLeisure">
+          <div>
+            <div class="rounded-2xl border-slate-200 bg-white shadow-sm h-full">
+              <div class="flex flex-row items-center justify-between p-6 pb-4">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">Link Toko: Roamer.id</h3>
               </div>
-              <div class="mt-2 text-sm text-slate-500">
-                <span>Pending penarikan</span>
-                <span class="ml-2 font-semibold text-slate-900" x-text="formatRupiah(stats.pendingWithdrawal)"></span>
+              <div class="p-6 pt-0">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-start">
+                  <div class="sm:w-24 sm:shrink-0">
+                    <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(referralLinkLeisure)" alt="QR Roamer" class="w-full aspect-square rounded-lg border bg-white object-contain p-2">
+                  </div>
+                  <div class="space-y-2 sm:flex-1">
+                    <label class="text-xs font-medium text-muted-foreground">Link Toko Leisure</label>
+                    <div class="flex flex-col gap-2 sm:flex-row">
+                      <input type="text" readonly :value="referralLinkLeisure" class="flex h-9 w-full min-w-0 rounded-md border border-input bg-muted px-3 py-2 text-xs">
+                      <button @click="copyLink(referralLinkLeisure)" class="h-9 w-full px-3 bg-primary text-white rounded-md text-xs font-medium hover:bg-primary/90 transition-colors sm:w-auto">
+                        Salin
+                      </button>
+                    </div>
+                    <p class="text-xs text-slate-500">Link untuk pemesanan paket Leisure.</p>
+                  </div>
+                </div>
               </div>
-              <a href="{{ isset($linkReferral) ? url('/dash/' . $linkReferral . '/withdraw') : route('agent.withdraw') }}" class="mt-6 inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 w-full h-11 text-base font-medium transition-colors">
-                Tarik Saldo
-              </a>
             </div>
           </div>
-        </div>
+        </template>
+
+        <!-- Debug: Show when neither condition is met -->
+        <template x-if="!hasUmroh && !hasLeisure">
+          <div>
+            <div class="rounded-2xl border-red-200 bg-red-50 shadow-sm h-full p-6">
+              <p class="text-sm text-red-600 font-medium mb-3">⚠️ Debug: Tidak ada jenis travel yang terdeteksi</p>
+              <div class="space-y-1 text-xs">
+                <p class="text-red-500">jenisTravel: "<span x-text="jenisTravel"></span>"</p>
+                <p class="text-red-500">jenisTravel type: <span x-text="typeof jenisTravel"></span></p>
+                <p class="text-red-500">jenisTravel length: <span x-text="jenisTravel.length"></span></p>
+                <p class="text-red-500">After split: <span x-text="jenisTravel ? JSON.stringify(jenisTravel.toUpperCase().split(',').map(t => t.trim())) : 'N/A'"></span></p>
+                <p class="text-red-500 font-semibold mt-2">hasUmroh: <span x-text="hasUmroh"></span></p>
+                <p class="text-red-500 font-semibold">hasLeisure: <span x-text="hasLeisure"></span></p>
+                <p class="text-red-500 mt-2">linkReferalAgent: "<span x-text="linkReferalAgent"></span>"</p>
+              </div>
+            </div>
+          </div>
+        </template>
       </div>
 
       <div class="space-y-8">
@@ -111,7 +139,13 @@
       return {
         imageBase: @json(asset('images')),
         linkReferral: '{{ $linkReferral ?? "" }}',
+        jenisTravel: '{{ $jenisTravelAgent ?? "" }}', // UMROH, LEISURE, or UMROH,LEISURE
+        linkReferalAgent: '{{ $linkReferalAgent ?? "" }}', // Link toko: /u/xxx
         referralLink: '{{ isset($linkReferral) ? url("/dash/" . $linkReferral) : "" }}',
+        referralLinkUmroh: '',
+        referralLinkLeisure: '',
+        hasUmroh: false,
+        hasLeisure: false,
         stats: {
           monthlyProfit: 2450000,
           totalProfit: 15750000,
@@ -126,7 +160,36 @@
           { id: 'catalog', title: 'Katalog Harga', href: '{{ isset($linkReferral) ? url("/dash/" . $linkReferral . "/catalog") : route("agent.catalog") }}', icon: 'catalog' },
         ],
         init() {
-          // Link referral sudah diset dari controller
+          console.log('Dashboard Init - jenisTravel:', this.jenisTravel);
+          console.log('linkReferalAgent:', this.linkReferalAgent);
+          
+          // Determine which travel types the agent has
+          // Use more robust parsing with includes check
+          if (this.jenisTravel) {
+            const jenisStr = String(this.jenisTravel).toUpperCase();
+            console.log('jenisStr:', jenisStr);
+            
+            // Check if string contains UMROH or LEISURE
+            this.hasUmroh = jenisStr.includes('UMROH');
+            this.hasLeisure = jenisStr.includes('LEISURE');
+            
+            // Also try split with multiple delimiters for debugging
+            const travelTypes = jenisStr.split(/[,;|\/\s]+/).map(t => t.trim()).filter(t => t);
+            console.log('Split result:', travelTypes);
+          }
+          
+          console.log('hasUmroh:', this.hasUmroh);
+          console.log('hasLeisure:', this.hasLeisure);
+          
+          // Generate store links using link_referal (format: /u/{link_referal})
+          if (this.linkReferalAgent) {
+            const storeBaseUrl = `${window.location.origin}/u/${this.linkReferalAgent}`;
+            this.referralLinkUmroh = storeBaseUrl;
+            this.referralLinkLeisure = storeBaseUrl;
+            console.log('Store URL generated:', storeBaseUrl);
+          } else {
+            console.warn('linkReferalAgent is empty!');
+          }
         },
         formatRupiah(value) {
           const n = Number(value || 0);
@@ -135,6 +198,10 @@
         copyReferralLink() {
           if (!this.referralLink) return;
           navigator.clipboard.writeText(this.referralLink);
+        },
+        copyLink(link) {
+          if (!link) return;
+          navigator.clipboard.writeText(link);
         },
       };
     }

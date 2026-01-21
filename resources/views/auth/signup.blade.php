@@ -181,6 +181,12 @@
                     Informasi Kontak
                   </h2>
 
+                  <!-- Email -->
+                  <div class="space-y-2">
+                    <label for="email" class="text-sm font-medium">Email</label>
+                    <input id="email" type="email" x-model="formData.email" placeholder="Email" disabled
+                      class="flex h-10 w-full rounded-md border border-input bg-muted px-3 py-2 text-sm opacity-60 cursor-not-allowed">
+                  </div>
                   <!-- Full Name -->
                   <div class="space-y-2">
                     <label for="full_name" class="text-sm font-medium">Nama PIC</label>
@@ -188,12 +194,6 @@
                       class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
                   </div>
 
-                  <!-- Email -->
-                  <div class="space-y-2">
-                    <label for="email" class="text-sm font-medium">Email</label>
-                    <input id="email" type="email" x-model="formData.email" placeholder="Email" disabled
-                      class="flex h-10 w-full rounded-md border border-input bg-muted px-3 py-2 text-sm opacity-60 cursor-not-allowed">
-                  </div>
 
                   <!-- Phone Number -->
                   <div class="space-y-2">
