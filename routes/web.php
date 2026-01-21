@@ -170,6 +170,7 @@ Route::delete('/agents/{id}', [App\Http\Controllers\AgentController::class, 'des
 // produk routes
 Route::get('/produk', [App\Http\Controllers\ProdukController::class, 'index']);
 Route::get('/produk/{id}', [App\Http\Controllers\ProdukController::class, 'show']);
+Route::get('/packages/by-provider/{provider}', [App\Http\Controllers\ProdukController::class, 'getByProvider']);
 Route::post('/produk', [App\Http\Controllers\ProdukController::class, 'store']);
 Route::post('/produk/{id}', [App\Http\Controllers\ProdukController::class, 'update']);
 Route::delete('/produk/{id}', [App\Http\Controllers\ProdukController::class, 'destroy']);
