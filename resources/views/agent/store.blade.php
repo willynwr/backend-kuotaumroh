@@ -121,7 +121,7 @@
 
         <!-- Hero Background Image -->
         <div class="relative w-full h-[200px] overflow-hidden">
-            <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('{{ asset('images/bg.jpg') }}');"></div>
+            <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('{{ asset('images/image.png') }}');"></div>
             <div class="absolute inset-0 bg-gradient-to-b from-transparent to-background"></div>
         </div>
 
@@ -494,39 +494,45 @@
         </main>
 
         <!-- Footer -->
-        <footer class="mt-16 bg-gradient-to-r from-primary to-emerald-500 text-white">
-            <div class="container mx-auto px-4 py-10 grid gap-8 md:grid-cols-3">
-                <div class="space-y-3">
-                    <div class="flex items-center gap-2">
-                        @if($agent->logo)
-                            <img src="{{ Storage::url($agent->logo) }}" alt="{{ $agent->nama_travel }}" class="h-10 w-10 object-contain rounded-full border border-white">
-                        @else
-                            <img src="{{ asset('images/kabah.png') }}" alt="Kuotaumroh.id" class="h-10 w-10 object-contain">
-                        @endif
-                        <div>
-                            <p class="text-lg font-semibold">{{ $agent->nama_travel }}</p>
-                            <p class="text-sm opacity-80">{{ $agent->nama_pic }}</p>
+        <footer class="bg-primary text-primary-foreground mt-16 pt-12 pb-8">
+            <div class="container mx-auto px-4">
+                <div class="grid md:grid-cols-2 gap-8 mb-8">
+                    <!-- Left Column -->
+                    <div class="space-y-4">
+                        <div class="flex items-center gap-2">
+                            @if($agent->logo)
+                                <img src="{{ Storage::url($agent->logo) }}" alt="{{ $agent->nama_travel }}" class="h-10 w-10 object-contain rounded-full border border-white">
+                            @else
+                                <img src="{{ asset('images/LOGO.png') }}" alt="Kuotaumroh.id" class="h-10 w-10 object-contain">
+                            @endif
+                            <span class="text-2xl font-bold">{{ $agent->nama_travel }}</span>
                         </div>
+                        <p class="max-w-md text-primary-foreground/90">
+                            Kuota Umroh menyediakan layanan internet stabil dan aman selama di Tanah Suci. Mendukung kebutuhan komunikasi jamaah umroh dan haji Indonesia.
+                        </p>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div class="md:text-right space-y-4">
+                        <div>
+                            <h3 class="font-bold text-lg mb-2">Customer Service</h3>
+                            <div class="space-y-1">
+                                <p class="text-primary-foreground/90">Email: {{ $agent->email }}</p>
+                                <p class="text-primary-foreground/90">WhatsApp: {{ $agent->no_hp }}</p>
+                            </div>
+                        </div>
+                        @if($agent->alamat_lengkap)
+                            <div>
+                                <p class="text-primary-foreground/90 leading-relaxed">
+                                    {{ $agent->alamat_lengkap }}
+                                </p>
+                            </div>
+                        @endif
                     </div>
                 </div>
-                <div class="space-y-2">
-                    <h3 class="font-semibold text-lg">Kontak</h3>
-                    <p class="text-sm opacity-90">Email: {{ $agent->email }}</p>
-                    <p class="text-sm opacity-90">WhatsApp: {{ $agent->no_hp }}</p>
-                    @if($agent->alamat_lengkap)
-                        <p class="text-sm opacity-90">{{ $agent->alamat_lengkap }}</p>
-                    @endif
-                </div>
-                <div class="space-y-2">
-                    <h3 class="font-semibold text-lg">Layanan</h3>
-                    <p class="text-sm opacity-90">Paket data, telepon, SMS untuk Umroh & Haji</p>
-                    <p class="text-sm opacity-90">Aktivasi otomatis & terjadwal</p>
-                    <p class="text-sm opacity-90">Dukungan pelanggan 24/7</p>
-                </div>
-            </div>
-            <div class="border-t border-white/20">
-                <div class="container mx-auto px-4 py-4 text-center text-sm opacity-80">
-                    © 2026 {{ $agent->nama_travel }} - Powered by Kuotaumroh.id
+                
+                <div class="border-t border-primary-foreground/20 pt-8 text-center text-sm text-primary-foreground/80">
+                    <p>© 2026 {{ $agent->nama_travel }} - Powered by Kuotaumroh.id</p>
                 </div>
             </div>
         </footer>
