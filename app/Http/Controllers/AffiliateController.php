@@ -195,4 +195,26 @@ class AffiliateController extends Controller
             'data' => $agents
         ], 200);
     }
+
+    /**
+     * Display order page for affiliate.
+     */
+    public function order($linkReferral)
+    {
+        $packages = \App\Models\Produk::orderBy('created_at', 'desc')->get();
+        
+        // Get affiliate by link referral
+        $affiliate = \App\Models\Affiliate::where('link_referral', $linkReferral)
+            ->where('is_active', true)
+            ->with('agents')
+            ->first();
+        
+        if (!$affiliate) {
+            abort(404, 'Affiliate not found');
+        }
+        
+        $agents = $affiliate->agents;
+        
+        return view('affiliate.order', compact('packages', 'agents', 'linkReferral'));
+    }
 }
