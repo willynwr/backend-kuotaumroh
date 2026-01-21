@@ -40,13 +40,20 @@ function orderApp() {
     // Individual input
     individualItems: [{ id: '1', msisdn: '', packageId: '', provider: null }],
 
-    // Packages from API/backend
-    packages: [
-      // Dummy data - replace with actual API call
-      { id: 1, type: 'TELKOMSEL', name: 'Internet Umroh 10GB', price: 150000, sellPrice: 175000, days: 30, quota: '10GB', subType: 'INTERNET' },
-      { id: 2, type: 'INDOSAT', name: 'Internet Umroh 15GB', price: 165000, sellPrice: 190000, days: 30, quota: '15GB', subType: 'INTERNET' },
-      { id: 3, type: 'XL', name: 'Internet Umroh 20GB', price:185000, sellPrice: 215000, days: 30, quota: '20GB', subType: 'INTERNET' },
-    ],
+    // Packages from database
+    packages: @json($packages ?? []).map(pkg => ({
+      id: pkg.id,
+      type: pkg.provider,
+      name: pkg.nama_paket,
+      price: parseInt(pkg.harga_modal) || 0,
+      sellPrice: parseInt(pkg.harga_eup) || 0,
+      days: parseInt(pkg.masa_aktif) || 0,
+      quota: pkg.total_kuota || 0,
+      subType: pkg.tipe_paket || 'INTERNET',
+      telp: pkg.telp || 0,
+      sms: pkg.sms || 0,
+      bonus: pkg.kuota_bonus || 0
+    })),
     packagesLoading: false,
 
     // Checkout

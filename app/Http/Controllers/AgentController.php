@@ -105,7 +105,12 @@ class AgentController extends Controller
 
     public function catalog()
     {
-        return view('agent.catalog');
+        $packages = \App\Models\Produk::orderBy('created_at', 'desc')->get();
+        
+        // Debug: Log jumlah packages
+        \Log::info('Agent Catalog - Total packages: ' . $packages->count());
+        
+        return view('agent.catalog', compact('packages'));
     }
 
     public function history()
