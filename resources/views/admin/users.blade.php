@@ -890,6 +890,29 @@ function usersPage() {
                  this.updateMarker(lat, lng, instanceKey, markerKey);
                  this[instanceKey].flyTo([lat, lng], 16);
              }
+        },
+
+        getReferralLink(user) {
+            if (!user.referral_code) {
+                console.warn('getReferralLink: No referral_code for user', user);
+                return '#';
+            }
+            // Use window.location.origin to match current domain/port (e.g. 127.0.0.1:8000)
+            const link = `${window.location.origin}/u/${user.referral_code}`;
+            console.log('getReferralLink:', user.referral_code, '->', link);
+            return link;
+        },
+
+        formatDate(dateStr) {
+            if (!dateStr) return '-';
+            try {
+                return new Date(dateStr).toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'});
+            } catch(e) { return dateStr; }
+        },
+
+        getSortIcon(field) {
+            if (this.sortField !== field) return '↕';
+            return this.sortDirection === 'asc' ? '↑' : '↓';
         }
     }
 }

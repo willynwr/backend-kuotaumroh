@@ -139,6 +139,7 @@ class DashboardController extends Controller
                 'linkReferral' => $linkReferral,
                 'portalType' => 'agent',
                 'jenisTravelAgent' => $agent->jenis_travel ?? '',
+                'linkReferalAgent' => $agent->link_referal ?? '', // Link toko agent (/u/...)
                 'stats' => [
                     'totalOrders' => 0, // TODO: implement orders count
                     'totalRevenue' => 0, // TODO: implement revenue
@@ -489,12 +490,19 @@ class DashboardController extends Controller
             abort(404, 'Dashboard tidak ditemukan atau tidak aktif');
         }
 
-        return view($data['viewPath'] . '.referrals', [
+        $viewData = [
             'user' => $data['user'],
             'linkReferral' => $linkReferral,
             'portalType' => $data['portalType'],
             'stats' => $this->getStats($data['user'])
-        ]);
+        ];
+
+        // Add linkReferalAgent for agents
+        if ($data['portalType'] === 'agent' && isset($data['user']->link_referal)) {
+            $viewData['linkReferalAgent'] = $data['user']->link_referal;
+        }
+
+        return view($data['viewPath'] . '.referrals', $viewData);
     }
 
     /**

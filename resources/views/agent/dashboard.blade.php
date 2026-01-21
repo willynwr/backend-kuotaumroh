@@ -91,6 +91,24 @@
             </div>
           </div>
         </template>
+
+        <!-- Debug: Show when neither condition is met -->
+        <template x-if="!hasUmroh && !hasLeisure">
+          <div>
+            <div class="rounded-2xl border-red-200 bg-red-50 shadow-sm h-full p-6">
+              <p class="text-sm text-red-600 font-medium mb-3">⚠️ Debug: Tidak ada jenis travel yang terdeteksi</p>
+              <div class="space-y-1 text-xs">
+                <p class="text-red-500">jenisTravel: "<span x-text="jenisTravel"></span>"</p>
+                <p class="text-red-500">jenisTravel type: <span x-text="typeof jenisTravel"></span></p>
+                <p class="text-red-500">jenisTravel length: <span x-text="jenisTravel.length"></span></p>
+                <p class="text-red-500">After split: <span x-text="jenisTravel ? JSON.stringify(jenisTravel.toUpperCase().split(',').map(t => t.trim())) : 'N/A'"></span></p>
+                <p class="text-red-500 font-semibold mt-2">hasUmroh: <span x-text="hasUmroh"></span></p>
+                <p class="text-red-500 font-semibold">hasLeisure: <span x-text="hasLeisure"></span></p>
+                <p class="text-red-500 mt-2">linkReferalAgent: "<span x-text="linkReferalAgent"></span>"</p>
+              </div>
+            </div>
+          </div>
+        </template>
       </div>
 
       <div class="space-y-8">
@@ -122,6 +140,7 @@
         imageBase: @json(asset('images')),
         linkReferral: '{{ $linkReferral ?? "" }}',
         jenisTravel: '{{ $jenisTravelAgent ?? "" }}', // UMROH, LEISURE, or UMROH,LEISURE
+        linkReferalAgent: '{{ $linkReferalAgent ?? "" }}', // Link toko: /u/xxx
         referralLink: '{{ isset($linkReferral) ? url("/dash/" . $linkReferral) : "" }}',
         referralLinkUmroh: '',
         referralLinkLeisure: '',
@@ -141,15 +160,36 @@
           { id: 'catalog', title: 'Katalog Harga', href: '{{ isset($linkReferral) ? url("/dash/" . $linkReferral . "/catalog") : route("agent.catalog") }}', icon: 'catalog' },
         ],
         init() {
-          // Determine which travel types the agent has
-          const travelTypes = this.jenisTravel.toUpperCase().split(',').map(t => t.trim());
-          this.hasUmroh = travelTypes.includes('UMROH');
-          this.hasLeisure = travelTypes.includes('LEISURE');
+          console.log('Dashboard Init - jenisTravel:', this.jenisTravel);
+          console.log('linkReferalAgent:', this.linkReferalAgent);
           
-          // Set referral links based on travel type
-          const baseLink = this.referralLink || '';
-          this.referralLinkUmroh = baseLink ? `${baseLink}?type=umroh` : '';
-          this.referralLinkLeisure = baseLink ? `${baseLink}?type=leisure` : '';
+          // Determine which travel types the agent has
+          // Use more robust parsing with includes check
+          if (this.jenisTravel) {
+            const jenisStr = String(this.jenisTravel).toUpperCase();
+            console.log('jenisStr:', jenisStr);
+            
+            // Check if string contains UMROH or LEISURE
+            this.hasUmroh = jenisStr.includes('UMROH');
+            this.hasLeisure = jenisStr.includes('LEISURE');
+            
+            // Also try split with multiple delimiters for debugging
+            const travelTypes = jenisStr.split(/[,;|\/\s]+/).map(t => t.trim()).filter(t => t);
+            console.log('Split result:', travelTypes);
+          }
+          
+          console.log('hasUmroh:', this.hasUmroh);
+          console.log('hasLeisure:', this.hasLeisure);
+          
+          // Generate store links using link_referal (format: /u/{link_referal})
+          if (this.linkReferalAgent) {
+            const storeBaseUrl = `${window.location.origin}/u/${this.linkReferalAgent}`;
+            this.referralLinkUmroh = storeBaseUrl;
+            this.referralLinkLeisure = storeBaseUrl;
+            console.log('Store URL generated:', storeBaseUrl);
+          } else {
+            console.warn('linkReferalAgent is empty!');
+          }
         },
         formatRupiah(value) {
           const n = Number(value || 0);

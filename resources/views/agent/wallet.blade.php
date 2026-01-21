@@ -17,26 +17,39 @@
         </div>
       </div>
 
-      <div class="rounded-2xl border-slate-200 bg-white shadow-sm mb-6 relative overflow-hidden">
-        <div class="relative z-10 flex flex-row items-center justify-between p-6 pb-4">
-          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">Saldo Tersedia</h3>
-        </div>
-        <div class="relative z-10 p-6 pt-0">
-          <div class="flex items-center gap-3">
-            <img :src="imageBase + '/wallet.png'" alt="Wallet" class="h-12 w-12 object-contain" onerror="this.style.display='none'">
-            <div class="text-3xl font-bold text-slate-900 tracking-tight" x-text="formatRupiah(walletBalance.balance)"></div>
+      <div class="grid gap-4 md:grid-cols-2 mb-6">
+        <!-- Saldo Tersedia -->
+        <div class="rounded-lg border bg-white shadow-sm p-6">
+          <div class="flex items-center gap-4">
+            <div class="rounded-full bg-primary/10 p-3">
+              <svg class="h-6 w-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </div>
+            <div>
+              <p class="text-sm font-medium text-muted-foreground">Saldo Profit Tersedia</p>
+              <h3 class="text-2xl font-bold" x-text="formatRupiah(walletBalance.balance)"></h3>
+            </div>
           </div>
-          <div class="mt-2 text-sm text-slate-500">
-            <span>Pending penarikan</span>
-            <span class="ml-2 font-semibold text-slate-900" x-text="formatRupiah(walletBalance.pendingWithdrawal)"></span>
-          </div>
-          <a href="{{ isset($linkReferral) ? url('/dash/' . $linkReferral . '/withdraw') : route('agent.withdraw') }}" class="mt-6 inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 w-full h-11 text-base font-medium transition-colors">
-            <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12" />
-            </svg>
-            Tarik Saldo
-          </a>
         </div>
+
+        <!-- Saldo Diproses -->
+        <div class="rounded-lg border bg-white shadow-sm p-6">
+          <div class="flex items-center gap-4">
+            <div class="rounded-full bg-muted p-3">
+              <svg class="h-6 w-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </div>
+            <div>
+              <p class="text-sm font-medium text-muted-foreground">Saldo Diproses</p>
+              <h3 class="text-2xl font-bold" x-text="formatRupiah(walletBalance.pendingWithdrawal)"></h3>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-6">
+        <a href="{{ isset($linkReferral) ? url('/dash/' . $linkReferral . '/withdraw') : route('agent.withdraw') }}" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 w-full h-12 text-lg font-medium transition-colors shadow-sm">
+          <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+          Tarik Saldo
+        </a>
       </div>
 
       <div class="rounded-lg border bg-white shadow-sm">

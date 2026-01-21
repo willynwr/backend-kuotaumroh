@@ -134,21 +134,36 @@
                   <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Provider</th>
                   <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Paket</th>
                   <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Tanggal</th>
-                  <th class="h-12 px-4 text-right align-middle font-medium text-muted-foreground">Komisi</th>
+                  <th class="h-12 px-4 text-right align-middle font-medium text-muted-foreground">Harga Jual</th>
+                  <th class="h-12 px-4 text-right align-middle font-medium text-muted-foreground">Profit</th>
+                  <th class="h-12 px-4 text-center align-middle font-medium text-muted-foreground">Status</th>
                 </tr>
               </thead>
               <tbody>
                 <template x-for="row in filteredAgents" :key="row.id">
                   <tr class="border-b transition-colors hover:bg-muted/50">
-                    <td class="p-4 align-middle font-mono" x-text="row.msisdn"></td>
-                    <td class="p-4 align-middle" x-text="row.provider"></td>
+                    <td class="p-4 align-middle font-mono text-sm" x-text="row.msisdn"></td>
+                    <td class="p-4 align-middle">
+                        <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-800" x-text="row.provider"></span>
+                    </td>
                     <td class="p-4 align-middle" x-text="row.packageName"></td>
-                    <td class="p-4 align-middle" x-text="formatDate(row.orderDate)"></td>
-                    <td class="p-4 align-middle text-right font-medium text-primary" x-text="row.commission > 0 ? '+' + formatRupiah(row.commission) : formatRupiah(row.commission)"></td>
+                    <td class="p-4 align-middle text-muted-foreground text-sm" x-text="formatDate(row.orderDate)"></td>
+                    <td class="p-4 align-middle text-right font-medium" x-text="formatRupiah(row.sellPrice)"></td>
+                    <td class="p-4 align-middle text-right font-bold text-primary" x-text="'+' + formatRupiah(row.commission)"></td>
+                    <td class="p-4 align-middle text-center">
+                        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold" 
+                            :class="{
+                                'bg-green-100 text-green-800': row.status === 'sukses',
+                                'bg-yellow-100 text-yellow-800': row.status === 'proses',
+                                'bg-red-100 text-red-800': row.status === 'batal'
+                            }" 
+                            x-text="row.status.charAt(0).toUpperCase() + row.status.slice(1)">
+                        </span>
+                    </td>
                   </tr>
                 </template>
                 <template x-if="filteredAgents.length === 0">
-                  <tr><td colspan="5" class="p-8 text-center text-muted-foreground">Tidak ada data referral</td></tr>
+                  <tr><td colspan="7" class="p-8 text-center text-muted-foreground">Tidak ada data referral</td></tr>
                 </template>
               </tbody>
             </table>
@@ -181,9 +196,9 @@
         user: {},
         agentData: { agentCode: '', referralLink: '', totalCommission: 0, pendingCommission: 0 },
         packages: [
-          { id: 1, provider: 'TELKOMSEL', name: 'Internet 12 Hari 50GB', feeAffiliate: 9400 },
-          { id: 2, provider: 'INDOSAT', name: 'Spesial 12 Hari', feeAffiliate: 8400 },
-          { id: 3, provider: 'XL', name: 'Internet 10 Hari 20GB', feeAffiliate: 7600 },
+          { id: 1, provider: 'TELKOMSEL', name: 'Internet 12 Hari 50GB', price: 250000, feeAffiliate: 9400 },
+          { id: 2, provider: 'INDOSAT', name: 'Spesial 12 Hari', price: 150000, feeAffiliate: 8400 },
+          { id: 3, provider: 'XL', name: 'Internet 10 Hari 20GB', price: 200000, feeAffiliate: 7600 },
         ],
         referredAgents: [],
         copied: null,
@@ -193,20 +208,22 @@
         toastVisible: false,
         toastTitle: '',
         toastMessage: '',
+        
         init() {
             // Get user data (similar to dashboard)
             this.user = typeof getUser === 'function' ? getUser() : JSON.parse(localStorage.getItem('user') || '{}');
             this.agentData.agentCode = this.user.agentCode || 'AGN-DEMO';
             
-            // Logic Sync with Dashboard: Prioritize PHP link, else build manual
-            const phpLink = '{{ isset($linkReferral) ? url("/dash/" . $linkReferral) : "" }}';
+            // Use link_referal (store link /u/...) instead of dashboard link
+            const linkReferal = '{{ $linkReferalAgent ?? "" }}';
             
-            if (phpLink) {
-                this.agentData.referralLink = phpLink;
+            if (linkReferal) {
+                // Generate store URL: /u/{link_referal}
+                this.agentData.referralLink = `${window.location.origin}/u/${linkReferal}`;
             } else {
-                // Fallback attempt to match dashboard URL structure
-                const code = this.user.link_referral || this.user.agentCode || 'demo-code';
-                this.agentData.referralLink = window.location.origin + '/dash/' + code;
+                // Fallback to dashboard link if link_referal not available yet
+                const phpLink = '{{ isset($linkReferral) ? url("/dash/" . $linkReferral) : "" }}';
+                this.agentData.referralLink = phpLink || `${window.location.origin}/u/demo-code`;
             }
 
             this.generateDemoReferralData(); // Dummy data remains for now
@@ -235,23 +252,40 @@
                 });
             });
         },
+
         generateDemoReferralData() {
           const demoMSISDNs = [
-            { msisdn: '081234567890', provider: 'TELKOMSEL' },
-            { msisdn: '085234567891', provider: 'INDOSAT' },
-            { msisdn: '087834567892', provider: 'XL' },
-            { msisdn: '082234567893', provider: 'TELKOMSEL' },
-            { msisdn: '081299990001', provider: 'INDOSAT' },
+            { msisdn: '081234567890', provider: 'TELKOMSEL', status: 'sukses' },
+            { msisdn: '085234567891', provider: 'INDOSAT', status: 'sukses' },
+            { msisdn: '087834567892', provider: 'XL', status: 'proses' },
+            { msisdn: '082234567893', provider: 'TELKOMSEL', status: 'sukses' },
+            { msisdn: '081299990001', provider: 'INDOSAT', status: 'batal' },
           ];
           this.referredAgents = demoMSISDNs.map((demo, idx) => {
             const pkg = this.packages.find(p => p.provider === demo.provider) || this.packages[0];
             const daysAgo = idx * 5 + Math.floor(Math.random() * 5);
             const orderDate = new Date();
             orderDate.setDate(orderDate.getDate() - daysAgo);
-            return { id: String(idx + 1), msisdn: demo.msisdn, provider: pkg.provider, packageName: pkg.name, orderDate, commission: pkg.feeAffiliate || 0 };
+            return { 
+                id: String(idx + 1), 
+                msisdn: demo.msisdn, 
+                provider: pkg.provider, 
+                packageName: pkg.name, 
+                orderDate, 
+                sellPrice: pkg.price,
+                commission: pkg.feeAffiliate || 0,
+                status: demo.status
+            };
           });
-          this.agentData.totalCommission = this.referredAgents.reduce((sum, r) => sum + r.commission, 0);
-          this.agentData.pendingCommission = Math.round(this.agentData.totalCommission * 0.15);
+          
+          // Calculate stats
+          this.agentData.totalCommission = this.referredAgents
+            .filter(r => r.status === 'sukses')
+            .reduce((sum, r) => sum + r.commission, 0);
+            
+          this.agentData.pendingCommission = this.referredAgents
+            .filter(r => r.status === 'proses')
+            .reduce((sum, r) => sum + r.commission, 0);
         },
         get filteredAgents() {
           return this.referredAgents.filter(agent => {
