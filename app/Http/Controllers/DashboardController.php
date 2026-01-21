@@ -418,11 +418,18 @@ class DashboardController extends Controller
             abort(404, 'Dashboard tidak ditemukan atau tidak aktif');
         }
 
+        // Get packages from database
+        $packages = \App\Models\Produk::orderBy('created_at', 'desc')->get();
+        
+        // Debug
+        \Log::info('Dashboard Order - Total packages: ' . $packages->count());
+
         return view($data['viewPath'] . '.order', [
             'user' => $data['user'],
             'linkReferral' => $linkReferral,
             'portalType' => $data['portalType'],
-            'stats' => $this->getStats($data['user'])
+            'stats' => $this->getStats($data['user']),
+            'packages' => $packages
         ]);
     }
 
@@ -515,11 +522,18 @@ class DashboardController extends Controller
             abort(404, 'Dashboard tidak ditemukan atau tidak aktif');
         }
 
+        // Get packages from database
+        $packages = \App\Models\Produk::orderBy('created_at', 'desc')->get();
+        
+        // Debug
+        \Log::info('Dashboard Catalog - Total packages: ' . $packages->count());
+
         return view($data['viewPath'] . '.catalog', [
             'user' => $data['user'],
             'linkReferral' => $linkReferral,
             'portalType' => $data['portalType'],
-            'stats' => $this->getStats($data['user'])
+            'stats' => $this->getStats($data['user']),
+            'packages' => $packages
         ]);
     }
 

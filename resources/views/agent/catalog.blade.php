@@ -133,21 +133,40 @@
                   </th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody class="[&_tr]:border-b">
+                <!-- Loading State -->
                 <template x-if="loading">
                   <tr>
-                    <td colspan="13" class="text-center py-12">
-                      <div class="flex items-center justify-center gap-3">
-                        <div class="spinner"></div>
-                        <span class="text-muted-foreground">Memuat paket...</span>
+                    <td colspan="13" class="p-8 text-center">
+                      <div class="flex flex-col items-center gap-3">
+                        <svg class="h-8 w-8 animate-spin text-primary" fill="none" viewBox="0 0 24 24">
+                          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <p class="text-sm text-muted-foreground">Memuat data katalog...</p>
                       </div>
                     </td>
                   </tr>
                 </template>
-                <template x-if="!loading">
-                  <template x-for="pkg in sortedPackages" :key="pkg.id">
-                    <tr class="border-b transition-colors hover:bg-muted/50">
-                      <td class="p-4 align-middle">
+
+                <!-- Empty State -->
+                <template x-if="!loading && sortedPackages.length === 0">
+                  <tr>
+                    <td colspan="13" class="p-8 text-center">
+                      <div class="flex flex-col items-center gap-3">
+                        <svg class="h-12 w-12 text-muted-foreground/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                        </svg>
+                        <p class="text-sm text-muted-foreground">Tidak ada paket ditemukan</p>
+                      </div>
+                    </td>
+                  </tr>
+                </template>
+
+                <!-- Package Rows -->
+                <template x-for="pkg in sortedPackages" :key="pkg.id">
+                  <tr x-show="!loading" class="border-b transition-colors hover:bg-muted/50">
+                    <td class="p-4 align-middle">
                         <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700" x-text="pkg.provider"></span>
                       </td>
                       <td class="p-4 align-middle">
@@ -173,12 +192,6 @@
                       <td class="p-4 align-middle text-right text-primary font-medium" x-text="'+' + pkg.pointBonus"></td>
                     </tr>
                   </template>
-                </template>
-                <template x-if="!loading && sortedPackages.length === 0">
-                  <tr>
-                    <td colspan="13" class="p-8 text-center text-muted-foreground">Tidak ada paket yang ditemukan</td>
-                  </tr>
-                </template>
               </tbody>
             </table>
           </div>
@@ -191,44 +204,42 @@
 @section('scripts')
   <script>
     function catalogApp() {
+      const rawPackages = @json($packages ?? []);
+      console.log('Raw packages from server:', rawPackages);
+      console.log('Total raw packages:', rawPackages.length);
+      
       return {
         search: '',
         selectedProvider: '',
         sortKey: 'provider',
         sortDirection: 'asc',
         loading: false,
-        packages: [
-          // AXIS Packages
-          { id: 1, provider: 'AXIS', name: 'Internet 10 Hari', type: 'INTERNET', duration: '10 hari', totalQuota: 'Unlimited', mainQuota: 'Unlimited', bonusQuota: '-', call: '-', sms: '-', price: 224100, sellPrice: 249000, profit: 24900, pointBonus: 0, isBestPromo: true },
-          { id: 2, provider: 'AXIS', name: 'Combo 10 Hari', type: 'INTERNET + TELP/SMS', duration: '10 hari', totalQuota: 'Unlimited', mainQuota: 'Unlimited', bonusQuota: '-', call: '50', sms: '50', price: 308700, sellPrice: 343000, profit: 34300, pointBonus: 0, isBestPromo: true },
-          { id: 3, provider: 'AXIS', name: 'Combo 20 Hari', type: 'INTERNET + TELP/SMS', duration: '20 hari', totalQuota: 'Unlimited', mainQuota: 'Unlimited', bonusQuota: '-', call: '75', sms: '75', price: 393300, sellPrice: 437000, profit: 43700, pointBonus: 0, isBestPromo: true },
-          { id: 4, provider: 'AXIS', name: 'Combo 40 Hari', type: 'INTERNET + TELP/SMS', duration: '40 hari', totalQuota: 'Unlimited', mainQuota: 'Unlimited', bonusQuota: '-', call: 'Unlimited', sms: 'Unlimited', price: 520200, sellPrice: 578000, profit: 57800, pointBonus: 0, isBestPromo: true },
-          { id: 5, provider: 'AXIS', name: 'Internet 45 Hari 2GB', type: 'INTERNET', duration: '45 hari', totalQuota: '2 GB', mainQuota: '1 GB', bonusQuota: '1 GB Indo', call: '-', sms: '-', price: 139500, sellPrice: 155000, profit: 15500, pointBonus: 0, isBestPromo: false },
-          
-          // BYU Packages
-          { id: 6, provider: 'BYU', name: 'Internet 10GB', type: 'INTERNET', duration: '30 hari', totalQuota: '10 GB', mainQuota: '10 GB', bonusQuota: '-', call: '-', sms: '-', price: 42000, sellPrice: 48000, profit: 6000, pointBonus: 0, isBestPromo: false },
-          { id: 7, provider: 'BYU', name: 'Combo 15GB', type: 'INTERNET + TELP/SMS', duration: '30 hari', totalQuota: '15 GB', mainQuota: '12 GB', bonusQuota: '3 GB Apps', call: '100', sms: '100', price: 58000, sellPrice: 65000, profit: 7000, pointBonus: 0, isBestPromo: false },
-          
-          // INDOSAT Packages
-          { id: 8, provider: 'INDOSAT', name: 'Freedom Internet 3GB', type: 'INTERNET', duration: '30 hari', totalQuota: '3 GB', mainQuota: '3 GB', bonusQuota: '-', call: '-', sms: '-', price: 15000, sellPrice: 18000, profit: 3000, pointBonus: 0, isBestPromo: false },
-          { id: 9, provider: 'INDOSAT', name: 'Combo 15GB + BBM', type: 'INTERNET + APPS', duration: '30 hari', totalQuota: '15 GB', mainQuota: '10 GB', bonusQuota: '5 GB BBM', call: '-', sms: '-', price: 45000, sellPrice: 52000, profit: 7000, pointBonus: 0, isBestPromo: false },
-          
-          // SMARTFREN Packages
-          { id: 10, provider: 'SMARTFREN', name: 'Unlimited MAX 30 Hari', type: 'INTERNET', duration: '30 hari', totalQuota: 'Unlimited', mainQuota: 'Unlimited', bonusQuota: '-', call: '-', sms: '-', price: 55000, sellPrice: 62000, profit: 7000, pointBonus: 0, isBestPromo: false },
-          { id: 11, provider: 'SMARTFREN', name: 'Combo Unlimited + Voice', type: 'INTERNET + TELP', duration: '30 hari', totalQuota: 'Unlimited', mainQuota: 'Unlimited', bonusQuota: '-', call: 'Unlimited', sms: '-', price: 70000, sellPrice: 78000, profit: 8000, pointBonus: 0, isBestPromo: false },
-          
-          // TELKOMSEL Packages
-          { id: 12, provider: 'TELKOMSEL', name: 'Internet Sakti 11GB', type: 'INTERNET', duration: '30 hari', totalQuota: '11 GB', mainQuota: '8 GB', bonusQuota: '3 GB Lokal', call: '-', sms: '-', price: 25000, sellPrice: 28000, profit: 3000, pointBonus: 0, isBestPromo: true },
-          { id: 13, provider: 'TELKOMSEL', name: 'Combo 25GB OMG', type: 'INTERNET + TELP/SMS', duration: '30 hari', totalQuota: '25 GB', mainQuota: '20 GB', bonusQuota: '5 GB Malam', call: '100', sms: '100', price: 85000, sellPrice: 95000, profit: 10000, pointBonus: 0, isBestPromo: true },
-          
-          // TRI Packages
-          { id: 14, provider: 'TRI', name: 'AON 10GB', type: 'INTERNET', duration: '30 hari', totalQuota: '10 GB', mainQuota: '10 GB', bonusQuota: '-', call: '-', sms: '-', price: 32000, sellPrice: 38000, profit: 6000, pointBonus: 0, isBestPromo: false },
-          { id: 15, provider: 'TRI', name: 'Combo Sakti 20GB', type: 'INTERNET + TELP/SMS', duration: '30 hari', totalQuota: '20 GB', mainQuota: '15 GB', bonusQuota: '5 GB Malam', call: 'Unlimited', sms: 'Unlimited', price: 58000, sellPrice: 65000, profit: 7000, pointBonus: 0, isBestPromo: false },
-          
-          // XL Packages
-          { id: 16, provider: 'XL', name: 'Xtra Combo Flex M', type: 'INTERNET', duration: '30 hari', totalQuota: '15 GB', mainQuota: '15 GB', bonusQuota: '-', call: '-', sms: '-', price: 45000, sellPrice: 48000, profit: 3000, pointBonus: 0, isBestPromo: false },
-          { id: 17, provider: 'XL', name: 'Combo Xtra Lite 7GB', type: 'INTERNET + TELP/SMS', duration: '15 hari', totalQuota: '7 GB', mainQuota: '5 GB', bonusQuota: '2 GB Sosmed', call: '50', sms: '50', price: 28000, sellPrice: 32000, profit: 4000, pointBonus: 0, isBestPromo: false },
-        ],
+        packages: rawPackages.map(pkg => {
+          console.log('Processing package:', pkg);
+          // Transform database fields to catalog format
+          return {
+            id: pkg.id,
+            provider: pkg.provider || '-',
+            name: pkg.nama_paket || '-',
+            type: pkg.tipe_paket || '-',
+            duration: pkg.masa_aktif ? pkg.masa_aktif + ' hari' : '-',
+            totalQuota: pkg.total_kuota || '-',
+            mainQuota: pkg.kuota_utama || '-',
+            bonusQuota: pkg.kuota_bonus || '-',
+            call: pkg.telp || '-',
+            sms: pkg.sms || '-',
+            price: parseInt(pkg.harga_modal) || 0,
+            sellPrice: parseInt(pkg.harga_eup) || 0,
+            profit: (parseInt(pkg.harga_eup) || 0) - (parseInt(pkg.harga_modal) || 0),
+            pointBonus: parseInt(pkg.poin) || 0,
+            isBestPromo: false // Could be based on profit or other criteria
+          };
+        }),
+        init() {
+          console.log('Catalog initialized');
+          console.log('Total packages after transform:', this.packages.length);
+          console.log('Transformed packages:', this.packages);
+        },
         formatRupiah(value) {
           const n = Number(value || 0);
           return 'Rp ' + n.toLocaleString('id-ID');
