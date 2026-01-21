@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('nama_paket');
             $table->string('tipe_paket');
+            $table->string('provider');
             $table->integer('masa_aktif')->comment('dalam hari');
             $table->integer('total_kuota')->comment('dalam MB/GB');
             $table->integer('kuota_utama')->comment('dalam MB/GB');

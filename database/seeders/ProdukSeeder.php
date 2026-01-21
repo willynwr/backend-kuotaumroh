@@ -16,6 +16,7 @@ class ProdukSeeder extends Seeder
             [
                 'nama_paket' => 'Umroh Basic 15GB',
                 'tipe_paket' => 'Internet',
+                'provider' => 'SIMPATI',
                 'masa_aktif' => 30,
                 'total_kuota' => 15000,
                 'kuota_utama' => 12000,
@@ -41,6 +42,7 @@ class ProdukSeeder extends Seeder
             [
                 'nama_paket' => 'Premium 30GB',
                 'tipe_paket' => 'Internet+Voice',
+                'provider' => 'INDOSAT',
                 'masa_aktif' => 30,
                 'total_kuota' => 30000,
                 'kuota_utama' => 25000,
@@ -66,6 +68,7 @@ class ProdukSeeder extends Seeder
             [
                 'nama_paket' => 'Haji Ekonomis 10GB',
                 'tipe_paket' => 'Internet',
+                'provider' => 'SIMPATI',
                 'masa_aktif' => 45,
                 'total_kuota' => 10000,
                 'kuota_utama' => 8000,
@@ -91,6 +94,7 @@ class ProdukSeeder extends Seeder
             [
                 'nama_paket' => 'Super 50GB',
                 'tipe_paket' => 'Internet+Voice',
+                'provider' => 'XL',
                 'masa_aktif' => 30,
                 'total_kuota' => 50000,
                 'kuota_utama' => 40000,
@@ -116,6 +120,7 @@ class ProdukSeeder extends Seeder
             [
                 'nama_paket' => 'Unlimited',
                 'tipe_paket' => 'Unlimited',
+                'provider' => 'INDOSAT',
                 'masa_aktif' => 30,
                 'total_kuota' => 999999,
                 'kuota_utama' => 999999,
@@ -141,6 +146,7 @@ class ProdukSeeder extends Seeder
             [
                 'nama_paket' => 'Express 20GB',
                 'tipe_paket' => 'Internet',
+                'provider' => 'TRI',
                 'masa_aktif' => 15,
                 'total_kuota' => 20000,
                 'kuota_utama' => 18000,
@@ -166,6 +172,7 @@ class ProdukSeeder extends Seeder
             [
                 'nama_paket' => 'Premium Plus 40GB',
                 'tipe_paket' => 'Internet+Voice',
+                'provider' => 'XL',
                 'masa_aktif' => 30,
                 'total_kuota' => 40000,
                 'kuota_utama' => 35000,
@@ -191,6 +198,7 @@ class ProdukSeeder extends Seeder
             [
                 'nama_paket' => 'Budget 8GB',
                 'tipe_paket' => 'Internet',
+                'provider' => 'SIMPATI',
                 'masa_aktif' => 30,
                 'total_kuota' => 8000,
                 'kuota_utama' => 6000,
