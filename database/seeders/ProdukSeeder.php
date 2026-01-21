@@ -16,7 +16,7 @@ class ProdukSeeder extends Seeder
             [
                 'nama_paket' => 'Umroh Basic 15GB',
                 'tipe_paket' => 'Internet',
-                'provider' => 'SIMPATI',
+                'provider' => 'TELKOMSEL',
                 'masa_aktif' => 30,
                 'total_kuota' => 15000,
                 'kuota_utama' => 12000,
@@ -68,7 +68,7 @@ class ProdukSeeder extends Seeder
             [
                 'nama_paket' => 'Haji Ekonomis 10GB',
                 'tipe_paket' => 'Internet',
-                'provider' => 'SIMPATI',
+                'provider' => 'TELKOMSEL',
                 'masa_aktif' => 45,
                 'total_kuota' => 10000,
                 'kuota_utama' => 8000,
@@ -198,7 +198,7 @@ class ProdukSeeder extends Seeder
             [
                 'nama_paket' => 'Budget 8GB',
                 'tipe_paket' => 'Internet',
-                'provider' => 'SIMPATI',
+                'provider' => 'TELKOMSEL',
                 'masa_aktif' => 30,
                 'total_kuota' => 8000,
                 'kuota_utama' => 6000,

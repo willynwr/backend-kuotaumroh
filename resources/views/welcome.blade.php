@@ -45,7 +45,6 @@
 
     <!-- Shared Scripts -->
     <script src="{{ asset('shared/utils.js') }}"></script>
-    <script src="{{ asset('shared/public-api.js') }}"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -693,13 +692,25 @@
                 toastMessage: '',
 
                 async init() {
-                    // Load all packages
+                    // Packages will be loaded when provider is detected
+                },
+
+                async loadPackagesByProvider(provider) {
                     try {
-                        this.packages = await fetchPackages();
+                        this.packagesLoading = true;
+                        const response = await fetch(`/packages/by-provider/${provider}`);
+                        if (!response.ok) {
+                            throw new Error('Failed to fetch packages');
+                        }
+                        
+                        const data = await response.json();
+                        this.packages = data.data || [];
                         this.packagesLoading = false;
                     } catch (error) {
                         console.error('Error loading packages:', error);
+                        this.packages = [];
                         this.packagesLoading = false;
+                        this.showToast('Error', 'Gagal memuat data paket');
                     }
                 },
 
@@ -719,6 +730,12 @@
                         const detectedProvider = detectProvider(cleaned);
                         // Normalize provider name for API (Telkomsel → SIMPATI, etc.)
                         this.provider = detectedProvider ? normalizeProviderForApi(detectedProvider) : null;
+                        
+                        if (this.provider) {
+                            // Load packages for this provider
+                            this.loadPackagesByProvider(this.provider);
+                        }
+                        
                         // Reset selected package when provider changes
                         if (this.selectedPackage && this.selectedPackage.provider !== this.provider) {
                             this.selectedPackage = null;
