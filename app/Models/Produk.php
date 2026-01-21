@@ -14,6 +14,7 @@ class Produk extends Model
     protected $fillable = [
         'nama_paket',
         'tipe_paket',
+        'provider',
         'masa_aktif',
         'total_kuota',
         'kuota_utama',

@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contoh Penggunaan Config API</title>
+
+    <!-- ⚠️ PENTING: Load config.js PERTAMA KALI sebelum script lain -->
+    <script src="../shared/config.js"></script>
+
+    <!-- Script lain setelah config.js -->
+    <script src="../shared/utils.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+
+        .section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        .code {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            margin: 10px 0;
+        }
+
+        button {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: #059669;
+        }
+
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f0f9ff;
+            border-left: 4px solid #0ea5e9;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🎯 Contoh Penggunaan Config API</h1>
+    <p>File ini mendemonstrasikan cara menggunakan konfigurasi API terpusat.</p>
+
+    <!-- Section 1: Menampilkan URL -->
+    <div class="section">
+        <h2>1. URL yang Dikonfigurasi</h2>
+        <div class="code">
+            <strong>API Base URL:</strong> <span id="apiBaseUrl"></span><br>
+            <strong>API URL:</strong> <span id="apiUrl"></span><br>
+            <strong>Storage URL:</strong> <span id="storageUrl"></span>
+        </div>
+    </div>
+
+    <!-- Section 2: Contoh apiUrl() -->
+    <div class="section">
+        <h2>2. Menggunakan apiUrl()</h2>
+        <p>Helper function untuk membuat URL API endpoint</p>
+        <button onclick="testApiUrl()">Test apiUrl()</button>
+        <div id="apiUrlResult" class="result" style="display: none;"></div>
+    </div>
+
+    <!-- Section 3: Contoh storageUrl() -->
+    <div class="section">
+        <h2>3. Menggunakan storageUrl()</h2>
+        <p>Helper function untuk membuat URL storage file</p>
+        <button onclick="testStorageUrl()">Test storageUrl()</button>
+        <div id="storageUrlResult" class="result" style="display: none;"></div>
+    </div>
+
+    <!-- Section 4: Contoh Fetch Data -->
+    <div class="section">
+        <h2>4. Fetch Data dari API</h2>
+        <p>Contoh menggunakan apiFetch() untuk mengambil data</p>
+        <button onclick="testFetchAffiliates()">Fetch Affiliates</button>
+        <button onclick="testFetchFreelances()">Fetch Freelances</button>
+        <button onclick="testFetchAgents()">Fetch Agents</button>
+        <div id="fetchResult" class="result" style="display: none;"></div>
+    </div>
+
+    <!-- Section 5: Contoh POST Data -->
+    <div class="section">
+        <h2>5. POST Data ke API (Demo)</h2>
+        <p>Contoh menggunakan apiFetch() untuk mengirim data</p>
+        <button onclick="testPostData()">Test POST (Demo)</button>
+        <div id="postResult" class="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        // ========================================
+        // 1. Menampilkan URL yang dikonfigurasi
+        // ========================================
+        document.getElementById('apiBaseUrl').textContent = API_BASE_URL;
+        document.getElementById('apiUrl').textContent = API_URL;
+        document.getElementById('storageUrl').textContent = STORAGE_URL;
+
+        // ========================================
+        // 2. Test apiUrl() function
+        // ========================================
+        function testApiUrl() {
+            const examples = [
+                { input: 'agents', output: apiUrl('agents') },
+                { input: '/affiliates', output: apiUrl('/affiliates') },
+                { input: 'freelances', output: apiUrl('freelances') },
+                { input: 'agents/123', output: apiUrl('agents/123') },
+            ];
+
+            let html = '<h3>Hasil apiUrl():</h3>';
+            examples.forEach(ex => {
+                html += `<div style="margin: 5px 0;">
+          <code>apiUrl('${ex.input}')</code> → <strong>${ex.output}</strong>
+        </div>`;
+            });
+
+            const resultDiv = document.getElementById('apiUrlResult');
+            resultDiv.innerHTML = html;
+            resultDiv.style.display = 'block';
+        }
+
+        // ========================================
+        // 3. Test storageUrl() function
+        // ========================================
+        function testStorageUrl() {
+            const examples = [
+                { input: 'uploads/foto.jpg', output: storageUrl('uploads/foto.jpg') },
+                { input: '/documents/file.pdf', output: storageUrl('/documents/file.pdf') },
+                { input: 'images/logo.png', output: storageUrl('images/logo.png') },
+            ];
+
+            let html = '<h3>Hasil storageUrl():</h3>';
+            examples.forEach(ex => {
+                html += `<div style="margin: 5px 0;">
+          <code>storageUrl('${ex.input}')</code> → <strong>${ex.output}</strong>
+        </div>`;
+            });
+
+            const resultDiv = document.getElementById('storageUrlResult');
+            resultDiv.innerHTML = html;
+            resultDiv.style.display = 'block';
+        }
+
+        // ========================================
+        // 4. Test Fetch Data
+        // ========================================
+        async function testFetchAffiliates() {
+            await fetchData('affiliates', 'Affiliates');
+        }
+
+        async function testFetchFreelances() {
+            await fetchData('freelances', 'Freelances');
+        }
+
+        async function testFetchAgents() {
+            await fetchData('agents', 'Agents');
+        }
+
+        async function fetchData(endpoint, label) {
+            const resultDiv = document.getElementById('fetchResult');
+            resultDiv.innerHTML = `<p>⏳ Fetching ${label}...</p>`;
+            resultDiv.style.display = 'block';
+
+            try {
+                // ✅ CARA YANG BENAR: Menggunakan apiUrl() dan apiFetch()
+                const response = await apiFetch(apiUrl(endpoint));
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                let html = `<h3>✅ Berhasil Fetch ${label}</h3>`;
+                html += `<p><strong>URL:</strong> <code>${apiUrl(endpoint)}</code></p>`;
+                html += `<p><strong>Status:</strong> ${response.status} ${response.statusText}</p>`;
+                html += `<p><strong>Total Data:</strong> ${Array.isArray(data) ? data.length : 'N/A'}</p>`;
+
+                if (Array.isArray(data) && data.length > 0) {
+                    html += `<p><strong>Sample Data (first item):</strong></p>`;
+                    html += `<pre style="background: #f5f5f5; padding: 10px; border-radius: 4px; overflow-x: auto;">${JSON.stringify(data[0], null, 2)}</pre>`;
+                }
+
+                resultDiv.innerHTML = html;
+            } catch (error) {
+                resultDiv.innerHTML = `
+          <h3>❌ Error Fetching ${label}</h3>
+          <p><strong>URL:</strong> <code>${apiUrl(endpoint)}</code></p>
+          <p><strong>Error:</strong> ${error.message}</p>
+          <p style="color: #dc2626;">Pastikan backend server sedang berjalan!</p>
+        `;
+            }
+        }
+
+        // ========================================
+        // 5. Test POST Data (Demo)
+        // ========================================
+        async function testPostData() {
+            const resultDiv = document.getElementById('postResult');
+            resultDiv.innerHTML = '<p>⏳ Sending POST request...</p>';
+            resultDiv.style.display = 'block';
+
+            // Data contoh
+            const demoData = {
+                nama: 'John Doe (Demo)',
+                email: 'john.demo@example.com',
+                no_wa: '81234567890'
+            };
+
+            try {
+                // ✅ CARA YANG BENAR: Menggunakan apiUrl() dan apiFetch()
+                const url = apiUrl('affiliates');
+
+                let html = `<h3>📤 POST Request Demo</h3>`;
+                html += `<p><strong>URL:</strong> <code>${url}</code></p>`;
+                html += `<p><strong>Method:</strong> POST</p>`;
+                html += `<p><strong>Data:</strong></p>`;
+                html += `<pre style="background: #f5f5f5; padding: 10px; border-radius: 4px;">${JSON.stringify(demoData, null, 2)}</pre>`;
+                html += `<p style="color: #059669;"><strong>ℹ️ Ini hanya demo, tidak benar-benar mengirim data.</strong></p>`;
+                html += `<p>Untuk mengirim data sungguhan, uncomment kode di function testPostData().</p>`;
+
+                resultDiv.innerHTML = html;
+
+                // Uncomment kode di bawah untuk benar-benar mengirim POST request
+                /*
+                const response = await apiFetch(url, {
+                  method: 'POST',
+                  body: JSON.stringify(demoData)
+                });
+        
+                if (!response.ok) {
+                  throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+        
+                const result = await response.json();
+                
+                html += `<h3>✅ Response dari Server:</h3>`;
+                html += `<pre style="background: #f5f5f5; padding: 10px; border-radius: 4px;">${JSON.stringify(result, null, 2)}</pre>`;
+                resultDiv.innerHTML = html;
+                */
+
+            } catch (error) {
+                resultDiv.innerHTML = `
+          <h3>❌ Error POST Data</h3>
+          <p><strong>Error:</strong> ${error.message}</p>
+        `;
+            }
+        }
+
+        // ========================================
+        // Contoh Penggunaan dalam Kode Nyata
+        // ========================================
+
+        // ❌ JANGAN seperti ini (hardcoded):
+        // fetch('agents')
+
+        // ✅ GUNAKAN seperti ini:
+        // fetch(apiUrl('agents'))
+
+        // ❌ JANGAN seperti ini:
+        // const imageUrl = `http://127.0.0.1:8000/storage/${path}`;
+
+        // ✅ GUNAKAN seperti ini:
+        // const imageUrl = storageUrl(path);
+
+        // ✅ Contoh lengkap:
+        async function exampleLoadUsers() {
+            try {
+                const response = await apiFetch(apiUrl('agents'));
+                const users = await response.json();
+                console.log('Users loaded:', users);
+                return users;
+            } catch (error) {
+                console.error('Error loading users:', error);
+            }
+        }
+
+        async function exampleCreateUser(userData) {
+            try {
+                const response = await apiFetch(apiUrl('agents'), {
+                    method: 'POST',
+                    body: JSON.stringify(userData)
+                });
+                const result = await response.json();
+                console.log('User created:', result);
+                return result;
+            } catch (error) {
+                console.error('Error creating user:', error);
+            }
+        }
+
+        function exampleDisplayImage(imagePath) {
+            const img = document.createElement('img');
+            img.src = storageUrl(imagePath);
+            img.alt = 'User Image';
+            document.body.appendChild(img);
+        }
+    </script>
+</body>
+
+</html>

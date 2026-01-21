@@ -5,11 +5,144 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 
 use App\Models\Agent;
+use App\Models\Affiliate;
+use App\Models\Freelance;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 
 class AgentController extends Controller
 {
+    /**
+     * Handle agent signup dengan referral link dari affiliate/freelance
+     * Route: /agent/{link_referral}
+     */
+    public function signupWithReferral($linkReferral)
+    {
+        // Cek apakah link_referral milik affiliate
+        $affiliate = Affiliate::where('link_referral', $linkReferral)
+            ->where('is_active', true)
+            ->first();
+
+        if ($affiliate) {
+            // Redirect ke login dengan affiliate referral
+            return redirect()->route('login', [
+                'ref' => 'affiliate:' . $affiliate->id,
+                'referrer_name' => $affiliate->nama
+            ]);
+        }
+
+        // Cek apakah link_referral milik freelance
+        $freelance = Freelance::where('link_referral', $linkReferral)
+            ->where('is_active', true)
+            ->first();
+
+        if ($freelance) {
+            // Redirect ke login dengan freelance referral
+            return redirect()->route('login', [
+                'ref' => 'freelance:' . $freelance->id,
+                'referrer_name' => $freelance->nama
+            ]);
+        }
+
+        // Jika link_referral tidak valid, redirect ke login biasa
+        return redirect()->route('login')->with('error', 'Link referral tidak valid atau sudah tidak aktif');
+    }
+
+    /**
+     * Tampilkan halaman toko agent berdasarkan link_referral
+     * Route: /u/{link_referal}
+     */
+    public function showStore($linkReferal)
+    {
+        // Cari agent berdasarkan link_referal
+        $agent = Agent::where('link_referal', $linkReferal)
+            ->where('is_active', true)
+            ->first();
+
+        // Jika agent tidak ditemukan, redirect ke home
+        if (!$agent) {
+            return redirect('/')->with('error', 'Toko tidak ditemukan atau sudah tidak aktif');
+        }
+
+        // Tampilkan halaman toko agent
+        return view('agent.store', compact('agent'));
+    }
+
+    /**
+     * Tampilkan halaman signup form untuk agent
+     * Bisa diakses tanpa referral (affiliate_id = 1 default)
+     * Route: GET /signup
+     */
+    public function signup()
+    {
+        return view('auth.signup');
+    }
+
+    public function asset(string $file)
+    {
+        if (!preg_match('/\A[A-Za-z0-9_\-\.]+\z/', $file)) {
+            abort(404);
+        }
+
+        if (!str_ends_with(strtolower($file), '.png')) {
+            abort(404);
+        }
+
+        $path = resource_path('views/agent/agent123/' . $file);
+        if (!is_file($path)) {
+            abort(404);
+        }
+
+        return response()->file($path, [
+            'Cache-Control' => 'public, max-age=604800',
+        ]);
+    }
+
+    public function dashboard()
+    {
+        return view('agent.dashboard');
+    }
+
+    public function catalog()
+    {
+        $packages = \App\Models\Produk::orderBy('created_at', 'desc')->get();
+        
+        // Debug: Log jumlah packages
+        \Log::info('Agent Catalog - Total packages: ' . $packages->count());
+        
+        return view('agent.catalog', compact('packages'));
+    }
+
+    public function history()
+    {
+        return view('agent.history');
+    }
+
+    public function order()
+    {
+        return view('agent.order');
+    }
+
+    public function wallet()
+    {
+        return view('agent.wallet');
+    }
+
+    public function withdraw()
+    {
+        return view('agent.withdraw');
+    }
+
+    public function profile()
+    {
+        return view('agent.profile');
+    }
+
+    public function referrals()
+    {
+        return view('agent.referrals');
+    }
+
     public function index()
     {
         $agents = Agent::with(['affiliate', 'freelance'])->get();
@@ -69,10 +202,13 @@ class AgentController extends Controller
             ], 422);
         }
 
-        // Validasi: minimal salah satu harus diisi
         if (!$request->affiliate_id && !$request->freelance_id) {
+            $request->merge(['affiliate_id' => 1]);
+        }
+
+        if ((int) $request->affiliate_id === 1 && !Affiliate::query()->whereKey(1)->exists()) {
             return response()->json([
-                'message' => 'Agent harus terhubung ke Affiliate atau Freelance'
+                'message' => 'Affiliate default tidak ditemukan (id=1)'
             ], 422);
         }
 

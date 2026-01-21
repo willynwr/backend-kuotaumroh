@@ -14,18 +14,24 @@ class AffiliateSeeder extends Seeder
      */
     public function run(): void
     {
-        DB::table('affiliates')->insert([
-            'nama' => 'Kuota Umroh',
-            'email' => 'kuotaumroh@gmail.com',
-            'no_wa' => '081234567890',
-            'provinsi' => 'Jawa Barat',
-            'kab_kota' => 'Bandung',
-            'alamat_lengkap' => 'Jl. Merdeka No. 123, Bandung, Jawa Barat 40111',
-            'date_register' => Carbon::now()->format('Y-m-d'),
-            'is_active' => true,
-            'link_referral' => 'kuota-umroh',
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now(),
-        ]);
+        $affiliates = [
+            [
+                'nama' => 'Kuota Umroh',
+                'email' => 'kuotaumroh@gmail.com',
+                'no_wa' => '081234567890',
+                'provinsi' => 'Jawa Barat',
+                'kab_kota' => 'Bandung',
+                'alamat_lengkap' => 'Jl. Merdeka No. 123, Bandung, Jawa Barat 40111',
+                'date_register' => Carbon::now()->format('Y-m-d'),
+                'is_active' => true,
+                'link_referral' => 'kuotaumroh-official',
+                'ref_code' => 'KUOTAUMROH',
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
+            ],
+      
+        ];
+
+        DB::table('affiliates')->insert($affiliates);
     }
 }

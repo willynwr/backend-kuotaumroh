@@ -14,6 +14,9 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             AffiliateSeeder::class,
+            AgentSeeder::class,
+            FreelanceSeeder::class,
+            ProdukSeeder::class,
         ]);
 
         // \App\Models\User::factory(10)->create();

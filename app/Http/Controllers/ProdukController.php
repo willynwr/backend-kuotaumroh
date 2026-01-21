@@ -214,4 +214,56 @@ class ProdukController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Get packages by provider
+     * GET /api/packages/by-provider/{provider}
+     */
+    public function getByProvider($provider)
+    {
+        try {
+            $products = Produk::where('provider', strtoupper($provider))
+                ->orderBy('masa_aktif')
+                ->get()
+                ->map(function ($product) {
+                    // Map tipe_paket to subType
+                    $subType = 'INTERNET';
+                    if (stripos($product->tipe_paket, 'voice') !== false || stripos($product->tipe_paket, 'telp') !== false) {
+                        $subType = 'INTERNET + VOICE';
+                    } else if (stripos($product->tipe_paket, 'sms') !== false) {
+                        $subType = 'INTERNET + SMS';
+                    }
+
+                    return [
+                        'id' => $product->id,
+                        'name' => $product->nama_paket,
+                        'packageName' => $product->nama_paket,
+                        'provider' => $product->provider,
+                        'price' => $product->harga_modal,
+                        'sellPrice' => $product->harga_eup, // Harga untuk customer publik
+                        'quota' => $product->total_kuota,
+                        'kuota_utama' => $product->kuota_utama,
+                        'kuota_bonus' => $product->kuota_bonus,
+                        'days' => $product->masa_aktif,
+                        'telp' => $product->telp,
+                        'sms' => $product->sms,
+                        'bonus' => null, // Bisa ditambahkan field bonus jika ada
+                        'subType' => $subType,
+                        'promo' => null, // Bisa ditambahkan field promo jika ada
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data paket berhasil diambil',
+                'data' => $products
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data paket',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

@@ -1,0 +1,209 @@
+@extends('agent.layout')
+
+@section('title', 'Dashboard - Kuotaumroh.id')
+
+@section('content')
+  <div x-data="dashboardApp()">
+    <main class="container mx-auto py-10 animate-fade-in px-4">
+      <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-12">
+        <!-- Box 1: Profit Bulan Ini -->
+        <div>
+          <div class="relative overflow-hidden rounded-2xl border-slate-200 bg-white shadow-sm h-full">
+            <div class="pointer-events-none absolute right-0 top-0 h-40 w-40 -translate-y-1/3 translate-x-1/3 rounded-full bg-primary/5"></div>
+            <div class="relative z-10 flex flex-row items-center justify-between p-6 pb-4">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-muted-foreground">Profit Bulan Ini</h3>
+              <div class="rounded-lg p-2 bg-primary/10 text-primary">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+              </div>
+            </div>
+            <div class="relative z-10 p-6 pt-0">
+              <div class="text-4xl font-extrabold text-primary tracking-tight" x-text="formatRupiah(stats.monthlyProfit)"></div>
+              <div class="mt-6 flex items-center justify-between border-t border-slate-100 pt-4">
+                <div>
+                  <p class="text-xs font-bold uppercase text-slate-400">Total akumulasi</p>
+                  <p class="text-xl font-extrabold text-primary" x-text="formatRupiah(stats.totalProfit)"></p>
+                </div>
+                <div class="flex items-end gap-1 opacity-70">
+                  <div class="h-4 w-2 rounded-t-sm bg-primary/20"></div>
+                  <div class="h-6 w-2 rounded-t-sm bg-primary/30"></div>
+                  <div class="h-5 w-2 rounded-t-sm bg-primary/40"></div>
+                  <div class="h-8 w-2 rounded-t-sm bg-primary/60"></div>
+                  <div class="h-10 w-2 rounded-t-sm bg-primary/80"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dynamic Link Toko Box(es) based on jenis_travel -->
+        <template x-if="hasUmroh">
+          <div>
+            <div class="rounded-2xl border-slate-200 bg-white shadow-sm h-full">
+              <div class="flex flex-row items-center justify-between p-6 pb-4">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">Link Toko: Kuotaumroh.id</h3>
+              </div>
+              <div class="p-6 pt-0">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-start">
+                  <div class="sm:w-24 sm:shrink-0">
+                    <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(referralLinkUmroh)" alt="QR Kuotaumroh" class="w-full aspect-square rounded-lg border bg-white object-contain p-2">
+                  </div>
+                  <div class="space-y-2 sm:flex-1">
+                    <label class="text-xs font-medium text-muted-foreground">Link Toko Umroh</label>
+                    <div class="flex flex-col gap-2 sm:flex-row">
+                      <input type="text" readonly :value="referralLinkUmroh" class="flex h-9 w-full min-w-0 rounded-md border border-input bg-muted px-3 py-2 text-xs">
+                      <button @click="copyLink(referralLinkUmroh)" class="h-9 w-full px-3 bg-primary text-white rounded-md text-xs font-medium hover:bg-primary/90 transition-colors sm:w-auto">
+                        Salin
+                      </button>
+                    </div>
+                    <p class="text-xs text-slate-500">Link untuk pemesanan paket Umroh.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <template x-if="hasLeisure">
+          <div>
+            <div class="rounded-2xl border-slate-200 bg-white shadow-sm h-full">
+              <div class="flex flex-row items-center justify-between p-6 pb-4">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">Link Toko: Roamer.id</h3>
+              </div>
+              <div class="p-6 pt-0">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-start">
+                  <div class="sm:w-24 sm:shrink-0">
+                    <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(referralLinkLeisure)" alt="QR Roamer" class="w-full aspect-square rounded-lg border bg-white object-contain p-2">
+                  </div>
+                  <div class="space-y-2 sm:flex-1">
+                    <label class="text-xs font-medium text-muted-foreground">Link Toko Leisure</label>
+                    <div class="flex flex-col gap-2 sm:flex-row">
+                      <input type="text" readonly :value="referralLinkLeisure" class="flex h-9 w-full min-w-0 rounded-md border border-input bg-muted px-3 py-2 text-xs">
+                      <button @click="copyLink(referralLinkLeisure)" class="h-9 w-full px-3 bg-primary text-white rounded-md text-xs font-medium hover:bg-primary/90 transition-colors sm:w-auto">
+                        Salin
+                      </button>
+                    </div>
+                    <p class="text-xs text-slate-500">Link untuk pemesanan paket Leisure.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <!-- Debug: Show when neither condition is met -->
+        <template x-if="!hasUmroh && !hasLeisure">
+          <div>
+            <div class="rounded-2xl border-red-200 bg-red-50 shadow-sm h-full p-6">
+              <p class="text-sm text-red-600 font-medium mb-3">⚠️ Debug: Tidak ada jenis travel yang terdeteksi</p>
+              <div class="space-y-1 text-xs">
+                <p class="text-red-500">jenisTravel: "<span x-text="jenisTravel"></span>"</p>
+                <p class="text-red-500">jenisTravel type: <span x-text="typeof jenisTravel"></span></p>
+                <p class="text-red-500">jenisTravel length: <span x-text="jenisTravel.length"></span></p>
+                <p class="text-red-500">After split: <span x-text="jenisTravel ? JSON.stringify(jenisTravel.toUpperCase().split(',').map(t => t.trim())) : 'N/A'"></span></p>
+                <p class="text-red-500 font-semibold mt-2">hasUmroh: <span x-text="hasUmroh"></span></p>
+                <p class="text-red-500 font-semibold">hasLeisure: <span x-text="hasLeisure"></span></p>
+                <p class="text-red-500 mt-2">linkReferalAgent: "<span x-text="linkReferalAgent"></span>"</p>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <div class="space-y-8">
+        <div class="flex items-center gap-4">
+          <h2 class="text-sm font-bold uppercase tracking-wider text-slate-900">Menu Utama</h2>
+          <div class="h-px flex-1 bg-slate-200"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-5">
+          <template x-for="item in menuItems" :key="item.id">
+            <a :href="item.href">
+              <div class="group flex h-48 cursor-pointer items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary hover:bg-primary hover:text-primary-foreground hover:shadow-md">
+                <div class="flex flex-col items-center justify-center gap-3 p-6 text-center">
+                  <img :src="imageBase + '/' + item.icon + '.png'" :alt="item.title" class="h-24 w-24 object-contain transition-transform group-hover:scale-110" onerror="this.src = imageBase + '/kabah.png'" />
+                  <h3 class="text-xs font-bold uppercase tracking-wide leading-tight text-slate-700 group-hover:text-primary-foreground" x-text="item.title"></h3>
+                </div>
+              </div>
+            </a>
+          </template>
+        </div>
+      </div>
+    </main>
+  </div>
+@endsection
+
+@section('scripts')
+  <script>
+    function dashboardApp() {
+      return {
+        imageBase: @json(asset('images')),
+        linkReferral: '{{ $linkReferral ?? "" }}',
+        jenisTravel: '{{ $jenisTravelAgent ?? "" }}', // UMROH, LEISURE, or UMROH,LEISURE
+        linkReferalAgent: '{{ $linkReferalAgent ?? "" }}', // Link toko: /u/xxx
+        referralLink: '{{ isset($linkReferral) ? url("/dash/" . $linkReferral) : "" }}',
+        referralLinkUmroh: '',
+        referralLinkLeisure: '',
+        hasUmroh: false,
+        hasLeisure: false,
+        stats: {
+          monthlyProfit: 2450000,
+          totalProfit: 15750000,
+          walletBalance: 3250000,
+          pendingWithdrawal: 500000,
+        },
+        menuItems: [
+          { id: 'new-order', title: 'Pesanan Baru', href: '{{ isset($linkReferral) ? url("/dash/" . $linkReferral . "/order") : route("agent.order") }}', icon: 'order' },
+          { id: 'history', title: 'Riwayat Transaksi', href: '{{ isset($linkReferral) ? url("/dash/" . $linkReferral . "/history") : route("agent.history") }}', icon: 'history' },
+          { id: 'wallet', title: 'Dompet Saya', href: '{{ isset($linkReferral) ? url("/dash/" . $linkReferral . "/wallet") : route("agent.wallet") }}', icon: 'wallet' },
+          { id: 'referrals', title: 'Program Referral', href: '{{ isset($linkReferral) ? url("/dash/" . $linkReferral . "/referrals") : route("agent.referrals") }}', icon: 'referral' },
+          { id: 'catalog', title: 'Katalog Harga', href: '{{ isset($linkReferral) ? url("/dash/" . $linkReferral . "/catalog") : route("agent.catalog") }}', icon: 'catalog' },
+        ],
+        init() {
+          console.log('Dashboard Init - jenisTravel:', this.jenisTravel);
+          console.log('linkReferalAgent:', this.linkReferalAgent);
+          
+          // Determine which travel types the agent has
+          // Use more robust parsing with includes check
+          if (this.jenisTravel) {
+            const jenisStr = String(this.jenisTravel).toUpperCase();
+            console.log('jenisStr:', jenisStr);
+            
+            // Check if string contains UMROH or LEISURE
+            this.hasUmroh = jenisStr.includes('UMROH');
+            this.hasLeisure = jenisStr.includes('LEISURE');
+            
+            // Also try split with multiple delimiters for debugging
+            const travelTypes = jenisStr.split(/[,;|\/\s]+/).map(t => t.trim()).filter(t => t);
+            console.log('Split result:', travelTypes);
+          }
+          
+          console.log('hasUmroh:', this.hasUmroh);
+          console.log('hasLeisure:', this.hasLeisure);
+          
+          // Generate store links using link_referal (format: /u/{link_referal})
+          if (this.linkReferalAgent) {
+            const storeBaseUrl = `${window.location.origin}/u/${this.linkReferalAgent}`;
+            this.referralLinkUmroh = storeBaseUrl;
+            this.referralLinkLeisure = storeBaseUrl;
+            console.log('Store URL generated:', storeBaseUrl);
+          } else {
+            console.warn('linkReferalAgent is empty!');
+          }
+        },
+        formatRupiah(value) {
+          const n = Number(value || 0);
+          return n.toLocaleString('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 });
+        },
+        copyReferralLink() {
+          if (!this.referralLink) return;
+          navigator.clipboard.writeText(this.referralLink);
+        },
+        copyLink(link) {
+          if (!link) return;
+          navigator.clipboard.writeText(link);
+        },
+      };
+    }
+  </script>
+@endsection
