@@ -102,7 +102,7 @@
         <header class="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
             <div class="container mx-auto flex h-16 items-center justify-between px-4">
                 <div class="flex items-center gap-2">
-                    <img src="{{ asset('images/kabah.png') }}" alt="Kuotaumroh.id" class="h-9 w-9 object-contain">
+                    <img src="{{ asset('images/LOGO.png') }}" alt="Kuotaumroh.id" class="h-9 w-9 object-contain">
                     <span class="text-xl font-semibold">Kuotaumroh.id</span>
                 </div>
                 <a href="{{ route('login') }}"
@@ -114,7 +114,7 @@
 
         <!-- Hero Background Image -->
         <div class="relative w-full h-[200px] overflow-hidden">
-            <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('{{ asset('images/bg.jpg') }}');"></div>
+            <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('{{ asset('images/image.png') }}');"></div>
             <div class="absolute inset-0 bg-gradient-to-b from-transparent to-background"></div>
         </div>
 
@@ -612,7 +612,7 @@
             <div class="container mx-auto px-4 py-10 grid gap-8 md:grid-cols-3">
                 <div class="space-y-3">
                     <div class="flex items-center gap-2">
-                        <img src="{{ asset('images/kabah.png') }}" alt="Kuotaumroh.id" class="h-10 w-10 object-contain">
+                        <img src="{{ asset('images/LOGO.png') }}" alt="Kuotaumroh.id" class="h-10 w-10 object-contain">
                         <div>
                             <p class="text-lg font-semibold">Kuotaumroh.id</p>
                             <p class="text-sm opacity-80">Solusi kuota terbaik untuk perjalanan suci Anda.</p>
@@ -671,9 +671,9 @@
                 // Filters
                 packageSearch: '',
                 selectedDurationFilter: 'all',
-                durationFilters: [{ value: 'all', label: 'Durasi: Semua' }],
+                durationFilters: [{ value: 'all', label: 'Semua' }],
                 selectedSubTypeFilter: 'all',
-                subTypeFilters: [{ value: 'all', label: 'Jenis: Semua' }],
+                subTypeFilters: [{ value: 'all', label: 'Semua Tipe' }],
 
                 // Activation time
                 activationTime: 'now',
@@ -752,13 +752,13 @@
 
                 generateDurationFilters() {
                     const days = Array.from(new Set(this.availablePackages.map(pkg => pkg.days).filter(Boolean))).sort((a, b) => a - b);
-                    this.durationFilters = [{ value: 'all', label: 'Durasi: Semua' }, ...days.map(d => ({ value: String(d), label: `${d} Hari` }))];
+                    this.durationFilters = [{ value: 'all', label: 'Semua' }, ...days.map(d => ({ value: String(d), label: `${d} Hari` }))];
                     this.selectedDurationFilter = 'all';
                 },
 
                 generateSubTypeFilters() {
                     const types = Array.from(new Set(this.availablePackages.map(pkg => pkg.subType).filter(Boolean)));
-                    this.subTypeFilters = [{ value: 'all', label: 'Jenis: Semua' }, ...types.map(t => ({ value: t, label: t }))];
+                    this.subTypeFilters = [{ value: 'all', label: 'Semua Tipe' }, ...types.map(t => ({ value: t, label: t }))];
                     this.selectedSubTypeFilter = 'all';
                 },
 
@@ -766,8 +766,8 @@
                     this.packageSearch = '';
                     this.selectedDurationFilter = 'all';
                     this.selectedSubTypeFilter = 'all';
-                    this.durationFilters = [{ value: 'all', label: 'Durasi: Semua' }];
-                    this.subTypeFilters = [{ value: 'all', label: 'Jenis: Semua' }];
+                    this.durationFilters = [{ value: 'all', label: 'Semua' }];
+                    this.subTypeFilters = [{ value: 'all', label: 'Semua Tipe' }];
                 },
 
                 selectPackage(pkg) {
