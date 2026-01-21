@@ -72,6 +72,13 @@
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           <div class="flex items-center gap-3">
             <h3 class="text-lg font-semibold">Daftar Users</h3>
+            <button x-show="roleFilter === 'agent'" @click="openAddTravelAgentModal(false)" 
+              class="h-9 px-4 rounded-md bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors inline-flex items-center gap-2">
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              </svg>
+              Tambah Travel Agent
+            </button>
             <button x-show="roleFilter === 'affiliate'" @click="openAddAffiliateModal(false)" 
               class="h-9 px-4 rounded-md bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors inline-flex items-center gap-2">
               <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -85,13 +92,6 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
               </svg>
               Tambah Freelance
-            </button>
-            <button x-show="roleFilter === 'newusers'" @click="openAddTravelAgentModal(false)" 
-              class="h-9 px-4 rounded-md bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors inline-flex items-center gap-2">
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-              </svg>
-              Tambah Travel Agent
             </button>
           </div>
           <div class="flex flex-wrap gap-2 w-full sm:w-auto">
@@ -111,7 +111,6 @@
         </div>
 
         <div class="mb-6 flex gap-2 border-b">
-          <button @click="changeTab('newusers')" class="px-4 py-2 text-sm font-medium border-b-2 transition-colors" :class="roleFilter === 'newusers' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'">Pengguna Baru</button>
           <button @click="changeTab('agent')" class="px-4 py-2 text-sm font-medium border-b-2 transition-colors" :class="roleFilter === 'agent' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'">Travel Agent</button>
           <button @click="changeTab('affiliate')" class="px-4 py-2 text-sm font-medium border-b-2 transition-colors" :class="roleFilter === 'affiliate' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'">Affiliate</button>
           <button @click="changeTab('freelance')" class="px-4 py-2 text-sm font-medium border-b-2 transition-colors" :class="roleFilter === 'freelance' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'">Freelance</button>
@@ -120,10 +119,6 @@
         <!-- Table -->
         <!-- Content State -->
         <div x-show="loaded" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="overflow-x-auto">
-          <div x-show="roleFilter === 'newusers'" x-cloak>
-            @include('admin.partial-users.users-new-users')
-          </div>
-
           <div x-show="roleFilter === 'agent'" x-cloak>
             @include('admin.partial-users.users-travel-agent')
           </div>
@@ -300,6 +295,123 @@
      </div>
   </div>
 
+  <!-- Custom Notification Modal -->
+  <div x-show="notificationModalOpen" x-cloak 
+    class="fixed top-4 right-4 z-[100] max-w-md w-full"
+    x-transition:enter="transition ease-out duration-300"
+    x-transition:enter-start="opacity-0 translate-x-full"
+    x-transition:enter-end="opacity-100 translate-x-0"
+    x-transition:leave="transition ease-in duration-200"
+    x-transition:leave-start="opacity-100 translate-x-0"
+    x-transition:leave-end="opacity-0 translate-x-full">
+    <div class="rounded-lg shadow-2xl overflow-hidden"
+      :class="notificationType === 'success' ? 'bg-white border-l-4 border-green-500' : 'bg-white border-l-4 border-red-500'">
+      <div class="p-4">
+        <div class="flex items-start gap-3">
+          <!-- Icon -->
+          <div class="flex-shrink-0">
+            <template x-if="notificationType === 'success'">
+              <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+            </template>
+            <template x-if="notificationType === 'error'">
+              <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+            </template>
+          </div>
+          
+          <!-- Content -->
+          <div class="flex-1 pt-0.5">
+            <h3 class="text-sm font-semibold" 
+              :class="notificationType === 'success' ? 'text-green-900' : 'text-red-900'"
+              x-text="notificationType === 'success' ? 'Berhasil!' : 'Error!'">
+            </h3>
+            <p class="mt-1 text-sm text-gray-600" x-text="notificationMessage"></p>
+          </div>
+          
+          <!-- Close Button -->
+          <button @click="closeNotification()" 
+            class="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div class="mt-3 h-1 bg-gray-200 rounded-full overflow-hidden">
+          <div class="h-full transition-all duration-[3000ms] ease-linear"
+            :class="notificationType === 'success' ? 'bg-green-500' : 'bg-red-500'"
+            x-init="$nextTick(() => { if(notificationModalOpen) $el.style.width = '0%'; setTimeout(() => $el.style.width = '100%', 10); })">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ban Confirmation Modal -->
+  <div x-show="banModalOpen" x-cloak class="fixed inset-0 z-[60] flex items-center justify-center"
+    x-transition:enter="transition ease-out duration-300"
+    x-transition:enter-start="opacity-0"
+    x-transition:enter-end="opacity-100"
+    x-transition:leave="transition ease-in duration-200"
+    x-transition:leave-start="opacity-100"
+    x-transition:leave-end="opacity-0">
+    <div class="absolute inset-0 bg-black/40" @click="closeBanModal()"></div>
+    <div class="relative z-10 w-full max-w-md rounded-lg bg-white shadow-lg p-6"
+      x-transition:enter="transition ease-out duration-300"
+      x-transition:enter-start="opacity-0 transform scale-95"
+      x-transition:enter-end="opacity-100 transform scale-100"
+      x-transition:leave="transition ease-in duration-200"
+      x-transition:leave-start="opacity-100 transform scale-100"
+      x-transition:leave-end="opacity-0 transform scale-95">
+      
+      <div class="flex items-start gap-4">
+        <div class="flex-shrink-0">
+          <div class="w-12 h-12 rounded-full flex items-center justify-center"
+            :class="banAction === 'deactivate' ? 'bg-red-100' : 'bg-green-100'">
+            <svg class="w-6 h-6" :class="banAction === 'deactivate' ? 'text-red-600' : 'text-green-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <template x-if="banAction === 'deactivate'">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+              </template>
+              <template x-if="banAction === 'activate'">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </template>
+            </svg>
+          </div>
+        </div>
+        
+        <div class="flex-1">
+          <h3 class="text-lg font-semibold text-slate-900" x-text="banAction === 'deactivate' ? 'Konfirmasi Ban User' : 'Konfirmasi Aktifkan User'"></h3>
+          <p class="mt-2 text-sm text-muted-foreground">
+            <span x-show="banAction === 'deactivate'">
+              Apakah Anda yakin ingin mem-ban <strong x-text="banUser?.name"></strong>? User akan dinonaktifkan dan tidak dapat mengakses sistem.
+            </span>
+            <span x-show="banAction === 'activate'">
+              Apakah Anda yakin ingin mengaktifkan <strong x-text="banUser?.name"></strong>? User akan dapat mengakses sistem kembali.
+            </span>
+          </p>
+        </div>
+      </div>
+      
+      <div class="mt-6 flex items-center justify-end gap-3">
+        <button @click="closeBanModal()" class="h-10 px-4 rounded-md border border-gray-300 text-sm font-medium text-slate-700 hover:bg-gray-50 transition-colors">
+          Batal
+        </button>
+        <button @click="confirmBan()" class="h-10 px-4 rounded-md text-white text-sm font-medium transition-colors"
+          :class="banAction === 'deactivate' ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'">
+          <span x-text="banAction === 'deactivate' ? 'Ya, Ban User' : 'Ya, Aktifkan'"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
 </div>
 @endsection
 
@@ -329,11 +441,13 @@ function usersPage() {
             freelanceActive: {{ $stats['freelanceActive'] ?? 0 }},
             freelanceBanned: {{ $stats['freelanceBanned'] ?? 0 }}
         },
-        roleFilter: 'newusers',
+        roleFilter: 'agent',
         statusFilter: 'all',
         search: '',
         currentPage: 1,
         itemsPerPage: 10,
+        sortField: 'name',
+        sortDirection: 'asc',
         
         // Modals
         approveModalOpen: false,
@@ -341,8 +455,13 @@ function usersPage() {
         addAffiliateModalOpen: false,
         addFreelanceModalOpen: false,
         addTravelAgentModalOpen: false,
+        confirmAddModalOpen: false,
+        confirmAddFreelanceModalOpen: false,
+        confirmAddTravelAgentModalOpen: false,
         userDetailModalOpen: false,
         fileModalOpen: false,
+        notificationModalOpen: false,
+        banModalOpen: false,
         
         // Data
         approvalUser: null,
@@ -350,6 +469,11 @@ function usersPage() {
         selectedUser: null,
         fileModalType: 'image',
         fileModalSrc: '',
+        logoFile: null,
+        notificationMessage: '',
+        notificationType: 'success', // 'success' or 'error'
+        banUser: null,
+        banAction: '',
         
         // Forms
         newAffiliate: { nama: '', email: '', no_wa: '', provinsi: '', kab_kota: '', alamat_lengkap: '', link_referral: '', latitude: null, longitude: null },
@@ -381,20 +505,26 @@ function usersPage() {
             const params = new URLSearchParams(window.location.search);
             const urlTab = params.get('tab');
             
-            if(urlTab && ['newusers', 'agent', 'affiliate', 'freelance'].includes(urlTab)) {
+            if(urlTab && ['agent', 'affiliate', 'freelance'].includes(urlTab)) {
                 this.roleFilter = urlTab;
             } else {
                 const storedTab = localStorage.getItem('admin_users_tab');
-                if(storedTab && ['newusers', 'agent', 'affiliate', 'freelance'].includes(storedTab)) {
+                if(storedTab && ['agent', 'affiliate', 'freelance'].includes(storedTab)) {
                     this.roleFilter = storedTab;
+                } else {
+                    this.roleFilter = 'agent';
                 }
             }
             
             // Simulate smooth loading
             setTimeout(() => { this.loaded = true; }, 300);
             
-            @if(session('success')) alert("{{ session('success') }}"); @endif
-            @if(session('error')) alert("{{ session('error') }}"); @endif
+            @if(session('success')) 
+                this.showNotification("{{ session('success') }}", 'success');
+            @endif
+            @if(session('error')) 
+                this.showNotification("{{ session('error') }}", 'error');
+            @endif
 
             // Re-open modals on validation errors
             @if($errors->any())
@@ -422,17 +552,17 @@ function usersPage() {
             window.history.pushState({}, '', url);
         },
 
+        
         get filteredUsers() {
-            return this.users.filter(user => {
+            let filtered = this.users.filter(user => {
                 // Search
                 const s = this.search.toLowerCase();
                 if (s && !user.name.toLowerCase().includes(s) && !user.email.toLowerCase().includes(s)) return false;
 
-                if (this.roleFilter === 'newusers') return user.role === 'agent' && user.status === 'pending';
                 if (this.roleFilter === 'agent') {
                     if (user.role !== 'agent') return false;
                     if (this.statusFilter !== 'all') return user.status === this.statusFilter;
-                    return user.status !== 'pending';
+                    return true; // Show all agents including pending
                 }
                 
                 // Affiliate/Freelance
@@ -444,15 +574,63 @@ function usersPage() {
                 }
                 return true;
             });
+            
+            // Apply sorting
+            return filtered.sort((a, b) => {
+                let aVal = a[this.sortField];
+                let bVal = b[this.sortField];
+                
+                // Handle null/undefined values
+                if (aVal === null || aVal === undefined) aVal = '';
+                if (bVal === null || bVal === undefined) bVal = '';
+                
+                // Convert to lowercase for string comparison
+                if (typeof aVal === 'string') aVal = aVal.toLowerCase();
+                if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+                
+                let comparison = 0;
+                if (aVal > bVal) comparison = 1;
+                if (aVal < bVal) comparison = -1;
+                
+                return this.sortDirection === 'asc' ? comparison : -comparison;
+            });
         },
+        
         
         get paginatedFilteredUsers() {
             const start = (this.currentPage - 1) * this.itemsPerPage;
             return this.filteredUsers.slice(start, start + this.itemsPerPage);  
         },
         
-        get paginatedNewUsers() { return this.paginatedFilteredUsers; }, // Alias for new users partial
-        get paginatedUsers() { return this.paginatedFilteredUsers; }, // Alias for other partials
+        get paginatedUsers() { return this.paginatedFilteredUsers; },
+        
+        // Sorting functions
+        sort(field) {
+            if (this.sortField === field) {
+                // Toggle direction if same field
+                this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                // New field, default to ascending
+                this.sortField = field;
+                this.sortDirection = 'asc';
+            }
+            this.currentPage = 1; // Reset to first page when sorting
+        },
+        
+        getSortIcon(field) {
+            if (this.sortField !== field) return '↕';
+            return this.sortDirection === 'asc' ? '↑' : '↓';
+        },
+        
+        formatDate(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('id-ID', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+        },
 
         getReferralLink(user) {
             if (user.role === 'affiliate' || user.role === 'freelance') {
@@ -497,8 +675,8 @@ function usersPage() {
                 });
                 const data = await res.json();
                 if(data.success) window.location.reload();
-                else alert(data.message || 'Error');
-            } catch(e) { alert('Error approving user'); }
+                else this.showNotification(data.message || 'Error', 'error');
+            } catch(e) { this.showNotification('Error approving user', 'error'); }
         },
         
         openRejectModal(u) { this.approvalUser = u; this.rejectModalOpen = true; },
@@ -517,8 +695,8 @@ function usersPage() {
                 });
                 const data = await res.json();
                 if(data.success) window.location.reload();
-                else alert(data.message || 'Error');
-            } catch(e) { alert('Error rejecting user'); }
+                else this.showNotification(data.message || 'Error', 'error');
+            } catch(e) { this.showNotification('Error rejecting user', 'error'); }
         },
         
         openFileModal(path) {
@@ -528,6 +706,60 @@ function usersPage() {
             this.fileModalOpen = true;
         },
         closeFileModal() { this.fileModalOpen = false; },
+        
+        openBanModal(user) {
+            this.banUser = user;
+            this.banAction = user.status === 'active' ? 'deactivate' : 'activate';
+            this.banModalOpen = true;
+        },
+        
+        closeBanModal() {
+            this.banModalOpen = false;
+            this.banUser = null;
+            this.banAction = '';
+        },
+        
+        async toggleBan(user) {
+            if (!user) return;
+            this.openBanModal(user);
+        },
+        
+        async confirmBan() {
+            if (!this.banUser) return;
+            
+            try {
+                let url = '';
+                if (this.banUser.role === 'agent') {
+                    url = `/admin/agents/${this.banUser.id}/${this.banAction}`;
+                } else if (this.banUser.role === 'affiliate') {
+                    url = `/admin/affiliates/${this.banUser.id}/${this.banAction}`;
+                } else if (this.banUser.role === 'freelance') {
+                    url = `/admin/freelances/${this.banUser.id}/${this.banAction}`;
+                }
+                
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    }
+                });
+                
+                const data = await res.json();
+                this.closeBanModal();
+                
+                if (data.success) {
+                    this.showNotification(data.message || 'Status berhasil diubah', 'success');
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    this.showNotification(data.message || 'Error', 'error');
+                }
+            } catch(e) { 
+                this.closeBanModal();
+                this.showNotification('Error mengubah status user', 'error'); 
+            }
+        },
 
         // Province & City
         async loadProvinces() {
@@ -552,9 +784,59 @@ function usersPage() {
         async handleProvinceChangeTravelAgent() { this.citiesTravelAgent = await this.loadCities(this.newTravelAgent.province); },
         
         get downlines() {
-             return this.users.filter(u => u.role === 'affiliate' || u.role === 'freelance');
+             return this.users.filter(u => u.role === 'affiliate' || u.role === 'freelance').map(u => ({
+                 ...u,
+                 type: u.role === 'affiliate' ? 'Affiliate' : 'Freelance'
+             }));
         },
         selectDownline(d) { this.selectedDownline = d; },
+        
+        // Affiliate Modal Functions
+        openConfirmAddModal() {
+            this.confirmAddModalOpen = true;
+        },
+        closeConfirmAddModal() {
+            this.confirmAddModalOpen = false;
+        },
+        confirmAddAffiliate() {
+            this.$refs.addAffiliateForm.submit();
+        },
+        
+        // Freelance Modal Functions
+        openConfirmAddFreelanceModal() {
+            this.confirmAddFreelanceModalOpen = true;
+        },
+        closeConfirmAddFreelanceModal() {
+            this.confirmAddFreelanceModalOpen = false;
+        },
+        confirmAddFreelance() {
+            this.$refs.addFreelanceForm.submit();
+        },
+        
+        // Travel Agent Modal Functions
+        openConfirmAddTravelAgentModal() {
+            this.confirmAddTravelAgentModalOpen = true;
+        },
+        closeConfirmAddTravelAgentModal() {
+            this.confirmAddTravelAgentModalOpen = false;
+        },
+        confirmAddTravelAgent() {
+            this.$refs.addTravelAgentForm.submit();
+        },
+        
+        // Notification Functions
+        showNotification(message, type = 'success') {
+            this.notificationMessage = message;
+            this.notificationType = type;
+            this.notificationModalOpen = true;
+            // Auto close after 3 seconds
+            setTimeout(() => {
+                this.notificationModalOpen = false;
+            }, 3000);
+        },
+        closeNotification() {
+            this.notificationModalOpen = false;
+        },
 
         // MAP FUNCTIONS (Condensed for safety)
         async initializeMapAffiliate() { this.initMap('map-affiliate', 'mapAffiliateInstance', 'newAffiliate', 'markerAffiliate'); },

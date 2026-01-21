@@ -577,6 +577,9 @@ class AdminController extends Controller
             'alamat_lengkap' => 'required|string',
             'affiliate_id' => 'nullable|integer|exists:affiliates,id',
             'freelance_id' => 'nullable|integer|exists:freelances,id',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
         if ($validator->fails()) {
@@ -588,7 +591,7 @@ class AdminController extends Controller
         }
 
         try {
-            Agent::create([
+            $data = [
                 'email' => $request->email,
                 'affiliate_id' => $request->affiliate_id,
                 'freelance_id' => $request->freelance_id,
@@ -601,9 +604,19 @@ class AdminController extends Controller
                 'provinsi' => $request->provinsi,
                 'kabupaten_kota' => $request->kabupaten_kota,
                 'alamat_lengkap' => $request->alamat_lengkap,
+                'lat' => $request->latitude,
+                'long' => $request->longitude,
                 'status' => 'pending',
                 'is_active' => 0,
-            ]);
+            ];
+
+            // Handle logo upload
+            if ($request->hasFile('logo')) {
+                $logoPath = $request->file('logo')->store('agent_logos', 'public');
+                $data['logo'] = $logoPath;
+            }
+
+            Agent::create($data);
 
             return $this->redirectBackTo('admin.agents.index', $request)->with('success', 'Travel Agent berhasil ditambahkan');
         } catch (\Exception $e) {

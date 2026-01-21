@@ -38,7 +38,7 @@
       </div>
     @endif
 
-    <form x-ref="addTravelAgentForm" method="POST" action="{{ route('admin.agents.store') }}" @submit.prevent="openConfirmAddTravelAgentModal()" class="p-6 space-y-6">
+    <form x-ref="addTravelAgentForm" method="POST" action="{{ route('admin.agents.store') }}" enctype="multipart/form-data" @submit.prevent="openConfirmAddTravelAgentModal()" class="p-6 space-y-6">
       @csrf
       <input type="hidden" name="_form" value="agent">
       <input type="hidden" name="redirect_to" value="/admin/users?tab=agent">
@@ -130,6 +130,24 @@
               <label class="block text-sm font-medium text-slate-700 mb-1">Total Traveller per Bulan <span class="text-red-500">*</span></label>
               <input type="number" name="total_traveller" x-model="newTravelAgent.travel_member" required min="0"
                 class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Logo Travel</label>
+              <div class="space-y-2">
+                <input type="file" name="logo" accept="image/*" 
+                  @change="logoFile = $event.target.files[0]"
+                  class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20">
+                <p class="text-xs text-muted-foreground">Format: JPG, PNG, GIF, SVG (Max: 2MB)</p>
+                <template x-if="logoFile">
+                  <div class="mt-2 p-2 bg-gray-50 rounded border flex items-center gap-2">
+                    <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span class="text-sm text-gray-700" x-text="logoFile.name"></span>
+                  </div>
+                </template>
+              </div>
             </div>
           </div>
         </div>

@@ -27,15 +27,14 @@ Route::get('/agent', function () {
     return view('auth.login');
 })->name('login');
 
+// Agent Signup tanpa Referral (default affiliate_id = 1)
+Route::get('/signup', [App\Http\Controllers\AgentController::class, 'signup'])->name('signup');
+
 // Agent Signup dengan Referral Link dari Affiliate/Freelance
 Route::get('/agent/{link_referral}', [App\Http\Controllers\AgentController::class, 'signupWithReferral'])->name('agent.signup.referral');
 
 // Halaman Toko Agent - /u/{link_referal}
 Route::get('/u/{link_referal}', [App\Http\Controllers\AgentController::class, 'showStore'])->name('agent.store.view');
-
-Route::get('/signup', function () {
-    return view('auth.signup');
-})->name('signup');
 
 Route::get('/callback', function () {
     return view('auth.callback');

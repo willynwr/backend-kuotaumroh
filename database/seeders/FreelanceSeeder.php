@@ -155,6 +155,20 @@ class FreelanceSeeder extends Seeder
                 'created_at' => Carbon::now()->subDays(1),
                 'updated_at' => Carbon::now()->subDays(1),
             ],
+            [
+                'nama' => 'Faiz Daffa',
+                'email' => 'faizdaffanaut@gmail.com',
+                'no_wa' => '0812345222800',
+                'provinsi' => 'Jawa Timur',
+                'kab_kota' => 'Surabaya',
+                'alamat_lengkap' => 'Jl. Sudirman No. 101, Pekanbaru, Riau 28155',
+                'date_register' => Carbon::now()->subDays(1)->format('Y-m-d'),
+                'is_active' => true,
+                'link_referral' => 'faizdaffanaut',
+                'ref_code' => 'FRL-FAIZ',
+                'created_at' => Carbon::now()->subDays(1),
+                'updated_at' => Carbon::now()->subDays(1),
+            ],
         ];
 
         DB::table('freelances')->insert($freelances);

@@ -68,6 +68,16 @@ class AgentController extends Controller
         return view('agent.store', compact('agent'));
     }
 
+    /**
+     * Tampilkan halaman signup form untuk agent
+     * Bisa diakses tanpa referral (affiliate_id = 1 default)
+     * Route: GET /signup
+     */
+    public function signup()
+    {
+        return view('auth.signup');
+    }
+
     public function asset(string $file)
     {
         if (!preg_match('/\A[A-Za-z0-9_\-\.]+\z/', $file)) {
