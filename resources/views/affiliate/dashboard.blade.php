@@ -13,18 +13,23 @@
         <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-12">
             <!-- Points Card (Primary) -->
             <div>
-                <div class="relative overflow-hidden rounded-2xl border-slate-200 bg-white shadow-sm h-full">
-                    <!-- Background Decoration -->
-                    <div
-                        class="pointer-events-none absolute right-0 top-0 h-32 w-32 -translate-y-1/3 translate-x-1/3 rounded-full bg-primary/5">
+                <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary/90 shadow-lg hover:shadow-xl transition-all duration-300 h-full group">
+                    <!-- Animated Background Decoration -->
+                    <div class="pointer-events-none absolute inset-0 opacity-20">
+                        <div class="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/30 blur-2xl"></div>
+                        <div class="absolute -left-8 -bottom-8 h-40 w-40 rounded-full bg-white/20 blur-2xl"></div>
                     </div>
+                    
+                    <!-- Sparkle Effect -->
+                    <div class="pointer-events-none absolute right-4 top-4 h-2 w-2 rounded-full bg-white/60 animate-pulse"></div>
+                    <div class="pointer-events-none absolute right-12 top-8 h-1.5 w-1.5 rounded-full bg-white/40 animate-pulse" style="animation-delay: 0.5s;"></div>
 
                     <!-- Header -->
-                    <div class="relative z-10 flex flex-row items-center justify-between p-4 pb-3">
-                        <h3 class="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    <div class="relative z-10 flex flex-row items-center justify-between p-4 pb-2">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-white/90">
                             Saldo Poin
                         </h3>
-                        <div class="rounded-lg p-2 bg-primary/10 text-primary">
+                        <div class="rounded-lg p-2 bg-white/20 backdrop-blur-sm text-white shadow-lg group-hover:scale-110 transition-transform duration-300">
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -33,24 +38,55 @@
                     </div>
 
                     <!-- Content -->
-                    <div class="relative z-10 p-4 pt-0">
-                        <div class="text-3xl font-extrabold text-primary tracking-tight"
-                            x-text="stats.pointsBalance.toLocaleString('id-ID') + ' poin'"></div>
+                    <div class="relative z-10 px-4 pb-4 pt-0">
+                        <!-- Main Balance -->
+                        <div class="mb-2">
+                            <div class="text-3xl font-extrabold text-white tracking-tight drop-shadow-lg"
+                                x-text="stats.pointsBalance.toLocaleString('id-ID')"></div>
+                            <div class="text-[10px] font-semibold text-white/80">Poin Tersedia</div>
+                        </div>
 
-                        <!-- Summary Bar -->
-                        <div class="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
+                        <!-- Progress to Next Reward -->
+                        <div class="bg-white/15 backdrop-blur-sm rounded-lg p-2.5 border border-white/20">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-[9px] font-bold text-white/90 uppercase tracking-wide">Progress Reward</span>
+                                <span class="text-[9px] font-bold text-white" x-text="Math.min(100, Math.round((stats.pointsBalance / stats.nextRewardPoints) * 100)) + '%'"></span>
+                            </div>
+                            
+                            <!-- Progress Bar -->
+                            <div class="relative h-1.5 bg-white/20 rounded-full overflow-hidden backdrop-blur-sm">
+                                <div class="absolute inset-y-0 left-0 bg-gradient-to-r from-yellow-300 via-yellow-200 to-white rounded-full transition-all duration-700 ease-out shadow-lg"
+                                    :style="'width: ' + Math.min(100, (stats.pointsBalance / stats.nextRewardPoints) * 100) + '%'">
+                                    <div class="absolute inset-0 bg-white/30 animate-pulse"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Next Milestone -->
+                            <div class="mt-1.5 flex items-center justify-between text-[9px]">
+                                <div class="flex items-center gap-1">
+                                    <svg class="h-2.5 w-2.5 text-yellow-300" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+                                    </svg>
+                                    <span class="font-semibold text-white/90" x-text="stats.nextRewardName"></span>
+                                </div>
+                                <span class="font-bold text-yellow-300" x-text="stats.nextRewardPoints.toLocaleString('id-ID')"></span>
+                            </div>
+                        </div>
+
+                        <!-- Total Earned Stats -->
+                        <div class="mt-2 flex items-center justify-between pt-2 border-t border-white/20">
                             <div>
-                                <p class="text-xs font-bold uppercase text-slate-400">Total Poin Diperoleh</p>
-                                <p class="text-lg font-extrabold text-primary"
+                                <p class="text-[10px] font-bold uppercase text-white/70 tracking-wide">Total Diperoleh</p>
+                                <p class="text-lg font-extrabold text-white"
                                     x-text="stats.totalPointsEarned.toLocaleString('id-ID') + ' poin'"></p>
                             </div>
-                            <!-- Mini Chart -->
-                            <div class="flex items-end gap-1 opacity-70">
-                                <div class="h-3 w-2 rounded-t-sm bg-primary/20"></div>
-                                <div class="h-5 w-2 rounded-t-sm bg-primary/30"></div>
-                                <div class="h-4 w-2 rounded-t-sm bg-primary/40"></div>
-                                <div class="h-7 w-2 rounded-t-sm bg-primary/60"></div>
-                                <div class="h-8 w-2 rounded-t-sm bg-primary/80"></div>
+                            <!-- Animated Mini Chart -->
+                            <div class="flex items-end gap-1 opacity-80">
+                                <div class="h-3 w-2 rounded-t-sm bg-white/40 animate-pulse"></div>
+                                <div class="h-5 w-2 rounded-t-sm bg-white/50 animate-pulse" style="animation-delay: 0.1s;"></div>
+                                <div class="h-4 w-2 rounded-t-sm bg-white/45 animate-pulse" style="animation-delay: 0.2s;"></div>
+                                <div class="h-7 w-2 rounded-t-sm bg-white/60 animate-pulse" style="animation-delay: 0.3s;"></div>
+                                <div class="h-8 w-2 rounded-t-sm bg-white/70 animate-pulse" style="animation-delay: 0.4s;"></div>
                             </div>
                         </div>
                     </div>
@@ -209,7 +245,9 @@
                 totalDownlines: {{ $stats['totalAgents'] ?? 0 }},
                 pendingClaims: 0,
                 activeAgentsThisMonth: {{ $stats['activeAgentsThisMonth'] ?? 0 }},
-                newAgentsThisMonth: {{ $stats['newAgentsThisMonth'] ?? 0 }}
+                newAgentsThisMonth: {{ $stats['newAgentsThisMonth'] ?? 0 }},
+                nextRewardPoints: 10000,
+                nextRewardName: 'Voucher Pulsa 50K'
             },
             portalType: '{{ $portalType ?? "affiliate" }}',
             freelanceId: {{ $user->id ?? 'null' }},
