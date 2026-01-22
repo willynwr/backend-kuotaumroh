@@ -448,6 +448,24 @@ class DashboardController extends Controller
     }
 
     /**
+     * Halaman Checkout
+     */
+    public function checkout($linkReferral)
+    {
+        $data = $this->getUserByLinkReferral($linkReferral);
+        if (!$data) {
+            abort(404, 'Dashboard tidak ditemukan atau tidak aktif');
+        }
+
+        return view($data['viewPath'] . '.checkout', [
+            'user' => $data['user'],
+            'linkReferral' => $linkReferral,
+            'portalType' => $data['portalType'],
+            'stats' => $this->getStats($data['user'])
+        ]);
+    }
+
+    /**
      * Halaman History (Agent)
      */
     public function history($linkReferral)

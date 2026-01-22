@@ -647,12 +647,71 @@ function orderApp() {
 
       this.validationError = false;
       this.isProcessing = true;
-      this.showToast('Pesanan Dikonfirmasi', 'Flow submit ke backend akan diintegrasikan.');
 
-      // TODO: Submit to backend
-      setTimeout(() => {
-        this.isProcessing = false;
-      }, 2000);
+      // Prepare order data
+      const orderItems = [];
+      
+      if (this.mode === 'bulk') {
+        // From bulk mode with multi-package assignments
+        Object.entries(this.providerPackages).forEach(([provider, assignments]) => {
+          assignments.forEach(assignment => {
+            const pkg = this.packages.find(p => p.id === assignment.packageId);
+            if (pkg) {
+              assignment.numbers.forEach(msisdn => {
+                orderItems.push({
+                  msisdn: msisdn,
+                  packageId: pkg.id,
+                  packageName: pkg.name,
+                  provider: provider,
+                  price: pkg.price,
+                  sellPrice: pkg.sellPrice
+                });
+              });
+            }
+          });
+        });
+      } else {
+        // From individual mode
+        this.individualItems.forEach(item => {
+          if (item.msisdn && item.packageId && item.provider) {
+            const pkg = this.packages.find(p => p.id === item.packageId);
+            if (pkg) {
+              orderItems.push({
+                msisdn: item.msisdn,
+                packageId: pkg.id,
+                packageName: pkg.name,
+                provider: item.provider,
+                price: pkg.price,
+                sellPrice: pkg.sellPrice
+              });
+            }
+          }
+        });
+      }
+
+      // Save to localStorage
+      const orderData = {
+        batchId: this.batchId,
+        batchName: this.batchName,
+        items: orderItems,
+        subtotal: this.subtotal,
+        platformFee: this.platformFee,
+        profit: this.profit,
+        paymentMethod: this.paymentMethod,
+        activationTime: this.activationTime,
+        scheduledDate: this.scheduledDate,
+        scheduledTime: this.scheduledTime,
+        timestamp: Date.now()
+      };
+
+      localStorage.setItem('pendingOrder', JSON.stringify(orderData));
+
+      // Redirect to checkout page
+      @if(isset($linkReferral))
+        window.location.href = '{{ url('/dash/' . $linkReferral . '/checkout') }}';
+      @else
+        window.location.href = '{{ route('freelance.checkout') }}';
+      @endif
     },
 
     saveBatchName() {
