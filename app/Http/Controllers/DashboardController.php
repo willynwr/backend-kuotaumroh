@@ -421,15 +421,23 @@ class DashboardController extends Controller
         // Get packages from database
         $packages = \App\Models\Produk::orderBy('created_at', 'desc')->get();
         
+        // Get agents based on portal type
+        $agents = [];
+        if ($data['portalType'] === 'affiliate' || $data['portalType'] === 'freelance') {
+            $agents = $data['user']->agents;
+        }
+        
         // Debug
         \Log::info('Dashboard Order - Total packages: ' . $packages->count());
+        \Log::info('Dashboard Order - Total agents: ' . count($agents));
 
         return view($data['viewPath'] . '.order', [
             'user' => $data['user'],
             'linkReferral' => $linkReferral,
             'portalType' => $data['portalType'],
             'stats' => $this->getStats($data['user']),
-            'packages' => $packages
+            'packages' => $packages,
+            'agents' => $agents
         ]);
     }
 

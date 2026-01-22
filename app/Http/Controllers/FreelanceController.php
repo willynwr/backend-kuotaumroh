@@ -195,4 +195,26 @@ class FreelanceController extends Controller
             'data' => $agents
         ], 200);
     }
+
+    /**
+     * Display order page for freelance.
+     */
+    public function order($linkReferral)
+    {
+        $packages = \App\Models\Produk::orderBy('created_at', 'desc')->get();
+        
+        // Get freelance by link referral
+        $freelance = \App\Models\Freelance::where('link_referral', $linkReferral)
+            ->where('is_active', true)
+            ->with('agents')
+            ->first();
+        
+        if (!$freelance) {
+            abort(404, 'Freelance not found');
+        }
+        
+        $agents = $freelance->agents;
+        
+        return view('freelance.order', compact('packages', 'agents', 'linkReferral'));
+    }
 }

@@ -633,13 +633,16 @@ function usersPage() {
         },
 
         getReferralLink(user) {
+            if (!user.referral_code) return '#';
+            const origin = window.location.origin;
+
             if (user.role === 'affiliate' || user.role === 'freelance') {
-                const baseUrl = '{{ url('/agent') }}';
-                const refParam = `${user.role}:${user.id}`;
-                const nameParam = encodeURIComponent(user.name);
-                return `${baseUrl}?ref=${refParam}&referrer_name=${nameParam}`;
+                // Affiliate/Freelance refer to Agent Signup
+                return `${origin}/agent/${user.referral_code}`;
             }
-            return '{{ url('/') }}/u/' + user.referral_code;
+            
+            // Agent refers to their Store
+            return `${origin}/u/${user.referral_code}`;
         },
 
         // Modal Actions
@@ -892,16 +895,7 @@ function usersPage() {
              }
         },
 
-        getReferralLink(user) {
-            if (!user.referral_code) {
-                console.warn('getReferralLink: No referral_code for user', user);
-                return '#';
-            }
-            // Use window.location.origin to match current domain/port (e.g. 127.0.0.1:8000)
-            const link = `${window.location.origin}/u/${user.referral_code}`;
-            console.log('getReferralLink:', user.referral_code, '->', link);
-            return link;
-        },
+
 
         formatDate(dateStr) {
             if (!dateStr) return '-';
