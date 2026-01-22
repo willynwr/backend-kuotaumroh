@@ -5,6 +5,7 @@
 @section('content')
   <div x-data="dashboardApp()">
     <main class="container mx-auto py-10 animate-fade-in px-4">
+      
       <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-12">
         <!-- Box 1: Profit Bulan Ini -->
         <div>
@@ -38,6 +39,7 @@
         </div>
 
         <!-- Dynamic Link Toko Box(es) based on jenis_travel -->
+        <!-- Dynamic Link Toko Box(es) based on jenis_travel -->
         <template x-if="hasUmroh">
           <div>
             <div class="rounded-2xl border-slate-200 bg-white shadow-sm h-full">
@@ -64,7 +66,7 @@
             </div>
           </div>
         </template>
-
+        
         <template x-if="hasLeisure">
           <div>
             <div class="rounded-2xl border-slate-200 bg-white shadow-sm h-full">

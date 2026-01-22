@@ -142,6 +142,11 @@ class AgentController extends Controller
         return view('agent.order');
     }
 
+    public function checkout()
+    {
+        return view('agent.checkout');
+    }
+
     public function wallet()
     {
         return view('agent.wallet');

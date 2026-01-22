@@ -29,6 +29,9 @@ function formatRupiah(value) {
 
 function orderApp() {
   return {
+    // Agent selection
+    selectedAgentId: '',
+
     // Mode
     mode: 'bulk',
 
@@ -707,7 +710,7 @@ function orderApp() {
       @if(isset($linkReferral))
         window.location.href = '{{ url('/dash/' . $linkReferral . '/checkout') }}';
       @else
-        window.location.href = '{{ route('agent.checkout') }}';
+        window.location.href = '{{ route('freelance.checkout') }}';
       @endif
     },
 

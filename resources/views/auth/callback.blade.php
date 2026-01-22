@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
-
+<!-- VERSION: 2026-01-22 14:38 - FIXED REDIRECT PRIORITY -->
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -121,17 +121,36 @@
           // Redirect to unique dashboard link based on link_referral
           statusEl.textContent = 'Mengarahkan ke dashboard...';
           const linkReferral = user.link_referral || user.link_referal;
+          
+          // Debug logging
+          console.log('=== REDIRECT DEBUG ===');
+          console.log('Role:', role);
+          console.log('User Status:', user.status);
+          console.log('Link Referral:', linkReferral);
+          console.log('User ID:', user.id);
+          
+          // Priority 1: Jika ada link_referral, redirect ke dashboard normal (approved agent)
           if (linkReferral) {
+            console.log('REDIRECTING TO: /dash/' + linkReferral);
             window.location.href = `{{ url('/') }}/dash/${linkReferral}`;
-          } else {
-            // Fallback if no link_referral
-            if (role === 'agent') {
-              window.location.href = `{{ url('/') }}/agent/dashboard?id=${user.id}`;
-            } else if (role === 'affiliate') {
-              window.location.href = `{{ url('/') }}/affiliate/dashboard?id=${user.id}`;
-            } else if (role === 'freelance') {
-              window.location.href = `{{ url('/') }}/freelance/dashboard?id=${user.id}`;
-            }
+            return;
+          }
+          
+          // Priority 2: Jika agent pending tanpa link_referal
+          if (role === 'agent' && user.status === 'pending') {
+            console.log('REDIRECTING TO: /agent/pending?id=' + user.id);
+            window.location.href = `{{ url('/') }}/agent/pending?id=${user.id}`;
+            return;
+          }
+          
+          // Priority 3: Fallback if no link_referral
+          if (role === 'agent') {
+            console.log('FALLBACK REDIRECTING TO: /agent/dashboard?id=' + user.id);
+            window.location.href = `{{ url('/') }}/agent/dashboard?id=${user.id}`;
+          } else if (role === 'affiliate') {
+            window.location.href = `{{ url('/') }}/affiliate/dashboard?id=${user.id}`;
+          } else if (role === 'freelance') {
+            window.location.href = `{{ url('/') }}/freelance/dashboard?id=${user.id}`;
           }
         }
 
@@ -182,7 +201,7 @@
           if (countdownEl) countdownEl.textContent = countdown;
           if (countdown <= 0) {
             clearInterval(timer);
-            window.location.href = '{{ url('/login') }}';
+            window.location.href = '{{ route('login') }}';
           }
         }, 1000);
       }
