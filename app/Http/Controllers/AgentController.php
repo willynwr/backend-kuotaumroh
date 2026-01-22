@@ -133,11 +133,6 @@ class AgentController extends Controller
         return view('agent.wallet');
     }
 
-    public function withdraw()
-    {
-        return view('agent.withdraw');
-    }
-
     public function profile()
     {
         return view('agent.profile');

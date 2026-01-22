@@ -221,9 +221,17 @@ Route::prefix('agent')->name('agent.')->group(function () {
     Route::get('/order', [AgentController::class, 'order'])->name('order');
     Route::get('/checkout', [AgentController::class, 'checkout'])->name('checkout');
     Route::get('/wallet', [AgentController::class, 'wallet'])->name('wallet');
-    Route::get('/withdraw', [AgentController::class, 'withdraw'])->name('withdraw');
     Route::get('/profile', [AgentController::class, 'profile'])->name('profile');
     Route::get('/referrals', [AgentController::class, 'referrals'])->name('referrals');
+    
+    // Withdraw routes
+    Route::post('/withdraws', [App\Http\Controllers\Agent\WithdrawController::class, 'store'])->name('withdraws.store');
+    Route::get('/withdraws', [App\Http\Controllers\Agent\WithdrawController::class, 'index'])->name('withdraws.index');
+    
+    // Rekening routes
+    Route::get('/rekenings', [App\Http\Controllers\Agent\RekeningController::class, 'index'])->name('rekenings.index');
+    Route::post('/rekenings', [App\Http\Controllers\Agent\RekeningController::class, 'store'])->name('rekenings.store');
+    Route::delete('/rekenings/{id}', [App\Http\Controllers\Agent\RekeningController::class, 'destroy'])->name('rekenings.destroy');
 });
 
 // Agent Signup dengan Referral Link dari Affiliate/Freelance (Must be after agent.* routes)
