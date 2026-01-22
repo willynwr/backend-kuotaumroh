@@ -124,8 +124,10 @@ class DashboardController extends Controller
         }
 
         // Jika bukan freelance, cek apakah milik agent
+        // Untuk agent pending, harus akses via /agent/pending?id=xxx
+        // Untuk agent approved, bisa akses via /dash/{link_referal}
         $agent = Agent::where('link_referal', $linkReferral)
-            ->where('is_active', true)
+            ->whereIn('status', ['approved', 'approve'])
             ->first();
 
         if ($agent) {
@@ -134,12 +136,14 @@ class DashboardController extends Controller
                 return redirect()->route('login')->with('error', 'Anda tidak memiliki akses ke dashboard ini');
             }
             
+            // Tampilkan dashboard normal untuk agent yang sudah approved
             return view('agent.dashboard', [
                 'user' => $agent,
                 'linkReferral' => $linkReferral,
                 'portalType' => 'agent',
                 'jenisTravelAgent' => $agent->jenis_travel ?? '',
-                'linkReferalAgent' => $agent->link_referal ?? '', // Link toko agent (/u/...)
+                'linkReferalAgent' => $agent->link_referal ?? '',
+                'isPending' => false,
                 'stats' => [
                     'totalOrders' => 0, // TODO: implement orders count
                     'totalRevenue' => 0, // TODO: implement revenue
@@ -148,8 +152,8 @@ class DashboardController extends Controller
             ]);
         }
 
-        // Jika tidak ditemukan, redirect atau tampilkan error
-        abort(404, 'Dashboard tidak ditemukan atau tidak aktif');
+        // Jika tidak ditemukan, redirect ke login
+        return redirect()->route('login')->with('error', 'Login gagal. Akun Anda belum terdaftar. Silakan daftar terlebih dahulu atau hubungi tim support.');
     }
 
     /**
@@ -257,16 +261,18 @@ class DashboardController extends Controller
             ];
         }
 
-        // Cek agent
+        // Cek agent (hanya yang sudah approved/approve, bukan pending)
         $agent = Agent::where('link_referal', $linkReferral)
-            ->where('is_active', true)
+            ->whereIn('status', ['approved', 'approve'])
             ->first();
 
         if ($agent) {
             return [
                 'user' => $agent,
                 'portalType' => 'agent',
-                'viewPath' => 'agent'
+                'viewPath' => 'agent',
+                'jenisTravelAgent' => $agent->jenis_travel ?? '',
+                'linkReferalAgent' => $agent->link_referal ?? '',
             ];
         }
 
@@ -315,7 +321,7 @@ class DashboardController extends Controller
     {
         $data = $this->getUserByLinkReferral($linkReferral);
         if (!$data) {
-            abort(404, 'Dashboard tidak ditemukan atau tidak aktif');
+            return redirect()->route('login')->with('error', 'Login gagal. Akun Anda belum terdaftar. Silakan daftar terlebih dahulu atau hubungi tim support.');
         }
 
         // Debug: Log agents data
@@ -343,7 +349,7 @@ class DashboardController extends Controller
     {
         $data = $this->getUserByLinkReferral($linkReferral);
         if (!$data) {
-            abort(404, 'Dashboard tidak ditemukan atau tidak aktif');
+            return redirect()->route('login')->with('error', 'Login gagal. Akun Anda belum terdaftar. Silakan daftar terlebih dahulu atau hubungi tim support.');
         }
 
         return view($data['viewPath'] . '.rewards', [
@@ -361,7 +367,7 @@ class DashboardController extends Controller
     {
         $data = $this->getUserByLinkReferral($linkReferral);
         if (!$data) {
-            abort(404, 'Dashboard tidak ditemukan atau tidak aktif');
+            return redirect()->route('login')->with('error', 'Login gagal. Akun Anda belum terdaftar. Silakan daftar terlebih dahulu atau hubungi tim support.');
         }
 
         return view($data['viewPath'] . '.points-history', [
@@ -379,7 +385,7 @@ class DashboardController extends Controller
     {
         $data = $this->getUserByLinkReferral($linkReferral);
         if (!$data) {
-            abort(404, 'Dashboard tidak ditemukan atau tidak aktif');
+            return redirect()->route('login')->with('error', 'Login gagal. Akun Anda belum terdaftar. Silakan daftar terlebih dahulu atau hubungi tim support.');
         }
 
         return view($data['viewPath'] . '.profile', [
@@ -397,7 +403,7 @@ class DashboardController extends Controller
     {
         $data = $this->getUserByLinkReferral($linkReferral);
         if (!$data) {
-            abort(404, 'Dashboard tidak ditemukan atau tidak aktif');
+            return redirect()->route('login')->with('error', 'Login gagal. Akun Anda belum terdaftar. Silakan daftar terlebih dahulu atau hubungi tim support.');
         }
 
         return view($data['viewPath'] . '.invite', [
@@ -415,7 +421,7 @@ class DashboardController extends Controller
     {
         $data = $this->getUserByLinkReferral($linkReferral);
         if (!$data) {
-            abort(404, 'Dashboard tidak ditemukan atau tidak aktif');
+            return redirect()->route('login')->with('error', 'Login gagal. Akun Anda belum terdaftar. Silakan daftar terlebih dahulu atau hubungi tim support.');
         }
 
         // Get packages from database
@@ -442,13 +448,31 @@ class DashboardController extends Controller
     }
 
     /**
+     * Halaman Checkout
+     */
+    public function checkout($linkReferral)
+    {
+        $data = $this->getUserByLinkReferral($linkReferral);
+        if (!$data) {
+            abort(404, 'Dashboard tidak ditemukan atau tidak aktif');
+        }
+
+        return view($data['viewPath'] . '.checkout', [
+            'user' => $data['user'],
+            'linkReferral' => $linkReferral,
+            'portalType' => $data['portalType'],
+            'stats' => $this->getStats($data['user'])
+        ]);
+    }
+
+    /**
      * Halaman History (Agent)
      */
     public function history($linkReferral)
     {
         $data = $this->getUserByLinkReferral($linkReferral);
         if (!$data) {
-            abort(404, 'Dashboard tidak ditemukan atau tidak aktif');
+            return redirect()->route('login')->with('error', 'Login gagal. Akun Anda belum terdaftar. Silakan daftar terlebih dahulu atau hubungi tim support.');
         }
 
         return view($data['viewPath'] . '.history', [
@@ -466,7 +490,7 @@ class DashboardController extends Controller
     {
         $data = $this->getUserByLinkReferral($linkReferral);
         if (!$data) {
-            abort(404, 'Dashboard tidak ditemukan atau tidak aktif');
+            return redirect()->route('login')->with('error', 'Login gagal. Akun Anda belum terdaftar. Silakan daftar terlebih dahulu atau hubungi tim support.');
         }
 
         return view($data['viewPath'] . '.wallet', [
@@ -484,7 +508,7 @@ class DashboardController extends Controller
     {
         $data = $this->getUserByLinkReferral($linkReferral);
         if (!$data) {
-            abort(404, 'Dashboard tidak ditemukan atau tidak aktif');
+            return redirect()->route('login')->with('error', 'Login gagal. Akun Anda belum terdaftar. Silakan daftar terlebih dahulu atau hubungi tim support.');
         }
 
         return view($data['viewPath'] . '.withdraw', [
@@ -502,7 +526,7 @@ class DashboardController extends Controller
     {
         $data = $this->getUserByLinkReferral($linkReferral);
         if (!$data) {
-            abort(404, 'Dashboard tidak ditemukan atau tidak aktif');
+            return redirect()->route('login')->with('error', 'Login gagal. Akun Anda belum terdaftar. Silakan daftar terlebih dahulu atau hubungi tim support.');
         }
 
         $viewData = [
@@ -527,7 +551,7 @@ class DashboardController extends Controller
     {
         $data = $this->getUserByLinkReferral($linkReferral);
         if (!$data) {
-            abort(404, 'Dashboard tidak ditemukan atau tidak aktif');
+            return redirect()->route('login')->with('error', 'Login gagal. Akun Anda belum terdaftar. Silakan daftar terlebih dahulu atau hubungi tim support.');
         }
 
         // Get packages from database
