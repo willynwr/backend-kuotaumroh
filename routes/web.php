@@ -66,21 +66,11 @@ Route::get('/agent/pending', function(Request $request) {
         
         \Log::info('Rendering pending dashboard for agent ID: ' . $agentId);
         
-        // Render dashboard normal tapi dengan flag isPending
-        return view('agent.dashboard', [
+        // Render dashboard khusus untuk agent pending
+        return view('agent.pending.dashboard', [
             'user' => $agent,
             'linkReferral' => null,
             'portalType' => 'agent',
-            'jenisTravelAgent' => $agent->jenis_travel ?? '',
-            'linkReferalAgent' => null, // Belum ada karena pending
-            'isPending' => true,
-            'isApproved' => false,
-            'status' => 'pending',
-            'stats' => [
-                'totalOrders' => 0,
-                'totalRevenue' => 0,
-                'activeBookings' => 0,
-            ]
         ]);
     } catch (\Exception $e) {
         \Log::error('Error in agent pending route: ' . $e->getMessage());

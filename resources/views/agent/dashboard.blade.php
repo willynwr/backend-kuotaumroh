@@ -6,16 +6,6 @@
   <div x-data="dashboardApp()">
     <main class="container mx-auto py-10 animate-fade-in px-4">
       
-      {{-- Simple Status Badge for Pending Agent --}}
-      @if(isset($isPending) && $isPending)
-      <div class="fixed top-24 right-4 z-50 animate-slide-in-right">
-        <div class="flex items-center gap-2 rounded-full bg-amber-100 border border-amber-200 px-4 py-2 shadow-sm">
-          <div class="h-2 w-2 rounded-full bg-amber-500 animate-pulse"></div>
-          <span class="text-xs font-semibold text-amber-900">Status: Menunggu Verifikasi</span>
-        </div>
-      </div>
-      @endif
-      
       <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-12">
         <!-- Box 1: Profit Bulan Ini -->
         <div>
@@ -57,29 +47,6 @@
                 <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">Link Toko: Kuotaumroh.id</h3>
               </div>
               <div class="p-6 pt-0">
-                @if(isset($isPending) && $isPending)
-                {{-- PENDING STATE FOR UMROH --}}
-                <div class="flex flex-col gap-4 sm:flex-row sm:items-start opacity-70">
-                  <div class="sm:w-24 sm:shrink-0">
-                    <div class="w-full aspect-square rounded-lg border bg-slate-100 flex items-center justify-center p-2">
-                       <svg class="h-8 w-8 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                       </svg>
-                    </div>
-                  </div>
-                  <div class="space-y-2 sm:flex-1">
-                    <label class="text-xs font-medium text-muted-foreground">Link Toko Umroh</label>
-                    <div class="flex flex-col gap-2 sm:flex-row">
-                      <input type="text" readonly value="Menunggu Verifikasi Admin..." class="flex h-9 w-full min-w-0 rounded-md border border-input bg-muted px-3 py-2 text-xs italic text-slate-500 cursor-not-allowed">
-                      <button disabled class="h-9 w-full px-3 bg-slate-200 text-slate-400 rounded-md text-xs font-medium cursor-not-allowed sm:w-auto">
-                        Salin
-                      </button>
-                    </div>
-                    <p class="text-xs text-amber-600 font-medium">Link akan aktif setelah verifikasi.</p>
-                  </div>
-                </div>
-                @else
-                {{-- ACTIVE STATE FOR UMROH --}}
                 <div class="flex flex-col gap-4 sm:flex-row sm:items-start">
                   <div class="sm:w-24 sm:shrink-0">
                     <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(referralLinkUmroh)" alt="QR Kuotaumroh" class="w-full aspect-square rounded-lg border bg-white object-contain p-2">
@@ -95,7 +62,6 @@
                     <p class="text-xs text-slate-500">Link untuk pemesanan paket Umroh.</p>
                   </div>
                 </div>
-                @endif
               </div>
             </div>
           </div>
@@ -108,29 +74,6 @@
                 <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">Link Toko: Roamer.id</h3>
               </div>
               <div class="p-6 pt-0">
-                @if(isset($isPending) && $isPending)
-                {{-- PENDING STATE FOR LEISURE --}}
-                <div class="flex flex-col gap-4 sm:flex-row sm:items-start opacity-70">
-                  <div class="sm:w-24 sm:shrink-0">
-                    <div class="w-full aspect-square rounded-lg border bg-slate-100 flex items-center justify-center p-2">
-                       <svg class="h-8 w-8 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                       </svg>
-                    </div>
-                  </div>
-                  <div class="space-y-2 sm:flex-1">
-                    <label class="text-xs font-medium text-muted-foreground">Link Toko Leisure</label>
-                    <div class="flex flex-col gap-2 sm:flex-row">
-                      <input type="text" readonly value="Menunggu Verifikasi Admin..." class="flex h-9 w-full min-w-0 rounded-md border border-input bg-muted px-3 py-2 text-xs italic text-slate-500 cursor-not-allowed">
-                      <button disabled class="h-9 w-full px-3 bg-slate-200 text-slate-400 rounded-md text-xs font-medium cursor-not-allowed sm:w-auto">
-                        Salin
-                      </button>
-                    </div>
-                    <p class="text-xs text-amber-600 font-medium">Link akan aktif setelah verifikasi.</p>
-                  </div>
-                </div>
-                @else
-                {{-- ACTIVE STATE FOR LEISURE --}}
                 <div class="flex flex-col gap-4 sm:flex-row sm:items-start">
                   <div class="sm:w-24 sm:shrink-0">
                     <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(referralLinkLeisure)" alt="QR Roamer" class="w-full aspect-square rounded-lg border bg-white object-contain p-2">
@@ -146,7 +89,6 @@
                     <p class="text-xs text-slate-500">Link untuk pemesanan paket Leisure.</p>
                   </div>
                 </div>
-                @endif
               </div>
             </div>
           </div>
@@ -178,18 +120,6 @@
         </div>
         <div class="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-5">
           <template x-for="item in menuItems" :key="item.id">
-            @if(isset($isPending) && $isPending)
-            {{-- Jika pending, tampilkan normal tapi tidak bisa diklik --}}
-            <div class="cursor-not-allowed opacity-80">
-              <div class="group flex h-48 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <div class="flex flex-col items-center justify-center gap-3 p-6 text-center">
-                  <img :src="imageBase + '/' + item.icon + '.png'" :alt="item.title" class="h-24 w-24 object-contain" onerror="this.src = imageBase + '/kabah.png'" />
-                  <h3 class="text-xs font-bold uppercase tracking-wide leading-tight text-slate-700" x-text="item.title"></h3>
-                </div>
-              </div>
-            </div>
-            @else
-            {{-- Jika approved, tampilkan normal --}}
             <a :href="item.href">
               <div class="group flex h-48 cursor-pointer items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary hover:bg-primary hover:text-primary-foreground hover:shadow-md">
                 <div class="flex flex-col items-center justify-center gap-3 p-6 text-center">
@@ -198,7 +128,6 @@
                 </div>
               </div>
             </a>
-            @endif
           </template>
         </div>
       </div>

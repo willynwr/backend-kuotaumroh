@@ -123,9 +123,11 @@ class DashboardController extends Controller
             ]);
         }
 
-        // Jika bukan freelance, cek apakah milik agent (termasuk pending dan approved/approve)
+        // Jika bukan freelance, cek apakah milik agent
+        // Untuk agent pending, harus akses via /agent/pending?id=xxx
+        // Untuk agent approved, bisa akses via /dash/{link_referal}
         $agent = Agent::where('link_referal', $linkReferral)
-            ->whereIn('status', ['pending', 'approved', 'approve'])
+            ->whereIn('status', ['approved', 'approve'])
             ->first();
 
         if ($agent) {
@@ -134,22 +136,14 @@ class DashboardController extends Controller
                 return redirect()->route('login')->with('error', 'Anda tidak memiliki akses ke dashboard ini');
             }
             
-            // Jika agent masih pending, redirect ke dashboard pending
-            if ($agent->status === 'pending') {
-                return view('agent.pending.dashboard', [
-                    'user' => $agent,
-                    'linkReferral' => $linkReferral,
-                    'portalType' => 'agent',
-                ]);
-            }
-            
-            // Jika agent sudah approved/approve, tampilkan dashboard normal
+            // Tampilkan dashboard normal untuk agent yang sudah approved
             return view('agent.dashboard', [
                 'user' => $agent,
                 'linkReferral' => $linkReferral,
                 'portalType' => 'agent',
                 'jenisTravelAgent' => $agent->jenis_travel ?? '',
-                'linkReferalAgent' => $agent->link_referal ?? '', // Link toko agent (/u/...)
+                'linkReferalAgent' => $agent->link_referal ?? '',
+                'isPending' => false,
                 'stats' => [
                     'totalOrders' => 0, // TODO: implement orders count
                     'totalRevenue' => 0, // TODO: implement revenue
@@ -267,21 +261,18 @@ class DashboardController extends Controller
             ];
         }
 
-        // Cek agent (termasuk pending)
+        // Cek agent (hanya yang sudah approved/approve, bukan pending)
         $agent = Agent::where('link_referal', $linkReferral)
-            ->whereIn('status', ['pending', 'approved'])
+            ->whereIn('status', ['approved', 'approve'])
             ->first();
 
         if ($agent) {
-            // Jika agent pending, redirect ke dashboard pending
-            if ($agent->status === 'pending') {
-                return redirect()->route('agent.pending.dashboard', ['linkReferral' => $linkReferral]);
-            }
-            
             return [
                 'user' => $agent,
                 'portalType' => 'agent',
-                'viewPath' => 'agent'
+                'viewPath' => 'agent',
+                'jenisTravelAgent' => $agent->jenis_travel ?? '',
+                'linkReferalAgent' => $agent->link_referal ?? '',
             ];
         }
 
