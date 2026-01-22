@@ -13,10 +13,15 @@
 /**
  * Base URL untuk API Backend
  * 
- * DEVELOPMENT: http://127.0.0.1:8000
- * PRODUCTION: https://api.kuotaumroh.id (ganti dengan URL production Anda)
+ * DEVELOPMENT/LOCAL: Gunakan external API langsung
+ * PRODUCTION: Akan otomatis menggunakan domain yang sama
+ * 
+ * NOTE: Untuk testing QRIS payment, wajib deploy ke server dengan domain publik
+ * atau gunakan ngrok untuk expose localhost
  */
-// const API_BASE_URL = 'https://api.roamer.id';
+const API_BASE_URL = window.location.hostname === 'kuotaumroh.id' 
+    ? '' // Production: use same origin
+    : 'https://kuotaumroh.id'; // Development: use external API directly
 
 /**
  * Base URL untuk API endpoints
