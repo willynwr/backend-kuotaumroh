@@ -1,4 +1,4 @@
-@extends('agent.layout')
+@extends('layouts.affiliate')
 
 @section('title', 'Pesanan Baru - Kuotaumroh.id')
 
@@ -8,7 +8,7 @@
       <!-- Page Header -->
       <div class="mb-6">
         <div class="flex items-start gap-4">
-          <a href="{{ isset($linkReferral) ? url('/dash/' . $linkReferral) : route('agent.dashboard') }}" class="inline-flex h-10 w-10 items-center justify-center rounded-md border bg-white hover:bg-muted transition-colors" aria-label="Kembali">
+          <a href="{{ isset($linkReferral) ? url('/dash/' . $linkReferral) : url('/dash/affiliate') }}" class="inline-flex h-10 w-10 items-center justify-center rounded-md border bg-white hover:bg-muted transition-colors" aria-label="Kembali">
             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
           </a>
           <div>
@@ -22,8 +22,33 @@
         <!-- Main Form (2/3) -->
         <div class="lg:col-span-2 space-y-6">
 
-          <!-- Input Method Card -->
+          <!-- Agent Selection Card -->
           <div class="rounded-lg border bg-white shadow-sm">
+            <div class="p-6 border-b">
+              <h3 class="text-lg font-semibold">Pilih Travel Agent</h3>
+            </div>
+            <div class="p-6">
+              <div class="space-y-2">
+                <label for="agent-select" class="text-sm font-medium">Travel Agent</label>
+                <select 
+                  id="agent-select" 
+                  x-model="selectedAgentId"
+                  class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                >
+                  <option value="">-- Pilih Travel Agent --</option>
+                  @foreach($agents as $agent)
+                    <option value="{{ $agent->id }}">{{ $agent->nama_travel }}</option>
+                  @endforeach
+                </select>
+                <p class="text-xs text-muted-foreground">
+                  Pilih travel agent terlebih dahulu sebelum membuat pesanan
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Input Method Card -->
+          <div x-show="selectedAgentId" class="rounded-lg border bg-white shadow-sm">
             <div class="p-6 border-b">
               <h3 class="text-lg font-semibold">Pilih Metode Input</h3>
             </div>
@@ -419,10 +444,10 @@
     </div>
 
     {{-- All Dialogs Below --}}
-    @include('agent.partials.order-dialogs')
+    @include('affiliate.partials.order-dialogs')
   </div>
 @endsection
 
 @push('scripts')
-  @include('agent.partials.order-scripts')
+  @include('affiliate.partials.order-scripts')
 @endpush

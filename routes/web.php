@@ -205,6 +205,9 @@ Route::prefix('affiliate')->group(function () {
     })->name('affiliate.rewards');
 });
 
+// Order page for affiliate and freelance (uses same route pattern as dashboard)
+Route::get('/dash/{linkReferral}/order', [DashboardController::class, 'order'])->name('dash.order');
+
 // freelance routes
 Route::prefix('freelance')->group(function () {
     Route::get('dashboard', [DashboardController::class, 'freelanceDashboard'])->name('freelance.dashboard');
