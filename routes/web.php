@@ -30,9 +30,6 @@ Route::get('/agent', function () {
 // Agent Signup tanpa Referral (default affiliate_id = 1)
 Route::get('/signup', [App\Http\Controllers\AgentController::class, 'signup'])->name('signup');
 
-// Agent Signup dengan Referral Link dari Affiliate/Freelance
-Route::get('/agent/{link_referral}', [App\Http\Controllers\AgentController::class, 'signupWithReferral'])->name('agent.signup.referral');
-
 // Halaman Toko Agent - /u/{link_referal}
 Route::get('/u/{link_referal}', [App\Http\Controllers\AgentController::class, 'showStore'])->name('agent.store.view');
 
@@ -59,6 +56,7 @@ Route::prefix('dash')->name('dash.')->middleware('web')->group(function () {
     
     // Agent specific routes
     Route::get('/{link_referral}/order', [DashboardController::class, 'order'])->name('order');
+    Route::get('/{link_referral}/checkout', [DashboardController::class, 'checkout'])->name('checkout');
     Route::get('/{link_referral}/history', [DashboardController::class, 'history'])->name('history');
     Route::get('/{link_referral}/wallet', [DashboardController::class, 'wallet'])->name('wallet');
     Route::get('/{link_referral}/withdraw', [DashboardController::class, 'withdraw'])->name('withdraw');
@@ -149,12 +147,17 @@ Route::prefix('agent')->name('agent.')->group(function () {
     Route::get('/dashboard', [AgentController::class, 'dashboard'])->name('dashboard');
     Route::get('/catalog', [AgentController::class, 'catalog'])->name('catalog');
     Route::get('/history', [AgentController::class, 'history'])->name('history');
+    Route::get('/orders', [AgentController::class, 'history'])->name('orders');
     Route::get('/order', [AgentController::class, 'order'])->name('order');
+    Route::get('/checkout', [AgentController::class, 'checkout'])->name('checkout');
     Route::get('/wallet', [AgentController::class, 'wallet'])->name('wallet');
     Route::get('/withdraw', [AgentController::class, 'withdraw'])->name('withdraw');
     Route::get('/profile', [AgentController::class, 'profile'])->name('profile');
     Route::get('/referrals', [AgentController::class, 'referrals'])->name('referrals');
 });
+
+// Agent Signup dengan Referral Link dari Affiliate/Freelance (Must be after agent.* routes)
+Route::get('/agent/{link_referral}', [App\Http\Controllers\AgentController::class, 'signupWithReferral'])->name('agent.signup.referral');
 
 // agent routes
 Route::get('/agents', [App\Http\Controllers\AgentController::class, 'index']);
@@ -191,6 +194,15 @@ Route::prefix('affiliate')->group(function () {
     Route::get('downlines', function () {
         return view('affiliate.downlines');
     })->name('affiliate.downlines');
+    Route::get('orders', function () {
+        return view('affiliate.history');
+    })->name('affiliate.orders');
+    Route::get('order', function () {
+        return view('affiliate.order');
+    })->name('affiliate.order');
+    Route::get('checkout', function () {
+        return view('affiliate.checkout');
+    })->name('affiliate.checkout');
     Route::get('invite', function () {
         return view('affiliate.invite');
     })->name('affiliate.invite');
@@ -214,6 +226,15 @@ Route::prefix('freelance')->group(function () {
     Route::get('downlines', function () {
         return view('freelance.downlines');
     })->name('freelance.downlines');
+    Route::get('orders', function () {
+        return view('freelance.history');
+    })->name('freelance.orders');
+    Route::get('order', function () {
+        return view('freelance.order');
+    })->name('freelance.order');
+    Route::get('checkout', function () {
+        return view('freelance.checkout');
+    })->name('freelance.checkout');
     Route::get('invite', function () {
         return view('freelance.invite');
     })->name('freelance.invite');
