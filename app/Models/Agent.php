@@ -69,10 +69,4 @@ class Agent extends Model
     {
         return $this->hasMany(Withdraw::class);
     }
-
-    /**
-    public function freelance()
-    {
-        return $this->belongsTo(Freelance::class);
-    }
 }
