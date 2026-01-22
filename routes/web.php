@@ -18,7 +18,7 @@ use App\Http\Controllers\DashboardController;
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect('/u/kuotaumroh');
 })->name('welcome');
 
 // Auth Routes - Unified Login for all users (Agent, Affiliate, Freelance) 
@@ -43,6 +43,11 @@ Route::get('/callback', function () {
 Route::get('/checkout', function () {
     return view('checkout');
 })->name('checkout');
+
+// Halaman Payment Umroh - /umroh/payment?id=xxx
+Route::get('/umroh/payment', function () {
+    return view('payment');
+})->name('umroh.payment');
 
 Route::get('/admin/login', function () {
     return view('auth.admin.login');
