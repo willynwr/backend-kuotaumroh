@@ -17,7 +17,7 @@ class AffiliateSeeder extends Seeder
         $affiliates = [
             [
                 'nama' => 'Kuota Umroh',
-                'email' => 'kuotaumroh@gmail.com',
+                'email' => 'kuotahaji@gmail.com',
                 'no_wa' => '081234567890',
                 'provinsi' => 'Jawa Barat',
                 'kab_kota' => 'Bandung',
