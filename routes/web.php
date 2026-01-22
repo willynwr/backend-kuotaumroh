@@ -30,6 +30,65 @@ Route::get('/agent', function () {
 // Agent Signup tanpa Referral (default affiliate_id = 1)
 Route::get('/signup', [App\Http\Controllers\AgentController::class, 'signup'])->name('signup');
 
+// Route khusus untuk agent pending (by ID, karena belum punya link_referal)
+// HARUS SEBELUM /agent/{link_referral} untuk menghindari conflict
+Route::get('/agent/pending', function(Request $request) {
+    try {
+        \Log::info('=== AGENT PENDING ROUTE ACCESSED ===');
+        
+        $agentId = $request->query('id');
+        \Log::info('Agent ID from query: ' . $agentId);
+        
+        if (!$agentId) {
+            \Log::warning('No agent ID provided');
+            return redirect()->route('login')->with('error', 'ID agent tidak ditemukan');
+        }
+        
+        $agent = \App\Models\Agent::find($agentId);
+        \Log::info('Agent found: ' . ($agent ? 'YES' : 'NO'));
+        
+        if (!$agent) {
+            \Log::warning('Agent not found with ID: ' . $agentId);
+            return redirect()->route('login')->with('error', 'Akun tidak ditemukan');
+        }
+        
+        \Log::info('Agent status: ' . $agent->status);
+        
+        if ($agent->status !== 'pending') {
+            // Jika sudah approved, redirect ke dashboard normal
+            if ($agent->link_referal) {
+                \Log::info('Agent approved, redirecting to: /dash/' . $agent->link_referal);
+                return redirect('/dash/' . $agent->link_referal);
+            }
+            \Log::warning('Agent approved but no link_referal');
+            return redirect()->route('login')->with('error', 'Akun Anda sudah disetujui, silakan login ulang');
+        }
+        
+        \Log::info('Rendering pending dashboard for agent ID: ' . $agentId);
+        
+        // Render dashboard normal tapi dengan flag isPending
+        return view('agent.dashboard', [
+            'user' => $agent,
+            'linkReferral' => null,
+            'portalType' => 'agent',
+            'jenisTravelAgent' => $agent->jenis_travel ?? '',
+            'linkReferalAgent' => null, // Belum ada karena pending
+            'isPending' => true,
+            'isApproved' => false,
+            'status' => 'pending',
+            'stats' => [
+                'totalOrders' => 0,
+                'totalRevenue' => 0,
+                'activeBookings' => 0,
+            ]
+        ]);
+    } catch (\Exception $e) {
+        \Log::error('Error in agent pending route: ' . $e->getMessage());
+        \Log::error('Stack trace: ' . $e->getTraceAsString());
+        return redirect()->route('login')->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+    }
+})->name('agent.pending');
+
 // Agent Signup dengan Referral Link dari Affiliate/Freelance
 Route::get('/agent/{link_referral}', [App\Http\Controllers\AgentController::class, 'signupWithReferral'])->name('agent.signup.referral');
 
@@ -65,6 +124,24 @@ Route::prefix('dash')->name('dash.')->middleware('web')->group(function () {
     Route::get('/{link_referral}/referrals', [DashboardController::class, 'referrals'])->name('referrals');
     Route::get('/{link_referral}/catalog', [DashboardController::class, 'catalog'])->name('catalog');
 });
+
+
+// Route khusus untuk agent pending (by link_referal, untuk yang sudah punya)
+Route::get('/agent/pending/{linkReferral}', function($linkReferral) {
+    $agent = \App\Models\Agent::where('link_referal', $linkReferral)
+        ->where('status', 'pending')
+        ->first();
+    
+    if (!$agent) {
+        return redirect()->route('login')->with('error', 'Akun tidak ditemukan');
+    }
+    
+    return view('agent.pending.dashboard', [
+        'user' => $agent,
+        'linkReferral' => $linkReferral,
+        'portalType' => 'agent',
+    ]);
+})->name('agent.pending.dashboard');
 
 // API Routes untuk mendapatkan data dashboard
 Route::prefix('api/dash')->name('api.dash.')->group(function () {

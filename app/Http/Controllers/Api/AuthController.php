@@ -115,6 +115,7 @@ class AuthController extends Controller
                     'jenis_agent' => $user->jenis_agent ?? null,
                     'agent_code' => $user->agent_code ?? null,
                     'link_referral' => $user->link_referral ?? $user->link_referal ?? null,
+                    'status' => $user->status ?? 'approved',
                 ],
                 'token' => $token,
                 'role' => $role
