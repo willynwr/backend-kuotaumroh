@@ -290,10 +290,41 @@ class DashboardController extends Controller
     {
         // Jika user adalah agent, return stats yang berbeda
         if ($user instanceof Agent) {
+            $now = now();
+            $startOfMonth = $now->copy()->startOfMonth();
+            
+            // Profit bulan ini diambil dari kolom saldo di table agent
+            $monthlyProfit = $user->saldo ?? 0;
+            
+            // Hitung total profit dari semua pesanan yang pembayarannya berhasil
+            $totalProfit = \App\Models\Pesanan::where('agent_id', $user->id)
+                ->whereHas('pembayaran', function($query) {
+                    $query->where('status_pembayaran', 'selesai');
+                })
+                ->sum('profit');
+            
+            // Hitung total transaksi (jumlah pesanan) bulan ini
+            $monthlyTransactions = \App\Models\Pesanan::where('agent_id', $user->id)
+                ->whereHas('pembayaran', function($query) {
+                    $query->where('status_pembayaran', 'selesai');
+                })
+                ->whereBetween('created_at', [$startOfMonth, $now])
+                ->count();
+            
+            // Hitung total transaksi keseluruhan
+            $totalTransactions = \App\Models\Pesanan::where('agent_id', $user->id)
+                ->whereHas('pembayaran', function($query) {
+                    $query->where('status_pembayaran', 'selesai');
+                })
+                ->count();
+            
             return [
-                'totalOrders' => 0, // TODO: implement
-                'totalRevenue' => 0, // TODO: implement
-                'activeBookings' => 0, // TODO: implement
+                'monthlyProfit' => $monthlyProfit,
+                'totalProfit' => $totalProfit,
+                'monthlyTransactions' => $monthlyTransactions,
+                'totalTransactions' => $totalTransactions,
+                'walletBalance' => 0, // TODO: implement dari table wallet/saldo
+                'pendingWithdrawal' => 0, // TODO: implement dari table withdraw
             ];
         }
 

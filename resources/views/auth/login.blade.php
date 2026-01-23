@@ -140,7 +140,7 @@
 
           <!-- Login Card -->
           <div class="w-full max-w-md mx-auto md:max-w-none">
-            <div class="rounded-2xl bg-white/95 backdrop-blur shadow-2xl border border-white/40 p-4 sm:p-5 lg:p-7 space-y-4 sm:space-y-5">
+            <div class="rounded-2xl bg-white/50 backdrop-blur shadow-2xl border border-white/40 p-4 sm:p-5 lg:p-7 space-y-4 sm:space-y-5">
               <div class="space-y-3 text-center">
                 <p class="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Masuk Agen</p>
                 <h3 class="text-lg sm:text-xl lg:text-2xl font-bold text-slate-900">Lanjutkan dengan Google</h3>

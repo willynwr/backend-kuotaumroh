@@ -13,6 +13,8 @@ class Pesanan extends Model
 
     protected $fillable = [
         'batch_id',
+        'agent_id',
+        'produk_id',
         'package_id',
         'nama_batch',
         'msisdn',
@@ -68,6 +70,14 @@ class Pesanan extends Model
     }
 
     /**
+     * Relasi ke Agent
+     */
+    public function agent()
+    {
+        return $this->belongsTo(Agent::class);
+    }
+
+    /**
      * Scope: Filter by batch_id
      */
     public function scopeByBatch($query, $batchId)
@@ -89,5 +99,13 @@ class Pesanan extends Model
     public function scopeByStatus($query, $status)
     {
         return $query->where('status_aktivasi', $status);
+    }
+
+    /**
+     * Scope: Filter by agent_id
+     */
+    public function scopeByAgent($query, $agentId)
+    {
+        return $query->where('agent_id', $agentId);
     }
 }

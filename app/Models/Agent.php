@@ -30,6 +30,7 @@ class Agent extends Model
         'date_approve',
         'logo',
         'surat_ppiu',
+        'saldo',
         'status',
         'is_active',
     ];

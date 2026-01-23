@@ -100,22 +100,9 @@
           </div>
         </template>
 
-        <!-- Debug: Show when neither condition is met -->
+        <!-- Jika tidak ada QR code yang ditampilkan, tampilkan placeholder kosong -->
         <template x-if="!hasUmroh && !hasLeisure">
-          <div>
-            <div class="rounded-2xl border-red-200 bg-red-50 shadow-sm h-full p-6">
-              <p class="text-sm text-red-600 font-medium mb-3">⚠️ Debug: Tidak ada jenis travel yang terdeteksi</p>
-              <div class="space-y-1 text-xs">
-                <p class="text-red-500">jenisTravel: "<span x-text="jenisTravel"></span>"</p>
-                <p class="text-red-500">jenisTravel type: <span x-text="typeof jenisTravel"></span></p>
-                <p class="text-red-500">jenisTravel length: <span x-text="jenisTravel.length"></span></p>
-                <p class="text-red-500">After split: <span x-text="jenisTravel ? JSON.stringify(jenisTravel.toUpperCase().split(',').map(t => t.trim())) : 'N/A'"></span></p>
-                <p class="text-red-500 font-semibold mt-2">hasUmroh: <span x-text="hasUmroh"></span></p>
-                <p class="text-red-500 font-semibold">hasLeisure: <span x-text="hasLeisure"></span></p>
-                <p class="text-red-500 mt-2">linkReferalAgent: "<span x-text="linkReferalAgent"></span>"</p>
-              </div>
-            </div>
-          </div>
+          <div></div>
         </template>
       </div>
 
@@ -155,11 +142,12 @@
         hasUmroh: false,
         hasLeisure: false,
         stats: {
-          monthlyProfit: 2450000,
-          totalProfit: 15750000,
-          walletBalance: 3250000,
-          pendingWithdrawal: 500000,
+          monthlyProfit: 0,
+          totalProfit: 0,
+          walletBalance: 0,
+          pendingWithdrawal: 0,
         },
+        loading: true,
         menuItems: [
           { id: 'new-order', title: 'Pesanan Baru', href: '{{ isset($linkReferral) ? url("/dash/" . $linkReferral . "/order") : route("agent.order") }}', icon: 'order' },
           { id: 'history', title: 'Riwayat Transaksi', href: '{{ isset($linkReferral) ? url("/dash/" . $linkReferral . "/history") : route("agent.history") }}', icon: 'history' },
@@ -167,9 +155,12 @@
           { id: 'referrals', title: 'Program Referral', href: '{{ isset($linkReferral) ? url("/dash/" . $linkReferral . "/referrals") : route("agent.referrals") }}', icon: 'referral' },
           { id: 'catalog', title: 'Katalog Harga', href: '{{ isset($linkReferral) ? url("/dash/" . $linkReferral . "/catalog") : route("agent.catalog") }}', icon: 'catalog' },
         ],
-        init() {
+        async init() {
           console.log('Dashboard Init - jenisTravel:', this.jenisTravel);
           console.log('linkReferalAgent:', this.linkReferalAgent);
+          
+          // Load stats dari API
+          await this.loadStats();
           
           // Determine which travel types the agent has
           // Use more robust parsing with includes check
@@ -222,6 +213,34 @@
           document.body.appendChild(a);
           a.click();
           document.body.removeChild(a);
+        },
+        async loadStats() {
+          try {
+            this.loading = true;
+            const agentId = '{{ $user->id ?? "" }}';
+            
+            if (!agentId) {
+              console.error('Agent ID not found');
+              return;
+            }
+            
+            const response = await fetch(`/api/agent/stats?agent_id=${agentId}`);
+            const result = await response.json();
+            
+            if (result.success) {
+              this.stats.monthlyProfit = parseInt(result.data.monthly_profit) || 0;
+              this.stats.totalProfit = parseInt(result.data.total_profit) || 0;
+              this.stats.walletBalance = parseInt(result.data.wallet_balance) || 0;
+              this.stats.pendingWithdrawal = parseInt(result.data.pending_withdrawal) || 0;
+              console.log('Stats loaded:', this.stats);
+            } else {
+              console.error('Failed to load stats:', result.message);
+            }
+          } catch (error) {
+            console.error('Error loading stats:', error);
+          } finally {
+            this.loading = false;
+          }
         },
       };
     }
