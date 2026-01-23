@@ -17,9 +17,7 @@ use App\Http\Controllers\DashboardController;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-})->name('welcome');
+Route::get('/', [App\Http\Controllers\AgentController::class, 'showWelcome'])->name('welcome');
 
 // Auth Routes - Unified Login for all users (Agent, Affiliate, Freelance) 
 // Agent login on /agent (before prefix group to avoid conflict)
@@ -92,6 +90,11 @@ Route::get('/callback', function () {
 Route::get('/checkout', function () {
     return view('checkout');
 })->name('checkout');
+
+// Halaman Payment Umroh - /umroh/payment?id=xxx
+Route::get('/umroh/payment', function () {
+    return view('payment');
+})->name('umroh.payment');
 
 Route::get('/admin/login', function () {
     return view('auth.admin.login');

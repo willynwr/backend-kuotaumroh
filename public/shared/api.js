@@ -9,10 +9,13 @@
 
 // Import konfigurasi dari config.js
 // Pastikan config.js sudah di-load sebelum file ini
-// const API_BASE = typeof API_URL !== 'undefined' ? API_URL : 'https://api.roamer.id/api';
+const API_BASE = typeof API_URL !== 'undefined' ? API_URL : 'https://kuotaumroh.id/api';
 
 // Mock mode for development (set to false when API is ready)
-const USE_MOCK_DATA = false;
+// Jangan deklarasi ulang jika sudah ada di config.js
+if (typeof USE_MOCK_DATA === 'undefined') {
+  var USE_MOCK_DATA = false;
+}
 
 /* ===========================
    API Helper Functions
@@ -457,6 +460,137 @@ async function submitOrderBatch(backendPayload) {
   });
 }
 
+/* ===========================
+   Umroh Payment API
+   =========================== */
+
+/**
+ * Get Umroh package catalog
+ * @param {string} refCode - Reference code for special pricing (default: bulk_umroh)
+ * @returns {Promise<Object>} Catalog response
+ * 
+ * Endpoint: GET /api/umroh/package?ref_code=bulk_umroh
+ */
+async function getUmrohPackages(refCode = 'bulk_umroh') {
+  try {
+    const response = await fetch(`${API_BASE}/umroh/package?ref_code=${refCode}`);
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching umroh packages:', error);
+    throw error;
+  }
+}
+
+/**
+ * Create bulk payment order
+ * @param {Object} orderData - Order data
+ * @returns {Promise<Object>} Bulk payment response with QR code
+ * 
+ * Endpoint: POST /api/umroh/bulkpayment
+ * Request body format:
+ * {
+ *   batch_id: "BATCH_1234567",
+ *   batch_name: "ORDER_GOLD_TGL12",
+ *   payment_method: "QRIS" | "SALDO",
+ *   detail: "{date: 2026-01-16T13:00}" | null,
+ *   ref_code: "6600000001",
+ *   msisdn: ["6281262225575", "6285141302510"],
+ *   package_id: ["R1-TSEL-012", "R2-BYU-012"]
+ * }
+ */
+async function createBulkPayment(orderData) {
+  try {
+    const response = await fetch(`${API_BASE}/umroh/bulkpayment`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify(orderData),
+    });
+    return await response.json();
+  } catch (error) {
+    console.error('Error creating bulk payment:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get bulk payment history
+ * @param {string} agentId - Agent ID / ref_code
+ * @returns {Promise<Object>} Payment history
+ * 
+ * Endpoint: GET /api/umroh/bulkpayment?agent_id=600001
+ */
+async function getBulkPaymentHistory(agentId) {
+  try {
+    const response = await fetch(`${API_BASE}/umroh/bulkpayment?agent_id=${agentId}`);
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching payment history:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get bulk payment detail
+ * @param {number} paymentId - Payment ID
+ * @param {string} agentId - Agent ID / ref_code
+ * @returns {Promise<Object>} Payment detail with items
+ * 
+ * Endpoint: GET /api/umroh/bulkpayment/detail?id=123&agent_id=600001
+ */
+async function getBulkPaymentDetail(paymentId, agentId) {
+  try {
+    const response = await fetch(`${API_BASE}/umroh/bulkpayment/detail?id=${paymentId}&agent_id=${agentId}`);
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching payment detail:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get payment status (for polling)
+ * @param {number} paymentId - Payment ID
+ * @returns {Promise<Object>} Payment status with QRIS
+ * 
+ * Endpoint: GET /api/umroh/payment/status?id=123
+ */
+async function getPaymentStatus(paymentId) {
+  try {
+    const response = await fetch(`${API_BASE}/umroh/payment/status?id=${paymentId}`);
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching payment status:', error);
+    throw error;
+  }
+}
+
+/**
+ * Verify payment manually
+ * @param {number} paymentId - Payment ID
+ * @returns {Promise<Object>} Verification result
+ * 
+ * Endpoint: POST /api/umroh/payment/verify
+ */
+async function verifyPayment(paymentId) {
+  try {
+    const response = await fetch(`${API_BASE}/umroh/payment/verify`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({ id: paymentId }),
+    });
+    return await response.json();
+  } catch (error) {
+    console.error('Error verifying payment:', error);
+    throw error;
+  }
+}
+
 /**
  * Create payment transaction and get QR code
  * @param {Object} paymentData - Payment data
@@ -500,11 +634,8 @@ async function createPaymentTransaction(paymentData) {
     });
   }
 
-  // TODO: Replace with your actual payment gateway API endpoint
-  return apiFetch('/api/payments/create', {
-    method: 'POST',
-    body: JSON.stringify(paymentData),
-  });
+  // Use the new bulk payment API
+  return createBulkPayment(paymentData);
 }
 
 /**
@@ -543,6 +674,15 @@ async function checkPaymentStatus(paymentId) {
     });
   }
 
-  // TODO: Replace with your actual payment gateway API endpoint
-  return apiFetch(`/api/payments/${paymentId}/status`);
+  // Use the new payment status API
+  const response = await getPaymentStatus(paymentId);
+  
+  // Map to expected format
+  return {
+    success: response.success,
+    payment_id: response.data?.payment_id,
+    status: response.data?.status,
+    paid_at: response.data?.qris_date,
+    amount: response.data?.total_pembayaran
+  };
 }

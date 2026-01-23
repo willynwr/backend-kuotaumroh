@@ -41,10 +41,20 @@
     <link rel="stylesheet" href="{{ asset('shared/styles.css') }}">
 
     <!-- ⚠️ PENTING: Load config.js PERTAMA sebelum script lain -->
-    <script src="{{ asset('shared/config.js') }}"></script>
+    <script src="{{ asset('shared/config.js') }}?v={{ time() }}"></script>
 
     <!-- Shared Scripts -->
-    <script src="{{ asset('shared/utils.js') }}"></script>
+    <script src="{{ asset('shared/utils.js') }}?v={{ time() }}"></script>
+    
+    <!-- Store Config -->
+    <script>
+        const STORE_CONFIG = {
+            agent_id: '{{ $agent->id ?? 1 }}',           // Agent ID untuk payment ref_code
+            catalog_ref_code: 'bulk_umroh',              // Selalu bulk_umroh untuk dapat harga bulk
+            link_referal: '{{ $agent->link_referal ?? "kuotaumroh" }}',
+            nama_travel: '{{ $agent->nama_travel ?? "Kuotaumroh.id" }}',
+        };
+    </script>
     <script>
         tailwind.config = {
             theme: {
@@ -559,13 +569,14 @@
                 msisdn: '',
                 provider: null,
                 packages: [],
+                allPackages: [], // All packages from API
                 packagesLoading: true,
                 selectedPackage: null,
                 packageSearch: '',
                 selectedDurationFilter: 'all',
-                durationFilters: [{ value: 'all', label: 'Durasi: Semua' }],
+                durationFilters: [{ value: 'all', label: 'Semua' }],
                 selectedSubTypeFilter: 'all',
-                subTypeFilters: [{ value: 'all', label: 'Jenis: Semua' }],
+                subTypeFilters: [{ value: 'all', label: 'Semua Tipe' }],
                 activationTime: 'now',
                 scheduledDate: '',
                 scheduledTime: '',
@@ -574,26 +585,96 @@
                 toastMessage: '',
 
                 async init() {
-                    // Packages will be loaded when provider is detected
+                    // Load all packages on init
+                    await this.loadAllPackages();
                 },
 
-                async loadPackagesByProvider(provider) {
+                async loadAllPackages() {
                     try {
                         this.packagesLoading = true;
-                        const response = await fetch(`/packages/by-provider/${provider}`);
+                        // Selalu gunakan bulk_umroh untuk dapat harga bulk
+                        const catalogRefCode = STORE_CONFIG.catalog_ref_code || 'bulk_umroh';
+                        const response = await fetch(`${API_BASE_URL}/api/umroh/package?ref_code=${catalogRefCode}`);
                         if (!response.ok) {
                             throw new Error('Failed to fetch packages');
                         }
                         
                         const data = await response.json();
-                        this.packages = data.data || [];
+                        console.log('📦 API Response:', data);
+                        
+                        // Response langsung array, tidak wrapped
+                        if (Array.isArray(data)) {
+                            this.allPackages = data.map(pkg => {
+                                // Parse harga dengan fallback
+                                const priceBulk = parseInt(pkg.price_bulk) || 0;
+                                const priceCustomer = parseInt(pkg.price_customer) || priceBulk;
+                                
+                                return {
+                                    id: pkg.id,
+                                    package_id: pkg.id,
+                                    packageId: pkg.id,
+                                    name: pkg.name,
+                                    packageName: pkg.name,
+                                    provider: pkg.type, // type = provider (TELKOMSEL, XL, etc)
+                                    days: parseInt(pkg.days) || 0,
+                                    masa_aktif: parseInt(pkg.days) || 0,
+                                    quota: pkg.quota || '',
+                                    total_kuota: pkg.quota || '',
+                                    kuota_utama: pkg.quota || '',
+                                    kuota_bonus: pkg.bonus || '',
+                                    bonus: pkg.bonus || '',
+                                    telp: pkg.telp || '',
+                                    sms: pkg.sms || '',
+                                    price: priceCustomer,        // Harga jual ke customer
+                                    harga: priceCustomer,
+                                    sellPrice: priceCustomer,
+                                    displayPrice: priceCustomer,
+                                    price_bulk: priceBulk,       // Harga modal
+                                    price_customer: priceCustomer,
+                                    profit: priceCustomer - priceBulk,
+                                    subType: pkg.sub_type || '',
+                                    tipe_paket: pkg.sub_type || '',
+                                    is_active: pkg.is_active,
+                                    promo: pkg.promo || null,
+                                };
+                            });
+                            console.log('📦 Mapped packages:', this.allPackages.length);
+                        }
                         this.packagesLoading = false;
                     } catch (error) {
                         console.error('Error loading packages:', error);
-                        this.packages = [];
+                        this.allPackages = [];
                         this.packagesLoading = false;
                         this.showToast('Error', 'Gagal memuat data paket');
                     }
+                },
+
+                async loadPackagesByProvider(provider) {
+                    // Filter from allPackages instead of fetching again
+                    this.packages = this.allPackages.filter(pkg => {
+                        const pkgProvider = (pkg.provider || '').toUpperCase();
+                        const targetProvider = (provider || '').toUpperCase();
+                        
+                        // Normalize provider names to match API response
+                        // API menggunakan: TELKOMSEL, INDOSAT, XL, TRI, AXIS, SMARTFREN, BYU
+                        if (targetProvider === 'SIMPATI' || targetProvider === 'TSEL') {
+                            return pkgProvider === 'TELKOMSEL';
+                        }
+                        if (targetProvider === 'IM3' || targetProvider === 'ISAT') {
+                            return pkgProvider === 'INDOSAT';
+                        }
+                        if (targetProvider === '3' || targetProvider === 'THREE') {
+                            return pkgProvider === 'TRI';
+                        }
+                        if (targetProvider === 'SF') {
+                            return pkgProvider === 'SMARTFREN';
+                        }
+                        
+                        return pkgProvider === targetProvider;
+                    });
+                    
+                    console.log('Filtered packages for', provider, ':', this.packages.length);
+                    this.packagesLoading = false;
                 },
 
                 handleMsisdnInput(event) {
@@ -629,7 +710,8 @@
 
                 get availablePackages() {
                     if (!this.provider) return [];
-                    return this.packages.filter(pkg => pkg.provider === this.provider);
+                    // packages sudah di-filter di loadPackagesByProvider
+                    return this.packages;
                 },
 
                 get filteredPackages() {
@@ -653,13 +735,13 @@
 
                 generateDurationFilters() {
                     const days = Array.from(new Set(this.availablePackages.map(pkg => pkg.days).filter(Boolean))).sort((a, b) => a - b);
-                    this.durationFilters = [{ value: 'all', label: 'Durasi: Semua' }, ...days.map(d => ({ value: String(d), label: `${d} Hari` }))];
+                    this.durationFilters = [{ value: 'all', label: 'Semua' }, ...days.map(d => ({ value: String(d), label: `${d} Hari` }))];
                     this.selectedDurationFilter = 'all';
                 },
 
                 generateSubTypeFilters() {
                     const types = Array.from(new Set(this.availablePackages.map(pkg => pkg.subType).filter(Boolean)));
-                    this.subTypeFilters = [{ value: 'all', label: 'Jenis: Semua' }, ...types.map(t => ({ value: t, label: t }))];
+                    this.subTypeFilters = [{ value: 'all', label: 'Semua Tipe' }, ...types.map(t => ({ value: t, label: t }))];
                     this.selectedSubTypeFilter = 'all';
                 },
 
@@ -667,14 +749,15 @@
                     this.packageSearch = '';
                     this.selectedDurationFilter = 'all';
                     this.selectedSubTypeFilter = 'all';
-                    this.durationFilters = [{ value: 'all', label: 'Durasi: Semua' }];
-                    this.subTypeFilters = [{ value: 'all', label: 'Jenis: Semua' }];
+                    this.durationFilters = [{ value: 'all', label: 'Semua' }];
+                    this.subTypeFilters = [{ value: 'all', label: 'Semua Tipe' }];
                 },
 
                 selectPackage(pkg) {
                     this.selectedPackage = {
                         ...pkg,
-                        displayPrice: pkg.sellPrice || pkg.price
+                        // Use harga from API (price_bulk)
+                        displayPrice: pkg.price || pkg.harga
                     };
                 },
 
@@ -708,6 +791,7 @@
                 handleCheckout() {
                     if (!this.canCheckout) return;
 
+                    // Format schedule date if scheduled
                     let scheduleDate = null;
                     if (this.activationTime === 'scheduled' && this.scheduledDate) {
                         const date = new Date(this.scheduledDate);
@@ -715,28 +799,39 @@
                             const [hours, minutes] = this.scheduledTime.split(':');
                             date.setHours(parseInt(hours), parseInt(minutes), 0, 0);
                         }
-                        scheduleDate = date.toISOString();
+                        scheduleDate = date.toISOString().slice(0, 16); // Format: yyyy-mm-ddThh:mm
                     }
 
+                    // Prepare order data dengan format yang sesuai untuk API
                     const orderData = {
                         items: [{
                             msisdn: this.msisdn,
                             provider: this.provider,
-                            packageId: this.selectedPackage.id,
-                            packageName: this.selectedPackage.name,
-                            price: this.selectedPackage.displayPrice,
+                            package_id: this.selectedPackage.package_id || this.selectedPackage.packageId || this.selectedPackage.id,
+                            packageId: this.selectedPackage.package_id || this.selectedPackage.packageId || this.selectedPackage.id,
+                            packageName: this.selectedPackage.name || this.selectedPackage.packageName,
+                            nama_paket: this.selectedPackage.name,
+                            tipe_paket: this.selectedPackage.tipe_paket || this.selectedPackage.subType,
+                            masa_aktif: this.selectedPackage.masa_aktif || this.selectedPackage.days,
+                            days: this.selectedPackage.days || this.selectedPackage.masa_aktif,
+                            total_kuota: this.selectedPackage.total_kuota || this.selectedPackage.quota,
+                            price: this.selectedPackage.price || this.selectedPackage.harga || this.selectedPackage.displayPrice,
+                            harga: this.selectedPackage.harga || this.selectedPackage.price,
                         }],
-                        subtotal: this.selectedPackage.displayPrice,
+                        subtotal: this.selectedPackage.price || this.selectedPackage.harga || this.selectedPackage.displayPrice,
                         platformFee: 0,
-                        total: this.selectedPackage.displayPrice,
+                        total: this.selectedPackage.price || this.selectedPackage.harga || this.selectedPackage.displayPrice,
                         paymentMethod: 'qris',
                         activationTime: this.activationTime,
-                        scheduledDate: scheduleDate,
+                        scheduleDate: scheduleDate,
                         scheduledTime: this.scheduledTime,
-                        mode: 'public',
+                        refCode: STORE_CONFIG.agent_id || '1',  // Agent ID untuk payment
+                        linkReferal: STORE_CONFIG.link_referal || 'kuotaumroh',
+                        mode: 'store',
                         createdAt: new Date().toISOString(),
                     };
 
+                    // Store in localStorage and redirect to payment
                     localStorage.setItem('pendingOrder', JSON.stringify(orderData));
                     window.location.href = '{{ route('checkout') }}';
                 },
