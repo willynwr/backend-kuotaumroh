@@ -102,18 +102,18 @@
         </div>
 
         <!-- Stats Cards -->
-        <div class="grid gap-4 md:grid-cols-3 mb-6">
-            <div class="rounded-lg border bg-white shadow-sm p-6">
-                <p class="text-sm text-muted-foreground">Total Agent</p>
-                <p class="text-3xl font-bold mt-1" x-text="stats.total"></p>
+        <div class="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
+            <div class="rounded-lg border bg-white shadow-sm p-3 sm:p-6">
+                <p class="text-xs sm:text-sm text-muted-foreground">Total Agent</p>
+                <p class="text-xl sm:text-3xl font-bold mt-1" x-text="stats.total"></p>
             </div>
-            <div class="rounded-lg border bg-white shadow-sm p-6">
-                <p class="text-sm text-muted-foreground">Aktif Bulan Ini</p>
-                <p class="text-3xl font-bold mt-1 text-primary" x-text="stats.activeThisMonth"></p>
+            <div class="rounded-lg border bg-white shadow-sm p-3 sm:p-6">
+                <p class="text-xs sm:text-sm text-muted-foreground">Aktif Bulan Ini</p>
+                <p class="text-xl sm:text-3xl font-bold mt-1 text-primary" x-text="stats.activeThisMonth"></p>
             </div>
-            <div class="rounded-lg border bg-white shadow-sm p-6">
-                <p class="text-sm text-muted-foreground">Poin Diperoleh</p>
-                <p class="text-3xl font-bold mt-1" x-text="stats.pointsEarned"></p>
+            <div class="rounded-lg border bg-white shadow-sm p-3 sm:p-6">
+                <p class="text-xs sm:text-sm text-muted-foreground">Poin Diperoleh</p>
+                <p class="text-xl sm:text-3xl font-bold mt-1" x-text="stats.pointsEarned"></p>
             </div>
         </div>
 
@@ -125,14 +125,14 @@
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <h3 class="text-lg font-semibold">Daftar Agent Terekrut</h3>
                         <button @click="openAddModal()"
-                            class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 text-sm font-medium transition-colors">
+                            class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 text-sm font-medium transition-colors w-full sm:w-auto">
                             Tambah Agent
                         </button>
                     </div>
 
-                    <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:justify-end">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 sm:justify-end">
                         <!-- Date Range Filter -->
-                        <div class="relative">
+                        <div class="relative w-full sm:w-auto">
                             <svg class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none"
                                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -150,7 +150,7 @@
                         </div>
 
                         <!-- Search -->
-                        <div class="relative flex-1 sm:flex-none">
+                        <div class="relative w-full sm:w-auto">
                             <svg class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" fill="none"
                                 stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -161,7 +161,7 @@
                         </div>
 
                         <!-- Status Filter -->
-                        <select x-model="statusFilter" class="h-10 rounded-md border border-input bg-background px-3 text-sm">
+                        <select x-model="statusFilter" class="h-10 rounded-md border border-input bg-background px-3 text-sm w-full sm:w-auto">
                             <option value="all">Semua Status</option>
                             <option value="active">Aktif</option>
                             <option value="inactive">Tidak Aktif</option>
@@ -170,64 +170,64 @@
                 </div>
 
                 <!-- Table -->
-                <div class="overflow-x-auto">
+                <div class="overflow-x-auto -mx-6 sm:mx-0">
                     <table class="w-full">
                         <thead>
                             <tr class="border-b whitespace-nowrap">
-                                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Nama PIC</th>
-                                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Email</th>
-                                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Kategori Agent</th>
-                                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">No. HP</th>
-                                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Nama Travel</th>
-                                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Jenis Travel</th>
-                                <th class="h-12 px-4 text-right align-middle font-medium text-muted-foreground">Total Travel/Bulan</th>
-                                <th class="h-12 px-4 text-center align-middle font-medium text-muted-foreground">Logo</th>
-                                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Provinsi</th>
-                                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Kota/Kab</th>
-                                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Detail Alamat</th>
-                                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Koordinat</th>
-                                <th class="h-12 px-4 text-center align-middle font-medium text-muted-foreground">Status</th>
-                                <th class="h-12 px-4 text-center align-middle font-medium text-muted-foreground">Aksi</th>
+                                <th class="h-10 sm:h-12 px-2 sm:px-4 text-center align-middle font-medium text-muted-foreground text-sm">Status</th>
+                                <th class="h-10 sm:h-12 px-2 sm:px-4 text-center align-middle font-medium text-muted-foreground text-sm">Aksi</th>
+                                <th class="h-10 sm:h-12 px-2 sm:px-4 text-left align-middle font-medium text-muted-foreground text-sm">Nama PIC</th>
+                                <th class="h-10 sm:h-12 px-2 sm:px-4 text-left align-middle font-medium text-muted-foreground text-sm">Email</th>
+                                <th class="h-10 sm:h-12 px-2 sm:px-4 text-left align-middle font-medium text-muted-foreground text-sm">Kategori Agent</th>
+                                <th class="h-10 sm:h-12 px-2 sm:px-4 text-left align-middle font-medium text-muted-foreground text-sm">No. HP</th>
+                                <th class="h-10 sm:h-12 px-2 sm:px-4 text-left align-middle font-medium text-muted-foreground text-sm">Nama Travel</th>
+                                <th class="h-10 sm:h-12 px-2 sm:px-4 text-left align-middle font-medium text-muted-foreground text-sm">Jenis Travel</th>
+                                <th class="h-10 sm:h-12 px-2 sm:px-4 text-right align-middle font-medium text-muted-foreground text-sm">Total Travel/Bulan</th>
+                                <th class="h-10 sm:h-12 px-2 sm:px-4 text-center align-middle font-medium text-muted-foreground text-sm">Logo</th>
+                                <th class="h-10 sm:h-12 px-2 sm:px-4 text-left align-middle font-medium text-muted-foreground text-sm">Provinsi</th>
+                                <th class="h-10 sm:h-12 px-2 sm:px-4 text-left align-middle font-medium text-muted-foreground text-sm">Kota/Kab</th>
+                                <th class="h-10 sm:h-12 px-2 sm:px-4 text-left align-middle font-medium text-muted-foreground text-sm">Detail Alamat</th>
+                                <th class="h-10 sm:h-12 px-2 sm:px-4 text-left align-middle font-medium text-muted-foreground text-sm">Koordinat</th>
                             </tr>
                         </thead>
                         <tbody>
                             <template x-for="agent in filteredAgents" :key="agent.id">
                                 <tr class="border-b transition-colors hover:bg-muted/50 whitespace-nowrap">
-                                    <td class="p-4 align-middle font-medium" x-text="agent.nama_pic"></td>
-                                    <td class="p-4 align-middle text-muted-foreground" x-text="agent.email"></td>
-                                    <td class="p-4 align-middle text-muted-foreground" x-text="agent.kategori_agent || 'Host'"></td>
-                                    <td class="p-4 align-middle text-muted-foreground" x-text="agent.no_hp || '-'"></td>
-                                    <td class="p-4 align-middle text-muted-foreground" x-text="agent.nama_travel || '-'"></td>
-                                    <td class="p-4 align-middle text-muted-foreground" x-text="agent.jenis_travel || '-'"></td>
-                                    <td class="p-4 align-middle text-right" x-text="(agent.total_traveller ?? 0).toLocaleString('id-ID')"></td>
-                                    <td class="p-4 align-middle text-center">
-                                        <button x-show="agent.logo" @click="openFileModal(agent.logo)" class="text-sm text-primary hover:underline">Lihat</button>
-                                        <span x-show="!agent.logo" class="text-muted-foreground">-</span>
-                                    </td>
-                                    <td class="p-4 align-middle text-muted-foreground" x-text="agent.provinsi || '-'"></td>
-                                    <td class="p-4 align-middle text-muted-foreground" x-text="agent.kabupaten_kota || '-'"></td>
-                                    <td class="p-4 align-middle text-muted-foreground" x-text="agent.alamat_lengkap || '-'"></td>
-                                    <td class="p-4 align-middle text-muted-foreground">
-                                        <template x-if="agent.lat && agent.long">
-                                            <a :href="`https://www.google.com/maps?q=${agent.lat},${agent.long}`" target="_blank" class="text-primary hover:underline" x-text="`${agent.lat}, ${agent.long}`"></a>
-                                        </template>
-                                        <span x-show="!agent.lat || !agent.long" class="text-muted-foreground">-</span>
-                                    </td>
-                                    <td class="p-4 align-middle text-center">
-                                        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium" :class="{
+                                    <td class="p-2 sm:p-4 align-middle text-center">
+                                        <span class="inline-flex items-center rounded-full px-2 sm:px-2.5 py-0.5 text-xs font-medium" :class="{
                                             'bg-green-100 text-green-800': agent.status === 'approve',
                                             'bg-red-100 text-red-800': agent.status === 'reject',
                                             'bg-yellow-100 text-yellow-800': agent.status === 'pending'
                                         }" x-text="agent.status === 'approve' ? 'Approve' : (agent.status === 'reject' ? 'Reject' : 'Pending')"></span>
                                     </td>
-                                    <td class="p-4 align-middle text-center">
+                                    <td class="p-2 sm:p-4 align-middle text-center">
                                         <button @click="openAgentDetail(agent)" class="text-sm text-primary hover:underline">Detail</button>
+                                    </td>
+                                    <td class="p-2 sm:p-4 align-middle font-medium text-sm" x-text="agent.nama_pic"></td>
+                                    <td class="p-2 sm:p-4 align-middle text-muted-foreground text-sm" x-text="agent.email"></td>
+                                    <td class="p-2 sm:p-4 align-middle text-muted-foreground text-sm" x-text="agent.kategori_agent || 'Host'"></td>
+                                    <td class="p-2 sm:p-4 align-middle text-muted-foreground text-sm" x-text="agent.no_hp || '-'"></td>
+                                    <td class="p-2 sm:p-4 align-middle text-muted-foreground text-sm" x-text="agent.nama_travel || '-'"></td>
+                                    <td class="p-2 sm:p-4 align-middle text-muted-foreground text-sm" x-text="agent.jenis_travel || '-'"></td>
+                                    <td class="p-2 sm:p-4 align-middle text-right text-sm" x-text="(agent.total_traveller ?? 0).toLocaleString('id-ID')"></td>
+                                    <td class="p-2 sm:p-4 align-middle text-center">
+                                        <button x-show="agent.logo" @click="viewLogo(agent.logo)" class="text-sm text-primary hover:underline">Lihat</button>
+                                        <span x-show="!agent.logo" class="text-muted-foreground text-sm">-</span>
+                                    </td>
+                                    <td class="p-2 sm:p-4 align-middle text-muted-foreground text-sm" x-text="agent.provinsi || '-'"></td>
+                                    <td class="p-2 sm:p-4 align-middle text-muted-foreground text-sm" x-text="agent.kabupaten_kota || '-'"></td>
+                                    <td class="p-2 sm:p-4 align-middle text-muted-foreground text-sm" x-text="agent.alamat_lengkap || '-'"></td>
+                                    <td class="p-2 sm:p-4 align-middle text-muted-foreground text-sm">
+                                        <template x-if="agent.lat && agent.long">
+                                            <a :href="`https://www.google.com/maps?q=${agent.lat},${agent.long}`" target="_blank" class="text-primary hover:underline" x-text="`${agent.lat}, ${agent.long}`"></a>
+                                        </template>
+                                        <span x-show="!agent.lat || !agent.long" class="text-muted-foreground">-</span>
                                     </td>
                                 </tr>
                             </template>
                             <template x-if="filteredAgents.length === 0">
                                 <tr>
-                                    <td colspan="14" class="p-8 text-center text-muted-foreground">Tidak ada agent ditemukan</td>
+                                    <td colspan="14" class="p-8 text-center text-muted-foreground text-sm">Tidak ada agent ditemukan</td>
                                 </tr>
                             </template>
                         </tbody>
@@ -241,6 +241,128 @@
     <div x-show="toastVisible" x-transition class="toast">
         <div class="font-semibold mb-1" x-text="toastTitle"></div>
         <div class="text-sm text-muted-foreground" x-text="toastMessage"></div>
+    </div>
+
+    <!-- Modal Detail Agent -->
+    <div x-show="detailModalOpen" x-cloak class="fixed inset-0 z-50 overflow-y-auto" @click.self="closeDetailModal()">
+        <div class="min-h-full w-full p-4 flex items-center justify-center">
+            <div class="absolute inset-0 bg-black/50" @click="closeDetailModal()"></div>
+            
+            <div class="relative w-full max-w-4xl rounded-lg border bg-white shadow-lg overflow-hidden max-h-[calc(100dvh-2rem)] flex flex-col">
+                <div class="flex items-center justify-between border-b px-6 py-4 shrink-0">
+                    <h3 class="text-lg font-semibold">Detail Agent</h3>
+                    <button @click="closeDetailModal()" class="h-9 w-9 inline-flex items-center justify-center rounded-md hover:bg-muted transition-colors">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="px-6 py-6 overflow-y-auto flex-1" x-show="selectedAgent">
+                    <div class="grid gap-6 md:grid-cols-2">
+                        <!-- Data PIC -->
+                        <div class="rounded-lg border bg-white shadow-sm p-6 space-y-4">
+                            <h4 class="text-base font-semibold border-b pb-2">Data PIC</h4>
+                            <div class="space-y-3 text-sm">
+                                <div>
+                                    <p class="text-muted-foreground">Nama PIC</p>
+                                    <p class="font-semibold" x-text="selectedAgent?.nama_pic || '-'"></p>
+                                </div>
+                                <div>
+                                    <p class="text-muted-foreground">Email</p>
+                                    <p class="font-semibold" x-text="selectedAgent?.email || '-'"></p>
+                                </div>
+                                <div>
+                                    <p class="text-muted-foreground">No. HP</p>
+                                    <p class="font-semibold" x-text="selectedAgent?.no_hp || '-'"></p>
+                                </div>
+                                <div>
+                                    <p class="text-muted-foreground">Kategori Agent</p>
+                                    <p class="font-semibold" x-text="selectedAgent?.kategori_agent || 'Host'"></p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Detail Travel -->
+                        <div class="rounded-lg border bg-white shadow-sm p-6 space-y-4">
+                            <h4 class="text-base font-semibold border-b pb-2">Detail Travel</h4>
+                            <div class="space-y-3 text-sm">
+                                <div>
+                                    <p class="text-muted-foreground">Nama Travel</p>
+                                    <p class="font-semibold" x-text="selectedAgent?.nama_travel || '-'"></p>
+                                </div>
+                                <div>
+                                    <p class="text-muted-foreground">Jenis Travel</p>
+                                    <p class="font-semibold" x-text="selectedAgent?.jenis_travel || '-'"></p>
+                                </div>
+                                <div>
+                                    <p class="text-muted-foreground">Total Traveller/Bulan</p>
+                                    <p class="font-semibold" x-text="(selectedAgent?.total_traveller ?? 0).toLocaleString('id-ID')"></p>
+                                </div>
+                                <div>
+                                    <p class="text-muted-foreground">Logo Travel</p>
+                                    <template x-if="selectedAgent?.logo">
+                                        <button @click="viewLogo(selectedAgent.logo)" class="text-sm text-primary hover:underline font-semibold">Lihat Logo</button>
+                                    </template>
+                                    <p x-show="!selectedAgent?.logo" class="font-semibold">-</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Lokasi -->
+                    <div class="rounded-lg border bg-white shadow-sm p-6 space-y-4 mt-6">
+                        <h4 class="text-base font-semibold border-b pb-2">Lokasi</h4>
+                        <div class="grid gap-4 md:grid-cols-2">
+                            <div>
+                                <p class="text-sm text-muted-foreground">Provinsi</p>
+                                <p class="font-semibold" x-text="selectedAgent?.provinsi || '-'"></p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-muted-foreground">Kota/Kabupaten</p>
+                                <p class="font-semibold" x-text="selectedAgent?.kabupaten_kota || '-'"></p>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-sm text-muted-foreground">Alamat Lengkap</p>
+                            <p class="font-semibold" x-text="selectedAgent?.alamat_lengkap || '-'"></p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-muted-foreground">Koordinat</p>
+                            <template x-if="selectedAgent?.lat && selectedAgent?.long">
+                                <a :href="`https://www.google.com/maps?q=${selectedAgent.lat},${selectedAgent.long}`" target="_blank" class="text-primary hover:underline font-semibold" x-text="`${selectedAgent.lat}, ${selectedAgent.long}`"></a>
+                            </template>
+                            <p x-show="!selectedAgent?.lat || !selectedAgent?.long" class="font-semibold">-</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Status -->
+                    <div class="rounded-lg border bg-white shadow-sm p-6 space-y-4 mt-6">
+                        <h4 class="text-base font-semibold border-b pb-2">Status & Informasi</h4>
+                        <div class="grid gap-4 md:grid-cols-2">
+                            <div>
+                                <p class="text-sm text-muted-foreground">Status Agent</p>
+                                <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium" :class="{
+                                    'bg-green-100 text-green-800': selectedAgent?.status === 'approve',
+                                    'bg-red-100 text-red-800': selectedAgent?.status === 'reject',
+                                    'bg-yellow-100 text-yellow-800': selectedAgent?.status === 'pending'
+                                }" x-text="selectedAgent?.status === 'approve' ? 'Approve' : (selectedAgent?.status === 'reject' ? 'Reject' : 'Pending')"></span>
+                            </div>
+                            <div>
+                                <p class="text-sm text-muted-foreground">Tanggal Bergabung</p>
+                                <p class="font-semibold" x-text="selectedAgent?.created_at ? new Date(selectedAgent.created_at).toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'}) : '-'"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center justify-end gap-2 border-t bg-white px-6 py-4 shrink-0">
+                    <button @click="closeDetailModal()" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 text-sm font-medium transition-colors">
+                        Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div x-show="addModalOpen" x-transition class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
@@ -682,6 +804,9 @@
             toastTitle: '',
             toastMessage: '',
 
+            detailModalOpen: false,
+            selectedAgent: null,
+
             portalType: 'freelance',
 
             freelanceId: null,
@@ -1088,15 +1213,46 @@
                 return this.portalType === 'affiliate' ? 'affiliates' : 'freelances';
             },
 
+            viewLogo(logoPath) {
+                if (!logoPath) return;
+                // Paksa gunakan absolute URL dengan origin
+                const baseUrl = window.location.origin;
+                const fullUrl = `${baseUrl}/storage/${logoPath}`;
+                console.log('Opening logo:', fullUrl);
+                window.open(fullUrl, '_blank');
+            },
+
             openFileModal(fileUrl) {
                 if (!fileUrl) return;
-                window.open(fileUrl, '_blank');
+                console.log('Original fileUrl:', fileUrl);
+                
+                // Jika sudah URL lengkap (http/https), buka langsung
+                if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
+                    console.log('Opening full URL:', fileUrl);
+                    window.open(fileUrl, '_blank');
+                    return;
+                }
+                
+                // Buat URL absolute untuk menghindari relative path
+                let url;
+                if (fileUrl.startsWith('/')) {
+                    url = window.location.origin + fileUrl;
+                } else {
+                    url = window.location.origin + '/storage/' + fileUrl;
+                }
+                
+                console.log('Final URL:', url);
+                window.open(url, '_blank');
             },
 
             openAgentDetail(agent) {
-                // TODO: Implement detail modal or navigate to detail page
-                console.log('Opening detail for agent:', agent);
-                this.showToast('Info', 'Detail agent: ' + agent.nama_pic);
+                this.selectedAgent = agent;
+                this.detailModalOpen = true;
+            },
+
+            closeDetailModal() {
+                this.detailModalOpen = false;
+                this.selectedAgent = null;
             },
 
             showConfirmModal() {
