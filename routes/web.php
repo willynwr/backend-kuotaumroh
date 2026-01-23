@@ -158,6 +158,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/packages', [App\Http\Controllers\Admin\AdminController::class, 'packages'])->name('packages');
     Route::get('/transactions', [App\Http\Controllers\Admin\AdminController::class, 'transactions'])->name('transactions');
     Route::get('/withdrawals', [App\Http\Controllers\Admin\AdminController::class, 'withdrawals'])->name('withdrawals');
+    Route::post('/withdrawals/{id}/approve', [App\Http\Controllers\Admin\AdminController::class, 'approveWithdrawal'])->name('withdrawals.approve');
+    Route::post('/withdrawals/{id}/reject', [App\Http\Controllers\Admin\AdminController::class, 'rejectWithdrawal'])->name('withdrawals.reject');
     Route::get('/rewards', [App\Http\Controllers\Admin\AdminController::class, 'rewards'])->name('rewards');
     Route::get('/reward-claims', [App\Http\Controllers\Admin\AdminController::class, 'rewardClaims'])->name('reward-claims');
     Route::get('/analytics', [App\Http\Controllers\Admin\AdminController::class, 'analytics'])->name('analytics');
@@ -232,6 +234,8 @@ Route::prefix('agent')->name('agent.')->group(function () {
     // Withdraw routes
     Route::post('/withdraws', [App\Http\Controllers\Agent\WithdrawController::class, 'store'])->name('withdraws.store');
     Route::get('/withdraws', [App\Http\Controllers\Agent\WithdrawController::class, 'index'])->name('withdraws.index');
+    Route::post('/withdraws/{id}/approve', [App\Http\Controllers\Agent\WithdrawController::class, 'approve'])->name('withdraws.approve');
+    Route::post('/withdraws/{id}/reject', [App\Http\Controllers\Agent\WithdrawController::class, 'reject'])->name('withdraws.reject');
     
     // Rekening routes
     Route::get('/rekenings', [App\Http\Controllers\Agent\RekeningController::class, 'index'])->name('rekenings.index');

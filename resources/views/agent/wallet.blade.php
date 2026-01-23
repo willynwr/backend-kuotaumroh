@@ -94,23 +94,37 @@
                 <table class="w-full">
                   <thead>
                     <tr class="border-b">
+                      <th class="h-12 px-4 text-center align-middle font-medium text-muted-foreground">Status</th>
                       <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Tanggal</th>
                       <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Bank</th>
                       <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Rekening</th>
+                      <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Keterangan</th>
                       <th class="h-12 px-4 text-right align-middle font-medium text-muted-foreground">Jumlah</th>
-                      <th class="h-12 px-4 text-center align-middle font-medium text-muted-foreground">Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     <template x-for="item in withdrawalHistory" :key="item.id">
                       <tr class="border-b transition-colors hover:bg-muted/50">
+                        <td class="p-4 align-middle">
+                          <div class="flex flex-col items-center justify-center gap-2">
+                            <span class="badge" :class="{ 'badge-secondary': item.status === 'pending', 'badge-primary': item.status === 'approve', 'badge-destructive': item.status === 'reject' }" x-text="getStatusLabel(item.status)"></span>
+                            <button 
+                              x-show="item.status === 'reject' && item.alasan_reject" 
+                              @click="showRejectReason(item)" 
+                              class="text-xs text-red-600 hover:text-red-700 font-medium underline"
+                              title="Lihat alasan penolakan"
+                            >
+                              Detail
+                            </button>
+                          </div>
+                        </td>
                         <td class="p-4 align-middle" x-text="formatDate(item.date)"></td>
                         <td class="p-4 align-middle" x-text="item.bankName"></td>
                         <td class="p-4 align-middle" x-text="item.accountNumber"></td>
-                        <td class="p-4 align-middle text-right font-medium" x-text="formatRupiah(item.amount)"></td>
-                        <td class="p-4 align-middle text-center">
-                          <span class="badge" :class="{ 'badge-secondary': item.status === 'pending', 'badge-primary': item.status === 'completed', 'badge-destructive': item.status === 'rejected' }" x-text="getStatusLabel(item.status)"></span>
+                        <td class="p-4 align-middle">
+                          <span class="text-sm text-muted-foreground" x-text="item.keterangan || '-'"></span>
                         </td>
+                        <td class="p-4 align-middle text-right font-medium" x-text="formatRupiah(item.amount)"></td>
                       </tr>
                     </template>
                   </tbody>
@@ -121,6 +135,57 @@
         </div>
       </div>
     </main>
+
+    <!-- Modal Alasan Reject -->
+    <div x-show="rejectReasonModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/60" @click.self="closeRejectReason()">
+      <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md animate-fade-in overflow-hidden">
+        <div class="bg-gradient-to-r from-red-500 to-red-600 p-6">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+              </svg>
+            </div>
+            <div>
+              <h2 class="text-xl font-bold text-white">Penarikan Ditolak</h2>
+              <p class="text-red-50 text-sm">Alasan penolakan penarikan</p>
+            </div>
+          </div>
+        </div>
+        <div class="p-6 space-y-4" x-show="selectedReject">
+          <div class="bg-gray-50 rounded-xl p-4 space-y-3">
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-gray-600">Tanggal</span>
+              <span class="text-sm font-medium" x-text="formatDate(selectedReject?.date)"></span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-gray-600">Jumlah</span>
+              <span class="text-base font-bold text-red-600" x-text="formatRupiah(selectedReject?.amount)"></span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-gray-600">Bank</span>
+              <span class="text-sm" x-text="selectedReject?.bankName"></span>
+            </div>
+          </div>
+          <div class="bg-red-50 border border-red-200 rounded-xl p-4">
+            <div class="flex items-start gap-2 mb-2">
+              <svg class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              <div class="flex-1">
+                <p class="text-sm font-semibold text-red-900 mb-1">Alasan Penolakan:</p>
+                <p class="text-sm text-red-800" x-text="selectedReject?.alasan_reject"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="p-6 bg-gray-50 border-t">
+          <button @click="closeRejectReason()" class="w-full inline-flex items-center justify-center rounded-lg h-11 px-4 font-medium text-white bg-red-600 hover:bg-red-700 transition-colors">
+            Tutup
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 @endsection
 
@@ -136,11 +201,9 @@
           { id: '3', date: new Date('2024-01-10'), type: 'commission', description: 'Komisi Batch #ORD-2024-0110', amount: 320000 },
           { id: '4', date: new Date('2024-01-08'), type: 'bonus', description: 'Bonus target bulanan', amount: 500000 },
         ],
-        withdrawalHistory: [
-          { id: '1', date: new Date('2024-01-14'), amount: 500000, bankName: 'BCA', accountNumber: '****4567', status: 'pending' },
-          { id: '2', date: new Date('2024-01-10'), amount: 1000000, bankName: 'BCA', accountNumber: '****4567', status: 'completed' },
-          { id: '3', date: new Date('2024-01-05'), amount: 750000, bankName: 'Mandiri', accountNumber: '****8901', status: 'completed' },
-        ],
+        withdrawalHistory: @json($withdrawalHistory ?? []),
+        rejectReasonModal: false,
+        selectedReject: null,
         formatRupiah(value) {
           const n = Number(value || 0);
           return n.toLocaleString('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 });
@@ -154,8 +217,16 @@
           return labels[type] || type;
         },
         getStatusLabel(status) {
-          const labels = { pending: 'Diproses', completed: 'Selesai', rejected: 'Ditolak' };
+          const labels = { pending: 'Diproses', approve: 'Selesai', reject: 'Ditolak' };
           return labels[status] || status;
+        },
+        showRejectReason(withdrawal) {
+          this.selectedReject = withdrawal;
+          this.rejectReasonModal = true;
+        },
+        closeRejectReason() {
+          this.rejectReasonModal = false;
+          this.selectedReject = null;
         },
       };
     }

@@ -14,6 +14,7 @@ class Withdraw extends Model
         'rekening_id',
         'jumlah',
         'keterangan',
+        'alasan_reject',
         'status',
         'date_approve',
     ];

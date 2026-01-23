@@ -532,11 +532,35 @@ class DashboardController extends Controller
             'pendingWithdrawal' => 0
         ];
         
+        $withdrawalHistory = [];
+        
         // Jika user adalah agent, ambil saldo dari database
         if ($user instanceof \App\Models\Agent) {
             $walletBalance['balance'] = $user->saldo ?? 0;
-            // TODO: Hitung pending withdrawal dari table withdraw
-            $walletBalance['pendingWithdrawal'] = 0;
+            
+            // Hitung pending withdrawal dari table withdraw
+            $pendingWithdrawals = \App\Models\Withdraw::where('agent_id', $user->id)
+                ->where('status', 'pending')
+                ->sum('jumlah');
+            $walletBalance['pendingWithdrawal'] = $pendingWithdrawals;
+            
+            // Ambil withdrawal history dari database
+            $withdrawalHistory = \App\Models\Withdraw::where('agent_id', $user->id)
+                ->with('rekening')
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function($withdraw) {
+                    return [
+                        'id' => $withdraw->id,
+                        'date' => $withdraw->created_at,
+                        'amount' => $withdraw->jumlah,
+                        'bankName' => $withdraw->rekening->bank ?? 'N/A',
+                        'accountNumber' => '****' . substr($withdraw->rekening->nomor_rekening ?? '', -4),
+                        'status' => $withdraw->status,
+                        'keterangan' => $withdraw->keterangan,
+                        'alasan_reject' => $withdraw->alasan_reject
+                    ];
+                })->toArray();
         }
 
         return view($data['viewPath'] . '.wallet', [
@@ -544,7 +568,8 @@ class DashboardController extends Controller
             'linkReferral' => $linkReferral,
             'portalType' => $data['portalType'],
             'stats' => $this->getStats($data['user']),
-            'walletBalance' => $walletBalance
+            'walletBalance' => $walletBalance,
+            'withdrawalHistory' => $withdrawalHistory
         ]);
     }
 
@@ -643,9 +668,24 @@ class DashboardController extends Controller
             return redirect()->route('login')->with('error', 'Login gagal. Akun Anda belum terdaftar. Silakan daftar terlebih dahulu atau hubungi tim support.');
         }
 
+        $user = $data['user'];
+        $walletBalance = [
+            'balance' => 0,
+            'pendingWithdrawal' => 0
+        ];
+        
         // Load rekening untuk user (agent)
         $rekenings = [];
         if ($data['portalType'] === 'agent') {
+            // Ambil saldo dari database
+            $walletBalance['balance'] = $user->saldo ?? 0;
+            
+            // Hitung pending withdrawal dari table withdraw
+            $pendingWithdrawals = \App\Models\Withdraw::where('agent_id', $user->id)
+                ->where('status', 'pending')
+                ->sum('jumlah');
+            $walletBalance['pendingWithdrawal'] = $pendingWithdrawals;
+            
             $rekenings = \App\Models\Rekening::where('agent_id', $data['user']->id)
                 ->orderBy('created_at', 'desc')
                 ->get()
@@ -665,7 +705,8 @@ class DashboardController extends Controller
             'linkReferral' => $linkReferral,
             'portalType' => $data['portalType'],
             'stats' => $this->getStats($data['user']),
-            'rekenings' => $rekenings
+            'rekenings' => $rekenings,
+            'walletBalance' => $walletBalance
         ]);
     }
 
