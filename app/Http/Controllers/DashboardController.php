@@ -511,11 +511,29 @@ class DashboardController extends Controller
             return redirect()->route('login')->with('error', 'Login gagal. Akun Anda belum terdaftar. Silakan daftar terlebih dahulu atau hubungi tim support.');
         }
 
+        // Load rekening untuk user (agent)
+        $rekenings = [];
+        if ($data['portalType'] === 'agent') {
+            $rekenings = \App\Models\Rekening::where('agent_id', $data['user']->id)
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function($r) {
+                    return [
+                        'id' => $r->id,
+                        'bankName' => $r->bank,
+                        'accountNumber' => $r->nomor_rekening,
+                        'accountName' => $r->nama_rekening,
+                        'isDefault' => false
+                    ];
+                });
+        }
+
         return view($data['viewPath'] . '.withdraw', [
             'user' => $data['user'],
             'linkReferral' => $linkReferral,
             'portalType' => $data['portalType'],
-            'stats' => $this->getStats($data['user'])
+            'stats' => $this->getStats($data['user']),
+            'rekenings' => $rekenings
         ]);
     }
 
