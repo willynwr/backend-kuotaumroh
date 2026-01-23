@@ -72,26 +72,12 @@
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           <div class="flex items-center gap-3">
             <h3 class="text-lg font-semibold">Daftar Users</h3>
-            <button x-show="roleFilter === 'agent'" @click="openAddTravelAgentModal(false)" 
+            <button @click="openAddUserModal()" 
               class="h-9 px-4 rounded-md bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors inline-flex items-center gap-2">
               <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
               </svg>
-              Tambah Travel Agent
-            </button>
-            <button x-show="roleFilter === 'affiliate'" @click="openAddAffiliateModal(false)" 
-              class="h-9 px-4 rounded-md bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors inline-flex items-center gap-2">
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-              </svg>
-              Tambah Affiliate
-            </button>
-            <button x-show="roleFilter === 'freelance'" @click="openAddFreelanceModal(false)" 
-              class="h-9 px-4 rounded-md bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors inline-flex items-center gap-2">
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-              </svg>
-              Tambah Freelance
+              Tambah User
             </button>
           </div>
           <div class="flex flex-wrap gap-2 w-full sm:w-auto">
@@ -158,10 +144,80 @@
     </div>
   </main>
 
-  <!-- Modals -->
-  @include('partials.form-addaffiliate')
-  @include('partials.form-addfreelance')
-  @include('partials.form-addtravelagent')
+  <!-- Unified Add User Modal -->
+  <div x-show="addUserModalOpen" x-cloak class="fixed inset-0 z-[60] flex items-center justify-center bg-black/40" @click.self="closeAddUserModal()" x-transition.opacity>
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col mx-4" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100">
+      <div class="px-6 py-4 border-b flex justify-between items-center bg-gray-50">
+        <h3 class="text-xl font-bold text-gray-900">
+          <span x-show="!selectedUserType">Tambah User Baru</span>
+          <span x-show="selectedUserType === 'agent'">Tambah Travel Agent</span>
+          <span x-show="selectedUserType === 'affiliate'">Tambah Affiliate</span>
+          <span x-show="selectedUserType === 'freelance'">Tambah Freelance</span>
+        </h3>
+        <button @click="closeAddUserModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      
+      <div class="flex-1 overflow-y-auto p-6">
+        <!-- Step 1: Select User Type -->
+        <div x-show="!selectedUserType" class="space-y-6">
+          <p class="text-sm text-muted-foreground mb-6">Pilih jenis user yang ingin ditambahkan:</p>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Travel Agent Card -->
+            <button @click="selectUserType('agent')" class="p-6 border-2 border-gray-200 rounded-lg hover:border-primary hover:bg-primary/5 transition-all text-left group">
+              <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                <svg class="w-6 h-6 text-blue-600 group-hover:text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                </svg>
+              </div>
+              <h4 class="font-semibold text-lg mb-2 group-hover:text-primary transition-colors">Travel Agent</h4>
+              <p class="text-sm text-muted-foreground">Tambah agen travel dengan detail perusahaan dan dokumen</p>
+            </button>
+            
+            <!-- Affiliate Card -->
+            <button @click="selectUserType('affiliate')" class="p-6 border-2 border-gray-200 rounded-lg hover:border-primary hover:bg-primary/5 transition-all text-left group">
+              <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                <svg class="w-6 h-6 text-green-600 group-hover:text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                </svg>
+              </div>
+              <h4 class="font-semibold text-lg mb-2 group-hover:text-primary transition-colors">Affiliate</h4>
+              <p class="text-sm text-muted-foreground">Tambah affiliate dengan link referral</p>
+            </button>
+            
+            <!-- Freelance Card -->
+            <button @click="selectUserType('freelance')" class="p-6 border-2 border-gray-200 rounded-lg hover:border-primary hover:bg-primary/5 transition-all text-left group">
+              <div class="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                <svg class="w-6 h-6 text-purple-600 group-hover:text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+              </div>
+              <h4 class="font-semibold text-lg mb-2 group-hover:text-primary transition-colors">Freelance</h4>
+              <p class="text-sm text-muted-foreground">Tambah freelancer dengan link referral</p>
+            </button>
+          </div>
+        </div>
+        
+        <!-- Step 2: Show Selected Form -->
+        <div x-show="selectedUserType" x-cloak>
+          @include('partials.form-addtravelagent')
+          @include('partials.form-addaffiliate')
+          @include('partials.form-addfreelance')
+        </div>
+      </div>
+      
+      <!-- Footer with Back Button when form is shown -->
+      <div x-show="selectedUserType" class="px-6 py-4 bg-gray-50 border-t flex justify-start">
+        <button @click="backToSelection()" class="px-4 py-2 text-sm text-gray-700 hover:text-gray-900 font-medium flex items-center gap-2 transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+          </svg>
+          Kembali ke Pilihan
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Approve Modal -->
   <div x-show="approveModalOpen" x-cloak class="fixed inset-0 z-[60] flex items-center justify-center bg-black/40" x-transition.opacity>
@@ -452,6 +508,8 @@ function usersPage() {
         // Modals
         approveModalOpen: false,
         rejectModalOpen: false,
+        addUserModalOpen: false,
+        selectedUserType: null,
         addAffiliateModalOpen: false,
         addFreelanceModalOpen: false,
         addTravelAgentModalOpen: false,
@@ -530,11 +588,16 @@ function usersPage() {
             @if($errors->any())
               if(@json(old('nama_travel'))) {
                   this.changeTab('agent');
-                  this.$nextTick(() => this.openAddTravelAgentModal(true));
-              } else if(@json(old('nama')) && this.roleFilter === 'affiliate') {
-                  this.$nextTick(() => this.openAddAffiliateModal(true));
-              } else if(@json(old('nama')) && this.roleFilter === 'freelance') {
-                  this.$nextTick(() => this.openAddFreelanceModal(true));
+                  this.$nextTick(() => {
+                      this.openAddUserModal();
+                      this.selectUserType('agent');
+                  });
+              } else if(@json(old('nama'))) {
+                  const type = this.roleFilter === 'affiliate' ? 'affiliate' : 'freelance';
+                  this.$nextTick(() => {
+                      this.openAddUserModal();
+                      this.selectUserType(type);
+                  });
               }
             @endif
         },
@@ -646,6 +709,44 @@ function usersPage() {
         },
 
         // Modal Actions
+        openAddUserModal() { 
+            this.addUserModalOpen = true; 
+            this.selectedUserType = null;
+        },
+        closeAddUserModal() { 
+            this.addUserModalOpen = false; 
+            this.selectedUserType = null;
+            this.addTravelAgentModalOpen = false;
+            this.addAffiliateModalOpen = false;
+            this.addFreelanceModalOpen = false;
+        },
+        selectUserType(type) {
+            this.selectedUserType = type;
+            // Set flag untuk show form sesuai tipe
+            if (type === 'agent') {
+                this.addTravelAgentModalOpen = true;
+            } else if (type === 'affiliate') {
+                this.addAffiliateModalOpen = true;
+            } else if (type === 'freelance') {
+                this.addFreelanceModalOpen = true;
+            }
+            // Initialize map based on type
+            this.$nextTick(() => {
+                if (type === 'agent') {
+                    this.initializeMapAgent();
+                } else if (type === 'affiliate') {
+                    this.initializeMapAffiliate();
+                } else if (type === 'freelance') {
+                    this.initializeMapFreelance();
+                }
+            });
+        },
+        backToSelection() {
+            this.selectedUserType = null;
+            this.addTravelAgentModalOpen = false;
+            this.addAffiliateModalOpen = false;
+            this.addFreelanceModalOpen = false;
+        },
         openAddAffiliateModal() { this.addAffiliateModalOpen = true; },
         closeAddAffiliateModal() { this.addAffiliateModalOpen = false; },
         openAddFreelanceModal() { this.addFreelanceModalOpen = true; },
