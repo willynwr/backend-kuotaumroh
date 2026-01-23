@@ -27,7 +27,7 @@
                     <!-- Header -->
                     <div class="relative z-10 flex flex-row items-center justify-between p-4 pb-2">
                         <h3 class="text-xs font-bold uppercase tracking-wider text-white/90">
-                            Saldo Poin
+                            Saldo Fee
                         </h3>
                         <div class="rounded-lg p-2 bg-white/20 backdrop-blur-sm text-white shadow-lg group-hover:scale-110 transition-transform duration-300">
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -41,9 +41,9 @@
                     <div class="relative z-10 px-4 pb-4 pt-0">
                         <!-- Main Balance -->
                         <div class="mb-2">
-                            <div class="text-3xl font-extrabold text-white tracking-tight drop-shadow-lg"
+                            <div class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight drop-shadow-lg break-words"
                                 x-text="stats.pointsBalance.toLocaleString('id-ID')"></div>
-                            <div class="text-[10px] font-semibold text-white/80">Poin Tersedia</div>
+                            <div class="text-[10px] sm:text-xs font-semibold text-white/80">Poin Tersedia</div>
                         </div>
 
                         <!-- Progress to Next Reward -->
@@ -61,32 +61,33 @@
                                 </div>
                             </div>
                             
-                            <!-- Next Milestone -->
-                            <div class="mt-1.5 flex items-center justify-between text-[9px]">
-                                <div class="flex items-center gap-1">
-                                    <svg class="h-2.5 w-2.5 text-yellow-300" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-                                    </svg>
-                                    <span class="font-semibold text-white/90" x-text="stats.nextRewardName"></span>
+                            <!-- Next Milestone & Total Earned -->
+                            <div class="mt-1.5 space-y-1.5">
+                                <div class="flex items-center justify-between text-[9px]">
+                                    <div class="flex items-center gap-1">
+                                        <svg class="h-2.5 w-2.5 text-yellow-300" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+                                        </svg>
+                                        <span class="font-semibold text-white/90" x-text="stats.nextRewardName"></span>
+                                    </div>
+                                    <span class="font-bold text-yellow-300" x-text="stats.nextRewardPoints.toLocaleString('id-ID')"></span>
                                 </div>
-                                <span class="font-bold text-yellow-300" x-text="stats.nextRewardPoints.toLocaleString('id-ID')"></span>
-                            </div>
-                        </div>
-
-                        <!-- Total Earned Stats -->
-                        <div class="mt-2 flex items-center justify-between pt-2 border-t border-white/20">
-                            <div>
-                                <p class="text-[10px] font-bold uppercase text-white/70 tracking-wide">Total Diperoleh</p>
-                                <p class="text-lg font-extrabold text-white"
-                                    x-text="stats.totalPointsEarned.toLocaleString('id-ID') + ' poin'"></p>
-                            </div>
-                            <!-- Animated Mini Chart -->
-                            <div class="flex items-end gap-1 opacity-80">
-                                <div class="h-3 w-2 rounded-t-sm bg-white/40 animate-pulse"></div>
-                                <div class="h-5 w-2 rounded-t-sm bg-white/50 animate-pulse" style="animation-delay: 0.1s;"></div>
-                                <div class="h-4 w-2 rounded-t-sm bg-white/45 animate-pulse" style="animation-delay: 0.2s;"></div>
-                                <div class="h-7 w-2 rounded-t-sm bg-white/60 animate-pulse" style="animation-delay: 0.3s;"></div>
-                                <div class="h-8 w-2 rounded-t-sm bg-white/70 animate-pulse" style="animation-delay: 0.4s;"></div>
+                                
+                                <div class="flex items-center justify-between pt-1.5 border-t border-white/10">
+                                    <div class="min-w-0 flex-1">
+                                        <p class="text-[9px] font-bold uppercase text-white/60 tracking-wide">Total Diperoleh</p>
+                                        <p class="text-xs font-extrabold text-white break-words"
+                                            x-text="stats.totalPointsEarned.toLocaleString('id-ID') + ' poin'"></p>
+                                    </div>
+                                    <!-- Animated Mini Chart -->
+                                    <div class="flex items-end gap-0.5 opacity-70">
+                                        <div class="h-2.5 w-1.5 rounded-t-sm bg-white/40 animate-pulse"></div>
+                                        <div class="h-3.5 w-1.5 rounded-t-sm bg-white/50 animate-pulse" style="animation-delay: 0.1s;"></div>
+                                        <div class="h-3 w-1.5 rounded-t-sm bg-white/45 animate-pulse" style="animation-delay: 0.2s;"></div>
+                                        <div class="h-5 w-1.5 rounded-t-sm bg-white/60 animate-pulse" style="animation-delay: 0.3s;"></div>
+                                        <div class="h-6 w-1.5 rounded-t-sm bg-white/70 animate-pulse" style="animation-delay: 0.4s;"></div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -96,54 +97,31 @@
             <!-- Referral Card -->
             <div>
                 <div class="rounded-2xl border-slate-200 bg-white shadow-sm h-full">
-                    <div class="flex flex-row items-center justify-between p-4 pb-3">
+                    <div class="flex flex-row items-center justify-between p-6 pb-4">
                         <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">
                             Link Referral
                         </h3>
                     </div>
-                    <div class="p-4 pt-0 h-full">
-                        <div class="flex flex-col gap-4 sm:flex-row sm:items-start">
-                            <div class="sm:w-28 sm:shrink-0">
-                                <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=' + encodeURIComponent(referralLink)"
+                    <div class="p-6 pt-0">
+                        <div class="flex flex-row gap-4 items-start">
+                            <div class="w-24 sm:w-24 shrink-0">
+                                <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(referralLink)"
                                     alt="QR Referral" class="w-full aspect-square rounded-lg border bg-white object-contain p-2">
                             </div>
-                            <div class="space-y-3 sm:flex-1">
-                                <!-- Referral Link -->
-                                <div class="space-y-1.5 min-w-0">
-                                    <label class="text-xs font-medium text-muted-foreground">Link Pendaftaran</label>
-                                    <div class="flex flex-col gap-2 sm:flex-row">
-                                        <input type="text" readonly :value="referralLink"
-                                            class="flex h-9 w-full min-w-0 rounded-md border border-input bg-muted px-3 py-2 text-xs">
-                                        <button @click="copyLink()"
-                                            class="h-9 w-full px-3 bg-primary text-white rounded-md text-xs font-medium hover:bg-primary/90 transition-colors sm:w-auto">
-                                            Salin
-                                        </button>
-                                    </div>
+                            <div class="space-y-2 sm:flex-1">
+                                <input type="text" readonly :value="referralLink"
+                                    class="flex h-9 w-full rounded-md border border-input bg-muted px-3 py-2 text-xs">
+                                <div class="flex gap-2">
+                                    <button @click="copyLink()"
+                                        class="h-9 flex-1 px-3 bg-primary text-white rounded-md text-xs font-medium hover:bg-primary/90 transition-colors">
+                                        Salin Link
+                                    </button>
+                                    <button @click="downloadQR(referralLink, 'QR-Affiliate')"
+                                        class="h-9 flex-1 px-3 bg-white border border-slate-300 text-slate-700 rounded-md text-xs font-medium hover:bg-slate-50 transition-colors">
+                                        Download QR
+                                    </button>
                                 </div>
-
-                                <!-- Share Buttons -->
-                                <div class="pt-3 border-t">
-                                    <p class="text-xs font-medium mb-2 text-slate-600">Bagikan via:</p>
-                                    <div class="grid grid-cols-2 gap-2">
-                                        <a :href="'https://wa.me/?text=' + encodeURIComponent(shareText)" target="_blank"
-                                            class="h-9 px-3 inline-flex items-center justify-center gap-2 rounded-md border hover:bg-muted transition-colors text-xs font-medium">
-                                            <svg class="h-4 w-4 text-green-600" fill="currentColor" viewBox="0 0 24 24">
-                                                <path
-                                                    d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-                                            </svg>
-                                            WhatsApp
-                                        </a>
-                                        <a :href="'https://t.me/share/url?url=' + encodeURIComponent(referralLink) + '&text=' + encodeURIComponent(shareText)"
-                                            target="_blank"
-                                            class="h-9 px-3 inline-flex items-center justify-center gap-2 rounded-md border hover:bg-muted transition-colors text-xs font-medium">
-                                            <svg class="h-4 w-4 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
-                                                <path
-                                                    d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
-                                            </svg>
-                                            Telegram
-                                        </a>
-                                    </div>
-                                </div>
+                                <p class="text-xs text-slate-500">Bagikan link ini untuk dapatkan bonus referral.</p>
                             </div>
                         </div>
                     </div>
@@ -158,27 +136,33 @@
                         <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">
                             Total Agen
                         </h3>
+                        <div class="rounded-lg p-1.5 bg-primary/10 text-primary">
+                            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                        </div>
                     </div>
 
                     <!-- Content -->
                     <div class="p-4 pt-0">
-                        <div class="flex items-center gap-3">
-                            <div class="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                                <svg class="h-5 w-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                                </svg>
-                            </div>
-                            <div class="text-2xl font-bold text-slate-900 tracking-tight"
-                                x-text="stats.totalDownlines + ' Agen'">
-                            </div>
+                        <!-- Total Agen -->
+                        <div class="mb-3">
+                            <div class="text-2xl font-extrabold text-primary tracking-tight" x-text="stats.totalDownlines"></div>
+                            <div class="text-[10px] font-medium text-slate-500 mt-0.5">Total Agen</div>
                         </div>
 
-                        <div class="mt-3 text-xs font-medium text-slate-500">Agen Aktif Bulan Ini</div>
-                        <div class="text-lg font-bold text-slate-900" x-text="stats.activeAgentsThisMonth + ' Aktif'">
-                        </div>
-                        <div class="mt-2 text-xs font-medium text-slate-500">Agen Baru Bulan Ini</div>
-                        <div class="text-lg font-bold text-slate-900" x-text="stats.newAgentsThisMonth + ' Bergabung'">
+                        <!-- Stats Grid -->
+                        <div class="flex items-center justify-between border-t border-slate-100 pt-3">
+                            <div>
+                                <p class="text-[10px] font-bold uppercase text-slate-400">Aktif</p>
+                                <p class="text-base font-extrabold text-primary" x-text="stats.activeAgentsThisMonth"></p>
+                            </div>
+                            <div class="h-6 w-px bg-slate-200"></div>
+                            <div>
+                                <p class="text-[10px] font-bold uppercase text-slate-400">Baru</p>
+                                <p class="text-base font-extrabold text-primary" x-text="stats.newAgentsThisMonth"></p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -242,8 +226,8 @@
                 initials: ''
             },
             stats: {
-                pointsBalance: 0,
-                totalPointsEarned: 0,
+                pointsBalance: {{ $stats['saldoFee'] ?? 0 }},
+                totalPointsEarned: {{ $stats['totalFee'] ?? 0 }},
                 totalDownlines: {{ $stats['totalAgents'] ?? 0 }},
                 pendingClaims: 0,
                 activeAgentsThisMonth: {{ $stats['activeAgentsThisMonth'] ?? 0 }},
@@ -319,6 +303,17 @@
             copyLink() {
                 navigator.clipboard.writeText(this.referralLink);
                 this.showToast('Tersalin!', 'Link referral berhasil disalin');
+            },
+
+            downloadQR(url, filename) {
+                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(url)}`;
+                const link = document.createElement('a');
+                link.href = qrUrl;
+                link.download = `${filename}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                this.showToast('Download Berhasil!', 'QR Code berhasil diunduh');
             },
 
             logout() {

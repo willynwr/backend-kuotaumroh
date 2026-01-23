@@ -195,13 +195,25 @@ class BulkPaymentService
             if ($response->successful()) {
                 $result = $response->json();
                 
+                Log::info('✅ Bulk payment created successfully', [
+                    'payment_id' => $result['payment_id'] ?? $result['id'] ?? 'unknown',
+                    'has_qris' => isset($result['qris']),
+                    'qris_structure' => isset($result['qris']) ? array_keys($result['qris']) : [],
+                ]);
+                
                 // Store local record for tracking
                 $this->storeLocalPaymentRecord($requestBody, $result);
+                
+                $mappedResponse = $this->mapExternalResponse($result, $batchId);
+                
+                Log::info('📦 Mapped response', [
+                    'qris' => $mappedResponse['qris'],
+                ]);
                 
                 return [
                     'success' => true,
                     'message' => 'Bulk payment berhasil dibuat',
-                    'data' => $this->mapExternalResponse($result, $batchId),
+                    'data' => $mappedResponse,
                 ];
             }
 
@@ -280,7 +292,12 @@ class BulkPaymentService
     {
         // Check various possible QRIS data locations
         if (isset($response['qris'])) {
-            return $response['qris'];
+            $qris = $response['qris'];
+            // Pastikan qr_code_url ada
+            if (is_array($qris) && !isset($qris['qr_code_url']) && isset($response['payment_id'])) {
+                $qris['qr_code_url'] = "https://kuotaumroh.id/umroh/payment?id={$response['payment_id']}";
+            }
+            return $qris;
         }
 
         if (isset($response['qr_code_url']) || isset($response['qris_string'])) {
@@ -295,7 +312,7 @@ class BulkPaymentService
             $paymentId = $response['payment_id'] ?? $response['id'];
             return [
                 'qris_string' => null,
-                'qr_code_url' => "https://kuotaumroh.id/umroh/payment/qr?id={$paymentId}",
+                'qr_code_url' => "https://kuotaumroh.id/umroh/payment?id={$paymentId}",
             ];
         }
 

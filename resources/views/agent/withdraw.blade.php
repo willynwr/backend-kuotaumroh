@@ -80,6 +80,12 @@
               </button>
             </div>
 
+            <div class="space-y-2">
+              <label for="keterangan" class="text-sm font-medium">Keterangan (Opsional)</label>
+              <textarea id="keterangan" x-model="keterangan" placeholder="Masukkan keterangan penarikan..." rows="3" class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground resize-none"></textarea>
+              <p class="text-xs text-muted-foreground">Keterangan akan membantu Anda mengingat tujuan penarikan ini.</p>
+            </div>
+
             <template x-if="selectedBank">
               <div class="rounded-lg bg-muted/50 border">
                 <div class="flex items-center gap-4 p-4">
@@ -154,14 +160,13 @@
     function withdrawApp() {
       return {
         imageBase: @json(asset('images')),
-        walletBalance: 3250000,
+        agentId: {{ isset($user) && $user ? $user->id : 'null' }},
+        walletBalance: {{ isset($walletBalance) && isset($walletBalance['balance']) ? $walletBalance['balance'] : 0 }},
         minWithdrawal: 100000,
         amount: '',
         selectedAccount: '',
-        savedAccounts: [
-          { id: '1', bankName: 'BCA', accountNumber: '1234567890', accountName: 'Ahmad Fauzi', isDefault: true },
-          { id: '2', bankName: 'Mandiri', accountNumber: '0987654321', accountName: 'Ahmad Fauzi', isDefault: false },
-        ],
+        keterangan: '',
+        savedAccounts: @json($rekenings ?? []),
         bankList: ['BCA', 'Mandiri', 'BNI', 'BRI', 'CIMB Niaga', 'Permata', 'Danamon', 'Bank Syariah Indonesia (BSI)', 'BTN', 'Mega'],
         addAccountDialogOpen: false,
         newAccountBank: '',
@@ -171,9 +176,20 @@
         toastVisible: false,
         toastTitle: '',
         toastMessage: '',
+        loading: false,
         init() {
-          const defaultAcc = this.savedAccounts.find(a => a.isDefault);
-          if (defaultAcc) this.selectedAccount = defaultAcc.id;
+          console.log('Agent ID:', this.agentId);
+          console.log('Saved accounts:', this.savedAccounts);
+          
+          if (!this.agentId || this.agentId === 'null') {
+            console.error('Agent ID is not set!');
+            this.showToast('Error', 'Agent ID tidak ditemukan. Silakan login kembali.');
+            return;
+          }
+          
+          if (this.savedAccounts.length > 0) {
+            this.selectedAccount = this.savedAccounts[0].id;
+          }
         },
         get numericAmount() {
           return parseInt(String(this.amount || '').replace(/\D/g, '')) || 0;
@@ -195,10 +211,41 @@
         withdrawAll() {
           this.amount = this.walletBalance.toLocaleString('id-ID');
         },
-        handleSubmit() {
-          if (!this.isValidAmount) return;
-          this.showToast('Permintaan Penarikan Dikirim', `Penarikan sebesar ${this.formatRupiah(this.numericAmount)} sedang diproses.`);
-          setTimeout(() => { window.location.href = @json(isset($linkReferral) ? url('/dash/' . $linkReferral . '/wallet') : route('agent.wallet')); }, 1500);
+        async handleSubmit() {
+          if (!this.isValidAmount || this.loading) return;
+          
+          this.loading = true;
+          try {
+            const response = await fetch('/agent/withdraws', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+              },
+              body: JSON.stringify({
+                agent_id: this.agentId,
+                rekening_id: this.selectedAccount,
+                jumlah: this.numericAmount,
+                keterangan: this.keterangan || 'Penarikan saldo'
+              })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+              this.showToast('Permintaan Penarikan Dikirim', `Penarikan sebesar ${this.formatRupiah(this.numericAmount)} sedang diproses.`);
+              setTimeout(() => { 
+                window.location.href = @json(isset($linkReferral) ? url('/dash/' . $linkReferral . '/wallet') : route('agent.wallet')); 
+              }, 1500);
+            } else {
+              this.showToast('Gagal', result.message || 'Gagal mengajukan penarikan');
+            }
+          } catch (error) {
+            console.error('Error:', error);
+            this.showToast('Error', 'Terjadi kesalahan saat mengajukan penarikan');
+          } finally {
+            this.loading = false;
+          }
         },
         openAddAccountDialog() {
           this.addAccountDialogOpen = true;
@@ -210,29 +257,52 @@
           this.newAccountName = '';
           this.newAccountIsDefault = false;
         },
-        handleAddAccount() {
+        async handleAddAccount() {
           if (!this.newAccountBank || !this.newAccountNumber || !this.newAccountName) {
             this.showToast('Validasi Gagal', 'Mohon lengkapi semua field.');
             return;
           }
-          if (this.savedAccounts.some(acc => acc.accountNumber === this.newAccountNumber)) {
-            this.showToast('Rekening Sudah Ada', 'Nomor rekening ini sudah terdaftar.');
-            return;
+          
+          this.loading = true;
+          try {
+            const response = await fetch('/agent/rekenings', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+              },
+              body: JSON.stringify({
+                agent_id: this.agentId,
+                bank: this.newAccountBank,
+                nomor_rekening: this.newAccountNumber,
+                nama_rekening: this.newAccountName
+              })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+              const newAccount = {
+                id: result.data.id,
+                bankName: result.data.bank,
+                accountNumber: result.data.nomor_rekening,
+                accountName: result.data.nama_rekening,
+                isDefault: false
+              };
+              
+              this.savedAccounts.push(newAccount);
+              this.selectedAccount = newAccount.id;
+              this.showToast('Rekening Ditambahkan', `Rekening ${this.newAccountBank} berhasil ditambahkan.`);
+              this.closeAddAccountDialog();
+            } else {
+              this.showToast('Gagal', result.message || 'Gagal menambahkan rekening');
+            }
+          } catch (error) {
+            console.error('Error:', error);
+            this.showToast('Error', 'Terjadi kesalahan saat menambahkan rekening');
+          } finally {
+            this.loading = false;
           }
-          const newAccount = {
-            id: Date.now().toString(),
-            bankName: this.newAccountBank,
-            accountNumber: this.newAccountNumber,
-            accountName: this.newAccountName,
-            isDefault: this.newAccountIsDefault,
-          };
-          if (this.newAccountIsDefault) {
-            this.savedAccounts = this.savedAccounts.map(acc => ({ ...acc, isDefault: false }));
-          }
-          this.savedAccounts.push(newAccount);
-          this.selectedAccount = newAccount.id;
-          this.showToast('Rekening Ditambahkan', `Rekening ${this.newAccountBank} berhasil ditambahkan.`);
-          this.closeAddAccountDialog();
         },
         showToast(title, message) {
           this.toastTitle = title;

@@ -49,7 +49,8 @@
     <!-- Store Config -->
     <script>
         const STORE_CONFIG = {
-            ref_code: '{{ $agent->ref_code ?? "bulk_umroh" }}',
+            agent_id: '{{ $agent->id ?? 1 }}',           // Agent ID untuk payment ref_code
+            catalog_ref_code: 'bulk_umroh',              // Selalu bulk_umroh untuk dapat harga bulk
             link_referal: '{{ $agent->link_referal ?? "kuotaumroh" }}',
             nama_travel: '{{ $agent->nama_travel ?? "Kuotaumroh.id" }}',
         };
@@ -120,10 +121,6 @@
                         <p class="text-xs text-muted-foreground">{{ $agent->nama_pic }}</p>
                     </div>
                 </div>
-                <a href="{{ route('login') }}"
-                    class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground h-9 px-4 text-sm font-medium hover:bg-primary/90 transition-colors">
-                    Login Agen
-                </a>
             </div>
         </header>
 
@@ -201,28 +198,24 @@
                             <template x-if="!packagesLoading && provider">
                                 <div>
                                     <!-- Search & Filters -->
-                                    <div class="p-4 border-b space-y-4">
-                                        <div class="flex gap-2">
-                                            <!-- Search -->
-                                            <div class="relative flex-1">
-                                                <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                                </svg>
-                                                <input type="text" x-model="packageSearch" placeholder="Cari paket"
-                                                    class="w-full h-10 pl-10 pr-4 rounded-md border border-input bg-background text-sm">
-                                            </div>
-                                            <!-- SubType Filter -->
-                                            <div class="relative w-56">
-                                                <select x-model="selectedSubTypeFilter"
-                                                    class="w-full h-10 px-3 pr-8 rounded-md border border-input bg-background text-sm appearance-none cursor-pointer">
-                                                    <template x-for="filter in subTypeFilters" :key="filter.value">
-                                                        <option :value="filter.value" x-text="filter.label"></option>
-                                                    </template>
-                                                </select>
-                                                <svg class="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                                </svg>
-                                            </div>
+                                    <div class="p-4 border-b space-y-3">
+                                        <!-- Search -->
+                                        <div class="relative w-full">
+                                            <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                            </svg>
+                                            <input type="text" x-model="packageSearch" placeholder="Cari paket"
+                                                class="w-full h-10 pl-10 pr-4 rounded-md border border-input bg-background text-sm">
+                                        </div>
+
+                                        <!-- SubType Filters as pills -->
+                                        <div class="flex flex-wrap gap-2">
+                                            <template x-for="filter in subTypeFilters" :key="filter.value">
+                                                <button @click="selectedSubTypeFilter = filter.value"
+                                                    :class="selectedSubTypeFilter === filter.value ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'"
+                                                    class="px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap"
+                                                    x-text="filter.label"></button>
+                                            </template>
                                         </div>
 
                                         <!-- Duration Filters -->
@@ -421,7 +414,7 @@
                 </div>
 
                 <!-- Order Summary Sidebar (1/3) -->
-                <div class="lg:col-span-1">
+                <div class="lg:col-span-1" id="checkoutSummary">
                     <div class="rounded-lg border bg-white shadow-sm sticky top-24">
                         <div class="p-6 border-b">
                             <h3 class="text-lg font-semibold flex items-center gap-2">
@@ -441,6 +434,55 @@
                                 <div class="flex justify-between text-sm">
                                     <span class="text-muted-foreground">Paket</span>
                                     <span class="font-medium" x-text="selectedPackage?.name || '-'"></span>
+                                </div>
+                                
+                                <!-- Cetak Invoice Toggle -->
+                                <div class="flex items-center justify-between pt-2">
+                                    <span class="text-muted-foreground text-sm">Cetak Invoice</span>
+                                    <button @click="invoiceCetakEnabled = !invoiceCetakEnabled"
+                                        :class="invoiceCetakEnabled ? 'bg-primary' : 'bg-muted'"
+                                        class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors">
+                                        <span :class="invoiceCetakEnabled ? 'translate-x-6' : 'translate-x-1'"
+                                            class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"></span>
+                                    </button>
+                                </div>
+
+                                <!-- Invoice Method Options (when enabled) -->
+                                <div x-show="invoiceCetakEnabled" x-collapse class="border-t pt-3 space-y-3">
+                                    <div class="space-y-2">
+                                        <label class="text-sm font-medium">Kirim Invoice Via:</label>
+                                        
+                                        <!-- WhatsApp Option -->
+                                        <label class="flex items-center gap-3 p-3 border rounded-md cursor-pointer hover:bg-muted/30 transition"
+                                            :class="invoiceMethod === 'whatsapp' ? 'border-primary bg-primary/5' : 'border-border'">
+                                            <input type="radio" name="invoiceMethod" value="whatsapp" 
+                                                x-model="invoiceMethod" class="w-4 h-4">
+                                            <span class="text-sm font-medium flex-1">WhatsApp</span>
+                                            <span x-show="invoiceMethod === 'whatsapp'" class="text-xs text-primary">(Default)</span>
+                                        </label>
+
+                                        <!-- WhatsApp Number Field -->
+                                        <div x-show="invoiceMethod === 'whatsapp'" x-collapse>
+                                            <input type="text" x-model="invoiceWhatsapp" disabled
+                                                class="w-full h-9 px-3 rounded-md border border-input bg-muted text-sm font-mono">
+                                            <p class="text-xs text-muted-foreground mt-1">Nomor otomatis dari input di atas</p>
+                                        </div>
+
+                                        <!-- Email Option -->
+                                        <label class="flex items-center gap-3 p-3 border rounded-md cursor-pointer hover:bg-muted/30 transition"
+                                            :class="invoiceMethod === 'email' ? 'border-primary bg-primary/5' : 'border-border'">
+                                            <input type="radio" name="invoiceMethod" value="email" 
+                                                x-model="invoiceMethod" class="w-4 h-4">
+                                            <span class="text-sm font-medium">Email</span>
+                                        </label>
+
+                                        <!-- Email Input Field -->
+                                        <div x-show="invoiceMethod === 'email'" x-collapse>
+                                            <input type="email" x-model="invoiceEmail" placeholder="Masukkan email Anda"
+                                                class="w-full h-9 px-3 rounded-md border border-input bg-background text-sm">
+                                            <p class="text-xs text-muted-foreground mt-1">Invoice akan dikirim ke email ini</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <div class="border-t pt-4">
@@ -462,41 +504,6 @@
                     </div>
                 </div>
 
-            </div>
-
-            <!-- Benefits Section -->
-            <h2 class="text-2xl font-bold text-center mb-8 mt-16">Kenapa harus membeli Kuota Umroh Haji di {{ $agent->nama_travel }}?</h2>
-            <div class="mt-16 grid gap-6 md:grid-cols-3">
-                <div class="text-center">
-                    <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-4">
-                        <svg class="h-6 w-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
-                    </div>
-                    <h3 class="font-semibold mb-2">Proses Cepat</h3>
-                    <p class="text-sm text-muted-foreground">Aktivasi otomatis dalam hitungan menit</p>
-                </div>
-                <div class="text-center">
-                    <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-4">
-                        <svg class="h-6 w-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                        </svg>
-                    </div>
-                    <h3 class="font-semibold mb-2">Aman & Terpercaya</h3>
-                    <p class="text-sm text-muted-foreground">Transaksi aman dengan sistem pembayaran terenkripsi</p>
-                </div>
-                <div class="text-center">
-                    <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-4">
-                        <svg class="h-6 w-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
-                        </svg>
-                    </div>
-                    <h3 class="font-semibold mb-2">Dukungan 24/7</h3>
-                    <p class="text-sm text-muted-foreground">Tim support siap membantu kapan saja</p>
-                </div>
             </div>
 
         </main>
@@ -582,6 +589,10 @@
                 toastVisible: false,
                 toastTitle: '',
                 toastMessage: '',
+                invoiceCetakEnabled: false,
+                invoiceMethod: 'whatsapp',
+                invoiceEmail: '',
+                invoiceWhatsapp: '',
 
                 async init() {
                     // Load all packages on init
@@ -591,40 +602,53 @@
                 async loadAllPackages() {
                     try {
                         this.packagesLoading = true;
-                        const refCode = STORE_CONFIG.ref_code || 'bulk_umroh';
-                        const response = await fetch(`${API_BASE_URL}/api/umroh/package?ref_code=${refCode}`);
+                        // Selalu gunakan bulk_umroh untuk dapat harga bulk
+                        const catalogRefCode = STORE_CONFIG.catalog_ref_code || 'bulk_umroh';
+                        const response = await fetch(`${API_BASE_URL}/api/umroh/package?ref_code=${catalogRefCode}`);
                         if (!response.ok) {
                             throw new Error('Failed to fetch packages');
                         }
                         
                         const data = await response.json();
+                        console.log('📦 API Response:', data);
+                        
                         // Response langsung array, tidak wrapped
                         if (Array.isArray(data)) {
-                            this.allPackages = data.map(pkg => ({
-                                id: pkg.id,
-                                package_id: pkg.id,
-                                packageId: pkg.id,
-                                name: pkg.name,
-                                packageName: pkg.name,
-                                provider: pkg.type, // type = provider (TELKOMSEL, XL, etc)
-                                days: parseInt(pkg.days),
-                                masa_aktif: parseInt(pkg.days),
-                                quota: pkg.quota,
-                                total_kuota: pkg.quota,
-                                kuota_utama: pkg.quota,
-                                kuota_bonus: pkg.bonus,
-                                bonus: pkg.bonus,
-                                telp: pkg.telp,
-                                sms: pkg.sms,
-                                price: parseInt(pkg.price_bulk), // untuk bulk_umroh gunakan price_bulk
-                                harga: parseInt(pkg.price_bulk),
-                                price_customer: parseInt(pkg.price_customer),
-                                profit: parseInt(pkg.price_customer) - parseInt(pkg.price_bulk),
-                                subType: pkg.sub_type,
-                                tipe_paket: pkg.sub_type,
-                                is_active: pkg.is_active,
-                                promo: pkg.promo,
-                            }));
+                            this.allPackages = data.map(pkg => {
+                                // Parse harga dengan fallback
+                                const priceBulk = parseInt(pkg.price_bulk) || 0;
+                                const priceCustomer = parseInt(pkg.price_customer) || priceBulk;
+                                
+                                return {
+                                    id: pkg.id,
+                                    package_id: pkg.id,
+                                    packageId: pkg.id,
+                                    name: pkg.name,
+                                    packageName: pkg.name,
+                                    provider: pkg.type, // type = provider (TELKOMSEL, XL, etc)
+                                    days: parseInt(pkg.days) || 0,
+                                    masa_aktif: parseInt(pkg.days) || 0,
+                                    quota: pkg.quota || '',
+                                    total_kuota: pkg.quota || '',
+                                    kuota_utama: pkg.quota || '',
+                                    kuota_bonus: pkg.bonus || '',
+                                    bonus: pkg.bonus || '',
+                                    telp: pkg.telp || '',
+                                    sms: pkg.sms || '',
+                                    price: priceCustomer,        // Harga jual ke customer
+                                    harga: priceCustomer,
+                                    sellPrice: priceCustomer,
+                                    displayPrice: priceCustomer,
+                                    price_bulk: priceBulk,       // Harga modal
+                                    price_customer: priceCustomer,
+                                    profit: priceCustomer - priceBulk,
+                                    subType: pkg.sub_type || '',
+                                    tipe_paket: pkg.sub_type || '',
+                                    is_active: pkg.is_active,
+                                    promo: pkg.promo || null,
+                                };
+                            });
+                            console.log('📦 Mapped packages:', this.allPackages.length);
                         }
                         this.packagesLoading = false;
                     } catch (error) {
@@ -672,6 +696,7 @@
 
                     const cleaned = String(this.msisdn || '').replace(/\D/g, '');
                     this.msisdn = cleaned;
+                    this.invoiceWhatsapp = cleaned;  // Sync nomor ke invoice WhatsApp
 
                     if (validateMsisdn(cleaned)) {
                         const detectedProvider = detectProvider(cleaned);
@@ -745,14 +770,64 @@
                         // Use harga from API (price_bulk)
                         displayPrice: pkg.price || pkg.harga
                     };
+                    
+                    // Scroll ke checkout summary di mobile
+                    this.$nextTick(() => {
+                        const checkoutElement = document.getElementById('checkoutSummary');
+                        if (checkoutElement && window.innerWidth < 1024) {
+                            const elementPosition = checkoutElement.getBoundingClientRect().top + window.scrollY;
+                            const offsetPosition = elementPosition - 120; // offset untuk melihat header "Ringkasan Pesanan"
+                            window.scrollTo({
+                                top: offsetPosition,
+                                behavior: 'smooth'
+                            });
+                        }
+                    });
                 },
 
                 getPackageTitle(pkg) {
+                    const subType = (pkg.subType || pkg.sub_type || '').toUpperCase();
+                    const days = pkg.days || pkg.masa_aktif;
+                    const daysSuffix = days ? ` - ${days} Hari` : '';
+                    
+                    // Untuk paket INTERNET atau INTERNET + TELP/SMS
+                    if (subType.includes('INTERNET')) {
+                        // Hitung total kuota (quota + bonus)
+                        const quotaMatch = (pkg.quota || '').match(/(\d+(?:\.\d+)?)\s*GB/i);
+                        const bonusMatch = (pkg.bonus || '').match(/(\d+(?:\.\d+)?)\s*GB/i);
+                        
+                        let totalGB = 0;
+                        if (quotaMatch) totalGB += parseFloat(quotaMatch[1]);
+                        if (bonusMatch) totalGB += parseFloat(bonusMatch[1]);
+                        
+                        if (totalGB > 0) {
+                            return `Kuota ${totalGB}GB${daysSuffix}`;
+                        }
+                        // Fallback jika tidak bisa parse
+                        return pkg.quota ? `Kuota ${pkg.quota}${daysSuffix}` : `Paket Internet${daysSuffix}`;
+                    }
+                    
+                    // Untuk paket TELP/SMS
+                    if (subType.includes('TELP') || subType.includes('SMS')) {
+                        const telpStr = pkg.telp ? `Telp ${pkg.telp}` : '';
+                        const smsStr = pkg.sms ? `SMS ${pkg.sms}` : '';
+                        
+                        if (telpStr && smsStr) {
+                            return `${telpStr} & ${smsStr}${daysSuffix}`;
+                        } else if (telpStr) {
+                            return `${telpStr}${daysSuffix}`;
+                        } else if (smsStr) {
+                            return `${smsStr}${daysSuffix}`;
+                        }
+                    }
+                    
+                    // Fallback ke nama asli
                     if (pkg.name) return pkg.name;
                     if (pkg.packageName) return pkg.packageName;
+                    
                     const parts = [];
                     if (pkg.quota) parts.push(pkg.quota);
-                    if (pkg.days) parts.push(`${pkg.days} Hari`);
+                    if (days) parts.push(`${days} Hari`);
                     return parts.join(' - ') || 'Paket';
                 },
 
@@ -811,7 +886,7 @@
                         activationTime: this.activationTime,
                         scheduleDate: scheduleDate,
                         scheduledTime: this.scheduledTime,
-                        refCode: STORE_CONFIG.ref_code || 'bulk_umroh',
+                        refCode: STORE_CONFIG.agent_id || '1',  // Agent ID untuk payment
                         linkReferal: STORE_CONFIG.link_referal || 'kuotaumroh',
                         mode: 'store',
                         createdAt: new Date().toISOString(),

@@ -37,11 +37,8 @@ class UmrohPaymentController extends Controller
             
             $packages = $this->paymentService->getCatalog($refCode);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Catalog paket berhasil diambil',
-                'data' => $packages,
-            ]);
+            // Return array langsung (tidak wrapped) untuk kompatibilitas dengan frontend
+            return response()->json($packages);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

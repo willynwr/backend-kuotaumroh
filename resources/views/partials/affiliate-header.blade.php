@@ -2,7 +2,7 @@
     <div class="container mx-auto flex h-16 items-center justify-between px-4">
         <!-- Logo -->
         <a href="{{ isset($linkReferral) ? url('/dash/' . $linkReferral) : route('affiliate.dashboard') }}" class="flex items-center gap-2">
-            <img src="{{ asset('images/kabah.png') }}" alt="Kuotaumroh.id Logo" class="h-9 w-9 object-contain">
+            <img src="{{ asset('images/LOGO.png') }}" alt="Kuotaumroh.id Logo" class="h-9 w-9 object-contain">
             <span class="text-xl font-semibold">Kuotaumroh.id</span>
         </a>
 

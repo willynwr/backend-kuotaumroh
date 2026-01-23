@@ -27,10 +27,12 @@ class Agent extends Model
         'long',
         'lat',
         'link_referal',
-        'rekening_agent',
         'date_approve',
         'logo',
         'surat_ppiu',
+        'saldo',
+        'saldo_bulan',
+        'saldo_tahun',
         'status',
         'is_active',
     ];
@@ -51,5 +53,23 @@ class Agent extends Model
     public function freelance()
     {
         return $this->belongsTo(Freelance::class);
+    }
+
+    /**
+     * Relasi ke Rekening
+     * Agent bisa memiliki banyak Rekening
+     */
+    public function rekenings()
+    {
+        return $this->hasMany(Rekening::class);
+    }
+
+    /**
+     * Relasi ke Withdraw
+     * Agent bisa memiliki banyak Withdraw
+     */
+    public function withdraws()
+    {
+        return $this->hasMany(Withdraw::class);
     }
 }

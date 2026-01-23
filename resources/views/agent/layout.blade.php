@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Agent - Kuotaumroh.id')</title>
 
     <!-- Fonts -->
@@ -11,13 +12,16 @@
     <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Favicon -->
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('images/kabah.png') }}">
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/kabah.png') }}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('images/kabah.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('images/LOGO.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/LOGO.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('images/LOGO.png') }}">
     <meta name="theme-color" content="#10b981">
 
     <!-- Tailwind & Alpine -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <!-- Shared Styles & Scripts -->
