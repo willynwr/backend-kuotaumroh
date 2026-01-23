@@ -124,7 +124,7 @@
         <!-- Hero Copy - Visible on all screens -->
         <div class="text-white drop-shadow-lg mb-6 sm:mb-8 md:hidden text-center px-2">
           <h1 class="text-2xl sm:text-3xl font-black leading-tight tracking-tight">
-            Tambah Cuan Jual Paket Roaming Umroh & Haji Anti Ribet
+            Tambah Cuan Jual Paket Roaming Umroh & Haji Anti Ribet .
           </h1>
         </div>
 
@@ -133,7 +133,7 @@
           <div class="hidden md:block text-white drop-shadow-lg space-y-6">
             <div class="space-y-5">
               <h1 class="text-3xl lg:text-5xl xl:text-6xl font-black leading-[1.1] tracking-tight">
-                Tambah Cuan Jual Paket Roaming Umroh & Haji Anti Ribet
+                Tambah Cuan Jual Paket Roaming Umroh & Haji Anti Ribet .
               </h1>
             </div>
           </div>
