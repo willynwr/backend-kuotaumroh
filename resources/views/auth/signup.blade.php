@@ -123,20 +123,9 @@
     <!-- Header -->
     <header class="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
       <div class="container mx-auto flex h-16 items-center justify-between px-4">
-        <div class="flex items-center gap-2">
-          <!-- Desktop Logo -->
-          <div class="hidden md:flex items-center gap-2">
-            <img src="{{ asset('images/LOGO.png') }}" alt="Kuotaumroh.id" class="h-9 w-9 object-contain">
-            <span class="text-xl font-semibold">Kuotaumroh.id</span>
-          </div>
-          <!-- Mobile Banner Logo -->
-          <div class="md:hidden">
-            <img src="{{ asset('images/bannermobile.png') }}" alt="Kuotaumroh.id" class="h-10 object-contain">
-          </div>
-        </div>
-        <a href="{{ url('/login') }}"
-          class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground h-9 px-4 text-sm font-medium hover:bg-primary/90 transition-colors">
-          Login
+        <a href="{{ url('/') }}" class="flex items-center gap-2">
+          <img src="{{ asset('images/LOGO.png') }}" alt="Kuotaumroh.id Logo" class="h-9 w-9 object-contain">
+          <span class="text-xl font-semibold">Kuotaumroh.id</span>
         </a>
       </div>
     </header>
