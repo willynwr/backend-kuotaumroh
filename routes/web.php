@@ -155,6 +155,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\Admin\AdminController::class, 'dashboard'])->name('dashboard');
     Route::get('/users', [App\Http\Controllers\Admin\AdminController::class, 'users'])->name('users');
     Route::get('/packages', [App\Http\Controllers\Admin\AdminController::class, 'packages'])->name('packages');
+    
+    // Margin routes
+    Route::post('/margins', [App\Http\Controllers\Admin\AdminController::class, 'storeMargin'])->name('margins.store');
+    Route::put('/margins/{id}', [App\Http\Controllers\Admin\AdminController::class, 'updateMargin'])->name('margins.update');
+    Route::delete('/margins/{id}', [App\Http\Controllers\Admin\AdminController::class, 'deleteMargin'])->name('margins.delete');
+    
     Route::get('/transactions', [App\Http\Controllers\Admin\AdminController::class, 'transactions'])->name('transactions');
     Route::get('/withdrawals', [App\Http\Controllers\Admin\AdminController::class, 'withdrawals'])->name('withdrawals');
     Route::get('/rewards', [App\Http\Controllers\Admin\AdminController::class, 'rewards'])->name('rewards');
