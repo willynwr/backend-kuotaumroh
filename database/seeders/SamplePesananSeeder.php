@@ -138,10 +138,15 @@ class SamplePesananSeeder extends Seeder
         if ($agent) {
             // 5 batch x 3 pesanan x 50000 profit = 750000
             $totalProfitBulanIni = 5 * 3 * 50000;
-            $agent->saldo = $totalProfitBulanIni;
+            $agent->saldo = $totalProfitBulanIni;        // Saldo permanent (tidak reset)
+            $agent->saldo_bulan = $totalProfitBulanIni;  // Saldo bulan ini (reset tiap bulan)
+            $agent->saldo_tahun = $totalProfitBulanIni;  // Saldo tahun ini (reset tiap tahun)
             $agent->save();
             
-            $this->command->info('Saldo agent updated: Rp ' . number_format($totalProfitBulanIni, 0, ',', '.'));
+            $this->command->info('✅ Saldo agent updated:');
+            $this->command->info('   - saldo (permanent): Rp ' . number_format($totalProfitBulanIni, 0, ',', '.'));
+            $this->command->info('   - saldo_bulan: Rp ' . number_format($totalProfitBulanIni, 0, ',', '.'));
+            $this->command->info('   - saldo_tahun: Rp ' . number_format($totalProfitBulanIni, 0, ',', '.'));
         }
         
         $this->command->info('Sample data created successfully!');

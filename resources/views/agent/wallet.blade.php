@@ -24,10 +24,13 @@
             <div class="rounded-full bg-primary/10 p-3">
               <svg class="h-6 w-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             </div>
-            <div>
+            <div class="flex-1">
               <p class="text-sm font-medium text-muted-foreground">Saldo Profit Tersedia</p>
               <h3 class="text-2xl font-bold" x-text="formatRupiah(walletBalance.balance)"></h3>
             </div>
+            <a href="{{ isset($linkReferral) ? url('/dash/' . $linkReferral . '/history-profit') : route('agent.history-profit') }}" class="rounded-md p-2 hover:bg-primary/10 transition-colors" title="Lihat History Profit">
+              <svg class="h-5 w-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </a>
           </div>
         </div>
 
@@ -126,7 +129,7 @@
     function walletApp() {
       return {
         imageBase: @json(asset('images')),
-        walletBalance: { balance: 3250000, pendingWithdrawal: 500000 },
+        walletBalance: @json($walletBalance ?? ['balance' => 0, 'pendingWithdrawal' => 0]),
         incomeHistory: [
           { id: '1', date: new Date('2024-01-15'), type: 'commission', description: 'Komisi Batch #ORD-2024-0115', amount: 450000 },
           { id: '2', date: new Date('2024-01-12'), type: 'refund', description: 'Refund gagal aktivasi', amount: 75000 },

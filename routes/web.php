@@ -114,6 +114,7 @@ Route::prefix('dash')->name('dash.')->middleware('web')->group(function () {
     Route::get('/{link_referral}/checkout', [DashboardController::class, 'checkout'])->name('checkout');
     Route::get('/{link_referral}/history', [DashboardController::class, 'history'])->name('history');
     Route::get('/{link_referral}/wallet', [DashboardController::class, 'wallet'])->name('wallet');
+    Route::get('/{link_referral}/history-profit', [DashboardController::class, 'historyProfit'])->name('history-profit');
     Route::get('/{link_referral}/withdraw', [DashboardController::class, 'withdraw'])->name('withdraw');
     Route::get('/{link_referral}/referrals', [DashboardController::class, 'referrals'])->name('referrals');
     Route::get('/{link_referral}/catalog', [DashboardController::class, 'catalog'])->name('catalog');
@@ -224,6 +225,7 @@ Route::prefix('agent')->name('agent.')->group(function () {
     Route::get('/order', [AgentController::class, 'order'])->name('order');
     Route::get('/checkout', [AgentController::class, 'checkout'])->name('checkout');
     Route::get('/wallet', [AgentController::class, 'wallet'])->name('wallet');
+    Route::get('/history-profit', [AgentController::class, 'historyProfit'])->name('history-profit');
     Route::get('/profile', [AgentController::class, 'profile'])->name('profile');
     Route::get('/referrals', [AgentController::class, 'referrals'])->name('referrals');
     
