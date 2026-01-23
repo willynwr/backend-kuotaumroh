@@ -14,7 +14,7 @@ class SamplePesananSeeder extends Seeder
      */
     public function run(): void
     {
-        $agentId = 12;
+        $agentId = 1;
         
         // Hapus data lama untuk agent ini
         \App\Models\Pesanan::where('agent_id', $agentId)->delete();
@@ -55,7 +55,7 @@ class SamplePesananSeeder extends Seeder
                 'total_pembayaran' => $totalPembayaran,
                 'profit' => $totalProfit,
                 'metode_pembayaran' => 'QRIS',
-                'status_pembayaran' => 'selesai',
+                'status_pembayaran' => 'berhasil',
                 'created_at' => now()->subDays(rand(1, 20)),
             ]);
             
@@ -85,7 +85,7 @@ class SamplePesananSeeder extends Seeder
             }
         }
         
-        // Buat 2 transaksi dengan status proses (belum selesai pembayaran)
+        // Buat 2 transaksi dengan status proses (belum berhasil pembayaran)
         for ($i = 6; $i <= 7; $i++) {
             $batchId = 'BATCH' . now()->format('YmdHis') . $i;
             
@@ -106,7 +106,7 @@ class SamplePesananSeeder extends Seeder
                 'total_pembayaran' => $totalPembayaran,
                 'profit' => $profitPerPesanan,
                 'metode_pembayaran' => 'QRIS',
-                'status_pembayaran' => 'menunggu pembayaran',
+                'status_pembayaran' => 'proses',
                 'created_at' => now()->subDays(1),
             ]);
             
@@ -152,7 +152,7 @@ class SamplePesananSeeder extends Seeder
         $this->command->info('Sample data created successfully!');
         $this->command->info('Agent ID: ' . $agentId);
         $this->command->info('Produk ID: ' . $produk->id . ' - ' . $produk->nama_paket);
-        $this->command->info('Total Pembayaran Selesai: 5 (15 pesanan)');
+        $this->command->info('Total Pembayaran berhasil: 5 (15 pesanan)');
         $this->command->info('Total Pembayaran Proses: 2 (2 pesanan)');
         $this->command->info('Expected Monthly Profit: Rp 750,000 (5 batch x 3 pesanan x Rp 50,000)');
     }
