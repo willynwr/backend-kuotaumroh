@@ -154,7 +154,7 @@
                 </div>
                 
                 <div class="flex flex-col items-center justify-center gap-3 p-6 text-center">
-                  <img :src="imageBase + '/' + item.icon + '.png'" :alt="item.title" class="h-24 w-24 object-contain grayscale" onerror="this.src = imageBase + '/kabah.png'" />
+                  <img :src="imageBase + '/' + item.icon + '.png'" :alt="item.title" class="h-24 w-24 object-contain grayscale" onerror="this.src = imageBase + '/LOGO.png'" />
                   <h3 class="text-xs font-bold uppercase tracking-wide leading-tight text-slate-400" x-text="item.title"></h3>
                 </div>
               </div>

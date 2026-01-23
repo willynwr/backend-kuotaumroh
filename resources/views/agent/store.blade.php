@@ -104,7 +104,7 @@
                     @if($agent->logo)
                         <img src="{{ Storage::url($agent->logo) }}" alt="{{ $agent->nama_travel }}" class="h-10 w-10 object-contain rounded-full border">
                     @else
-                        <img src="{{ asset('images/kabah.png') }}" alt="Kuotaumroh.id" class="h-9 w-9 object-contain">
+                        <img src="{{ asset('images/LOGO.png') }}" alt="Kuotaumroh.id" class="h-9 w-9 object-contain">
                     @endif
                     <div>
                         <span class="text-lg font-semibold">{{ $agent->nama_travel ?? 'Toko Agent' }}</span>

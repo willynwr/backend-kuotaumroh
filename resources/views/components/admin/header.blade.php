@@ -4,7 +4,7 @@
     <!-- Logo -->
     <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-2">
       <img
-        src="{{ asset('images/kabah.png') }}"
+        src="{{ asset('images/LOGO.png') }}"
         alt="Kuotaumroh.id Logo"
         class="h-9 w-9 object-contain"
       >

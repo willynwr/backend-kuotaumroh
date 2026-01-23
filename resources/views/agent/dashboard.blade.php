@@ -47,19 +47,22 @@
                 <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">Link Toko: Kuotaumroh.id</h3>
               </div>
               <div class="p-6 pt-0">
-                <div class="flex flex-col gap-4 sm:flex-row sm:items-start">
-                  <div class="sm:w-24 sm:shrink-0">
+                <div class="flex flex-row gap-4 items-start">
+                  <div class="w-24 sm:w-24 shrink-0">
                     <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(referralLinkUmroh)" alt="QR Kuotaumroh" class="w-full aspect-square rounded-lg border bg-white object-contain p-2">
                   </div>
                   <div class="space-y-2 sm:flex-1">
-                    <label class="text-xs font-medium text-muted-foreground">Link Toko Umroh</label>
-                    <div class="flex flex-col gap-2 sm:flex-row">
-                      <input type="text" readonly :value="referralLinkUmroh" class="flex h-9 w-full min-w-0 rounded-md border border-input bg-muted px-3 py-2 text-xs">
-                      <button @click="copyLink(referralLinkUmroh)" class="h-9 w-full px-3 bg-primary text-white rounded-md text-xs font-medium hover:bg-primary/90 transition-colors sm:w-auto">
-                        Salin
+                    <!-- <label class="text-xs font-medium text-muted-foreground">Link Toko Umroh</label> -->
+                    <input type="text" readonly :value="referralLinkUmroh" class="flex h-9 w-full rounded-md border border-input bg-muted px-3 py-2 text-xs">
+                    <div class="flex gap-2">
+                      <button @click="copyLink(referralLinkUmroh)" class="h-9 flex-1 px-3 bg-primary text-white rounded-md text-xs font-medium hover:bg-primary/90 transition-colors">
+                        Salin Link
+                      </button>
+                      <button @click="downloadQR(referralLinkUmroh, 'QR-Kuotaumroh')" class="h-9 flex-1 px-3 bg-white border border-slate-300 text-slate-700 rounded-md text-xs font-medium hover:bg-slate-50 transition-colors">
+                        Download QR
                       </button>
                     </div>
-                    <p class="text-xs text-slate-500">Link untuk pemesanan paket Umroh.</p>
+                    <p class="text-xs text-slate-500">Bagikan link ini untuk dapatkan bonus referral.</p>
                   </div>
                 </div>
               </div>
@@ -74,19 +77,22 @@
                 <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">Link Toko: Roamer.id</h3>
               </div>
               <div class="p-6 pt-0">
-                <div class="flex flex-col gap-4 sm:flex-row sm:items-start">
-                  <div class="sm:w-24 sm:shrink-0">
+                <div class="flex flex-row gap-4 items-start">
+                  <div class="w-24 sm:w-24 shrink-0">
                     <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(referralLinkLeisure)" alt="QR Roamer" class="w-full aspect-square rounded-lg border bg-white object-contain p-2">
                   </div>
                   <div class="space-y-2 sm:flex-1">
-                    <label class="text-xs font-medium text-muted-foreground">Link Toko Leisure</label>
-                    <div class="flex flex-col gap-2 sm:flex-row">
-                      <input type="text" readonly :value="referralLinkLeisure" class="flex h-9 w-full min-w-0 rounded-md border border-input bg-muted px-3 py-2 text-xs">
-                      <button @click="copyLink(referralLinkLeisure)" class="h-9 w-full px-3 bg-primary text-white rounded-md text-xs font-medium hover:bg-primary/90 transition-colors sm:w-auto">
-                        Salin
+                    <!-- <label class="text-xs font-medium text-muted-foreground">Link Toko Leisure</label> -->
+                    <input type="text" readonly :value="referralLinkLeisure" class="flex h-9 w-full rounded-md border border-input bg-muted px-3 py-2 text-xs">
+                    <div class="flex gap-2">
+                      <button @click="copyLink(referralLinkLeisure)" class="h-9 flex-1 px-3 bg-primary text-white rounded-md text-xs font-medium hover:bg-primary/90 transition-colors">
+                        Salin Link
+                      </button>
+                      <button @click="downloadQR(referralLinkLeisure, 'QR-Roamer')" class="h-9 flex-1 px-3 bg-white border border-slate-300 text-slate-700 rounded-md text-xs font-medium hover:bg-slate-50 transition-colors">
+                        Download QR
                       </button>
                     </div>
-                    <p class="text-xs text-slate-500">Link untuk pemesanan paket Leisure.</p>
+                    <p class="text-xs text-slate-500">Bagikan link ini untuk dapatkan bonus referral.</p>
                   </div>
                 </div>
               </div>
@@ -123,7 +129,7 @@
             <a :href="item.href">
               <div class="group flex h-48 cursor-pointer items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary hover:bg-primary hover:text-primary-foreground hover:shadow-md">
                 <div class="flex flex-col items-center justify-center gap-3 p-6 text-center">
-                  <img :src="imageBase + '/' + item.icon + '.png'" :alt="item.title" class="h-24 w-24 object-contain transition-transform group-hover:scale-110" onerror="this.src = imageBase + '/kabah.png'" />
+                  <img :src="imageBase + '/' + item.icon + '.png'" :alt="item.title" class="h-24 w-24 object-contain transition-transform group-hover:scale-110" onerror="this.src = imageBase + '/LOGO.png'" />
                   <h3 class="text-xs font-bold uppercase tracking-wide leading-tight text-slate-700 group-hover:text-primary-foreground" x-text="item.title"></h3>
                 </div>
               </div>
@@ -204,6 +210,18 @@
         copyLink(link) {
           if (!link) return;
           navigator.clipboard.writeText(link);
+        },
+        downloadQR(link, filename = 'QR-Code') {
+          if (!link) return;
+          const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(link)}`;
+          
+          // Create a temporary link element and trigger download
+          const a = document.createElement('a');
+          a.href = qrUrl;
+          a.download = `${filename}.png`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
         },
       };
     }

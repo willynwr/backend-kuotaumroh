@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Favicon -->
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('images/kabah.png') }}">
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/kabah.png') }}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('images/kabah.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('images/LOGO.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/LOGO.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('images/LOGO.png') }}">
     <meta name="theme-color" content="#10b981">
 
     <!-- Tailwind & Alpine -->

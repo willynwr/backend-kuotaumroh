@@ -80,7 +80,7 @@ function renderHeader(currentPage = '') {
         <!-- Logo -->
         <a href="${dashboardLink}" class="flex items-center gap-2">
           <img
-            src="${basePath}public/images/kabah.png"
+            src="${basePath}public/images/LOGO.png"
             alt="Kuotaumroh.id Logo"
             class="h-9 w-9 object-contain"
           >

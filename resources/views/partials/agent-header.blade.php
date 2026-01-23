@@ -1,7 +1,7 @@
 <header class="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur" x-data="agentHeaderComponent()">
     <div class="container mx-auto flex h-16 items-center justify-between px-4">
         <a href="{{ route('agent.dashboard') }}" class="flex items-center gap-2">
-            <img src="{{ asset('images/kabah.png') }}" alt="Logo" class="h-9 w-9 object-contain">
+            <img src="{{ asset('images/LOGO.png') }}" alt="Logo" class="h-9 w-9 object-contain">
             <span class="text-xl font-semibold">Kuotaumroh.id</span>
         </a>
 
