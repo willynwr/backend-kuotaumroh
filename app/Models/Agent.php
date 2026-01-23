@@ -31,6 +31,8 @@ class Agent extends Model
         'logo',
         'surat_ppiu',
         'saldo',
+        'saldo_bulan',
+        'saldo_tahun',
         'status',
         'is_active',
     ];

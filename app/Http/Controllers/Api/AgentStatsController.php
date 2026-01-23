@@ -37,16 +37,13 @@ class AgentStatsController extends Controller
         
         $now = now();
         $startOfMonth = $now->copy()->startOfMonth();
+        $startOfYear = $now->copy()->startOfYear();
         
-        // Profit bulan ini diambil dari kolom saldo di table agent
-        $monthlyProfit = $agent->saldo ?? 0;
+        // Profit bulan ini diambil dari kolom saldo_bulan (reset setiap bulan)
+        $monthlyProfit = $agent->saldo_bulan ?? 0;
         
-        // Hitung total profit dari semua pesanan yang pembayarannya berhasil
-        $totalProfit = Pesanan::where('agent_id', $agentId)
-            ->whereHas('pembayaran', function($query) {
-                $query->where('status_pembayaran', 'selesai');
-            })
-            ->sum('profit');
+        // Total akumulasi tahun ini diambil dari kolom saldo_tahun (reset setiap tahun)
+        $totalProfit = $agent->saldo_tahun ?? 0;
         
         // Hitung total transaksi (jumlah pesanan) bulan ini yang pembayarannya berhasil
         $monthlyTransactions = Pesanan::where('agent_id', $agentId)
@@ -56,12 +53,16 @@ class AgentStatsController extends Controller
             ->whereBetween('created_at', [$startOfMonth, $now])
             ->count();
         
-        // Hitung total transaksi keseluruhan yang pembayarannya berhasil
+        // Hitung total transaksi tahun ini yang pembayarannya berhasil
         $totalTransactions = Pesanan::where('agent_id', $agentId)
             ->whereHas('pembayaran', function($query) {
                 $query->where('status_pembayaran', 'selesai');
             })
+            ->whereBetween('created_at', [$startOfYear, $now])
             ->count();
+        
+        // Wallet balance dari saldo (tidak pernah reset)
+        $walletBalance = $agent->saldo ?? 0;
         
         return response()->json([
             'success' => true,
@@ -72,7 +73,7 @@ class AgentStatsController extends Controller
                 'total_profit' => $totalProfit,
                 'monthly_transactions' => $monthlyTransactions,
                 'total_transactions' => $totalTransactions,
-                'wallet_balance' => 0, // TODO: implement dari table wallet/saldo
+                'wallet_balance' => $walletBalance,
                 'pending_withdrawal' => 0, // TODO: implement dari table withdraw
             ]
         ]);

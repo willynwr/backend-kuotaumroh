@@ -78,6 +78,14 @@ class Pesanan extends Model
     }
 
     /**
+     * Relasi ke Produk
+     */
+    public function produk()
+    {
+        return $this->belongsTo(Produk::class);
+    }
+
+    /**
      * Scope: Filter by batch_id
      */
     public function scopeByBatch($query, $batchId)
