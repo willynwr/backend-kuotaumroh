@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('agent_id')->nullable()->constrained('agents')->onDelete('cascade');
             $table->foreignId('affiliate_id')->nullable()->constrained('affiliates')->onDelete('cascade');
             $table->foreignId('freelance_id')->nullable()->constrained('freelances')->onDelete('cascade');
+            $table->foreignId('produk_id')->nullable()->constrained('produk')->onDelete('cascade');
             $table->integer('harga_eup');
             $table->decimal('persentase_margin_star', 5, 2)->default(0);
             $table->integer('margin_star')->default(0);

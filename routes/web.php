@@ -116,6 +116,8 @@ Route::prefix('dash')->name('dash.')->middleware('web')->group(function () {
     Route::get('/{link_referral}/checkout', [DashboardController::class, 'checkout'])->name('checkout');
     Route::get('/{link_referral}/history', [DashboardController::class, 'history'])->name('history');
     Route::get('/{link_referral}/wallet', [DashboardController::class, 'wallet'])->name('wallet');
+    Route::get('/{link_referral}/history-profit', [DashboardController::class, 'historyProfit'])->name('history-profit');
+    Route::get('/{link_referral}/history-profit/{month}', [DashboardController::class, 'historyProfitDetail'])->name('history-profit.detail');
     Route::get('/{link_referral}/withdraw', [DashboardController::class, 'withdraw'])->name('withdraw');
     Route::get('/{link_referral}/referrals', [DashboardController::class, 'referrals'])->name('referrals');
     Route::get('/{link_referral}/catalog', [DashboardController::class, 'catalog'])->name('catalog');
@@ -157,8 +159,16 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\Admin\AdminController::class, 'dashboard'])->name('dashboard');
     Route::get('/users', [App\Http\Controllers\Admin\AdminController::class, 'users'])->name('users');
     Route::get('/packages', [App\Http\Controllers\Admin\AdminController::class, 'packages'])->name('packages');
+    
+    // Margin routes
+    Route::post('/margins', [App\Http\Controllers\Admin\AdminController::class, 'storeMargin'])->name('margins.store');
+    Route::put('/margins/{id}', [App\Http\Controllers\Admin\AdminController::class, 'updateMargin'])->name('margins.update');
+    Route::delete('/margins/{id}', [App\Http\Controllers\Admin\AdminController::class, 'deleteMargin'])->name('margins.delete');
+    
     Route::get('/transactions', [App\Http\Controllers\Admin\AdminController::class, 'transactions'])->name('transactions');
     Route::get('/withdrawals', [App\Http\Controllers\Admin\AdminController::class, 'withdrawals'])->name('withdrawals');
+    Route::post('/withdrawals/{id}/approve', [App\Http\Controllers\Admin\AdminController::class, 'approveWithdrawal'])->name('withdrawals.approve');
+    Route::post('/withdrawals/{id}/reject', [App\Http\Controllers\Admin\AdminController::class, 'rejectWithdrawal'])->name('withdrawals.reject');
     Route::get('/rewards', [App\Http\Controllers\Admin\AdminController::class, 'rewards'])->name('rewards');
     Route::get('/reward-claims', [App\Http\Controllers\Admin\AdminController::class, 'rewardClaims'])->name('reward-claims');
     Route::get('/analytics', [App\Http\Controllers\Admin\AdminController::class, 'analytics'])->name('analytics');
@@ -226,12 +236,15 @@ Route::prefix('agent')->name('agent.')->group(function () {
     Route::get('/order', [AgentController::class, 'order'])->name('order');
     Route::get('/checkout', [AgentController::class, 'checkout'])->name('checkout');
     Route::get('/wallet', [AgentController::class, 'wallet'])->name('wallet');
+    Route::get('/history-profit', [AgentController::class, 'historyProfit'])->name('history-profit');
     Route::get('/profile', [AgentController::class, 'profile'])->name('profile');
     Route::get('/referrals', [AgentController::class, 'referrals'])->name('referrals');
     
     // Withdraw routes
     Route::post('/withdraws', [App\Http\Controllers\Agent\WithdrawController::class, 'store'])->name('withdraws.store');
     Route::get('/withdraws', [App\Http\Controllers\Agent\WithdrawController::class, 'index'])->name('withdraws.index');
+    Route::post('/withdraws/{id}/approve', [App\Http\Controllers\Agent\WithdrawController::class, 'approve'])->name('withdraws.approve');
+    Route::post('/withdraws/{id}/reject', [App\Http\Controllers\Agent\WithdrawController::class, 'reject'])->name('withdraws.reject');
     
     // Rekening routes
     Route::get('/rekenings', [App\Http\Controllers\Agent\RekeningController::class, 'index'])->name('rekenings.index');

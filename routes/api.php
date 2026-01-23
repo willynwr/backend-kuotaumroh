@@ -65,3 +65,16 @@ Route::prefix('umroh')->group(function () {
     // POST /api/umroh/payment/callback
     Route::post('/payment/callback', [UmrohPaymentController::class, 'paymentCallback']);
 });
+
+/*
+|--------------------------------------------------------------------------
+| Agent Dashboard API Routes
+|--------------------------------------------------------------------------
+|
+| API endpoints untuk statistik dan data dashboard agent
+|
+*/
+Route::prefix('agent')->group(function () {
+    // GET /api/agent/stats?agent_id=1
+    Route::get('/stats', [App\Http\Controllers\Api\AgentStatsController::class, 'getStats']);
+});

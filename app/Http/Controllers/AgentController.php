@@ -188,7 +188,96 @@ class AgentController extends Controller
 
     public function wallet()
     {
-        return view('agent.wallet');
+        $user = auth()->user();
+        $walletBalance = [
+            'balance' => 0,
+            'pendingWithdrawal' => 0
+        ];
+        
+        // Jika user adalah agent, ambil saldo dari database
+        if ($user instanceof \App\Models\Agent) {
+            $walletBalance['balance'] = $user->saldo ?? 0;
+            // TODO: Hitung pending withdrawal dari table withdraw
+            $walletBalance['pendingWithdrawal'] = 0;
+        }
+        
+        return view('agent.wallet', [
+            'walletBalance' => $walletBalance
+        ]);
+    }
+
+    public function historyProfit()
+    {
+        $user = auth()->user();
+        $profitData = [
+            'current_balance' => 0,
+            'monthly_profit' => 0,
+            'yearly_profit' => 0,
+            'monthly_history' => [],
+            'yearly_history' => []
+        ];
+        
+        // Jika user adalah agent, ambil data profit
+        if ($user instanceof \App\Models\Agent) {
+            $profitData['current_balance'] = $user->saldo ?? 0;
+            $profitData['monthly_profit'] = $user->saldo_bulan ?? 0;
+            $profitData['yearly_profit'] = $user->saldo_tahun ?? 0;
+            
+            // Ambil history profit per bulan dari pesanan
+            $monthlyHistory = \App\Models\Pesanan::where('agent_id', $user->id)
+                ->whereHas('pembayaran', function($query) {
+                    $query->where('status_pembayaran', 'selesai');
+                })
+                ->selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month, SUM(profit) as total_profit, COUNT(*) as total_transactions')
+                ->groupBy('month')
+                ->orderBy('month', 'DESC')
+                ->limit(12)
+                ->get();
+            
+            // Untuk setiap bulan, ambil detail transaksinya dan restructure ke array
+            $monthlyHistoryArray = [];
+            foreach ($monthlyHistory as $monthData) {
+                $details = \App\Models\Pesanan::where('agent_id', $user->id)
+                    ->whereHas('pembayaran', function($query) {
+                        $query->where('status_pembayaran', 'selesai');
+                    })
+                    ->with('produk:id,nama_paket')
+                    ->whereRaw('DATE_FORMAT(created_at, "%Y-%m") = ?', [$monthData->month])
+                    ->select('id', 'produk_id', 'profit', 'created_at')
+                    ->orderBy('created_at', 'DESC')
+                    ->get()
+                    ->map(function($pesanan) {
+                        return [
+                            'date' => $pesanan->created_at->format('d-m-Y'),
+                            'product_name' => $pesanan->produk->nama_paket ?? 'N/A',
+                            'profit' => $pesanan->profit
+                        ];
+                    })->toArray();
+                
+                $monthlyHistoryArray[] = [
+                    'month' => $monthData->month,
+                    'total_profit' => $monthData->total_profit,
+                    'total_transactions' => $monthData->total_transactions,
+                    'details' => $details
+                ];
+            }
+            
+            $profitData['monthly_history'] = $monthlyHistoryArray;
+            
+            // Ambil history profit per tahun dari pesanan
+            $profitData['yearly_history'] = \App\Models\Pesanan::where('agent_id', $user->id)
+                ->whereHas('pembayaran', function($query) {
+                    $query->where('status_pembayaran', 'selesai');
+                })
+                ->selectRaw('YEAR(created_at) as year, SUM(profit) as total_profit, COUNT(*) as total_transactions')
+                ->groupBy('year')
+                ->orderBy('year', 'DESC')
+                ->get();
+        }
+        
+        return view('agent.history-profit', [
+            'profitData' => $profitData
+        ]);
     }
 
     public function profile()

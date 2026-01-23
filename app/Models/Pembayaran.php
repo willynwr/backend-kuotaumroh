@@ -35,6 +35,8 @@ class Pembayaran extends Model
 
     protected $fillable = [
         'batch_id',
+        'agent_id',
+        'produk_id',
         'nama_batch',
         'sub_total',
         'biaya_platform',
@@ -73,6 +75,14 @@ class Pembayaran extends Model
     public function pesanan(): HasMany
     {
         return $this->hasMany(Pesanan::class, 'batch_id', 'batch_id');
+    }
+
+    /**
+     * Relasi ke Agent
+     */
+    public function agent()
+    {
+        return $this->belongsTo(Agent::class);
     }
 
     /**

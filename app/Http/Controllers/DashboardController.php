@@ -80,6 +80,8 @@ class DashboardController extends Controller
                     'activeAgents' => $activeAgents,
                     'activeAgentsThisMonth' => $activeAgentsThisMonth,
                     'newAgentsThisMonth' => $newAgentsThisMonth,
+                    'saldoFee' => $affiliate->saldo_fee ?? 0,
+                    'totalFee' => $affiliate->total_fee ?? 0,
                 ]
             ]);
         }
@@ -119,6 +121,8 @@ class DashboardController extends Controller
                     'activeAgents' => $activeAgents,
                     'activeAgentsThisMonth' => $activeAgentsThisMonth,
                     'newAgentsThisMonth' => $newAgentsThisMonth,
+                    'saldoFee' => $freelance->saldo_fee ?? 0,
+                    'totalFee' => $freelance->total_fee ?? 0,
                 ]
             ]);
         }
@@ -286,10 +290,39 @@ class DashboardController extends Controller
     {
         // Jika user adalah agent, return stats yang berbeda
         if ($user instanceof Agent) {
+            $now = now();
+            $startOfMonth = $now->copy()->startOfMonth();
+            
+            // Profit bulan ini diambil dari kolom saldo_bulan (reset setiap bulan)
+            $monthlyProfit = $user->saldo_bulan ?? 0;
+            
+            // Total akumulasi tahun ini diambil dari kolom saldo_tahun (reset setiap tahun)
+            $totalProfit = $user->saldo_tahun ?? 0;
+            
+            // Hitung total transaksi (jumlah pesanan) bulan ini
+            $monthlyTransactions = \App\Models\Pesanan::where('agent_id', $user->id)
+                ->whereHas('pembayaran', function($query) {
+                    $query->where('status_pembayaran', 'selesai');
+                })
+                ->whereBetween('created_at', [$startOfMonth, $now])
+                ->count();
+            
+            // Hitung total transaksi tahun ini
+            $startOfYear = $now->copy()->startOfYear();
+            $totalTransactions = \App\Models\Pesanan::where('agent_id', $user->id)
+                ->whereHas('pembayaran', function($query) {
+                    $query->where('status_pembayaran', 'selesai');
+                })
+                ->whereBetween('created_at', [$startOfYear, $now])
+                ->count();
+            
             return [
-                'totalOrders' => 0, // TODO: implement
-                'totalRevenue' => 0, // TODO: implement
-                'activeBookings' => 0, // TODO: implement
+                'monthlyProfit' => $monthlyProfit,
+                'totalProfit' => $totalProfit,
+                'monthlyTransactions' => $monthlyTransactions,
+                'totalTransactions' => $totalTransactions,
+                'walletBalance' => 0, // TODO: implement dari table wallet/saldo
+                'pendingWithdrawal' => 0, // TODO: implement dari table withdraw
             ];
         }
 
@@ -493,13 +526,185 @@ class DashboardController extends Controller
             return redirect()->route('login')->with('error', 'Login gagal. Akun Anda belum terdaftar. Silakan daftar terlebih dahulu atau hubungi tim support.');
         }
 
+        $user = $data['user'];
+        $walletBalance = [
+            'balance' => 0,
+            'pendingWithdrawal' => 0
+        ];
+        
+        $withdrawalHistory = [];
+        
+        // Jika user adalah agent, ambil saldo dari database
+        if ($user instanceof \App\Models\Agent) {
+            $walletBalance['balance'] = $user->saldo ?? 0;
+            
+            // Hitung pending withdrawal dari table withdraw
+            $pendingWithdrawals = \App\Models\Withdraw::where('agent_id', $user->id)
+                ->where('status', 'pending')
+                ->sum('jumlah');
+            $walletBalance['pendingWithdrawal'] = $pendingWithdrawals;
+            
+            // Ambil withdrawal history dari database
+            $withdrawalHistory = \App\Models\Withdraw::where('agent_id', $user->id)
+                ->with('rekening')
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function($withdraw) {
+                    return [
+                        'id' => $withdraw->id,
+                        'date' => $withdraw->created_at,
+                        'amount' => $withdraw->jumlah,
+                        'bankName' => $withdraw->rekening->bank ?? 'N/A',
+                        'accountNumber' => '****' . substr($withdraw->rekening->nomor_rekening ?? '', -4),
+                        'status' => $withdraw->status,
+                        'keterangan' => $withdraw->keterangan,
+                        'alasan_reject' => $withdraw->alasan_reject
+                    ];
+                })->toArray();
+        }
+
         return view($data['viewPath'] . '.wallet', [
             'user' => $data['user'],
             'linkReferral' => $linkReferral,
             'portalType' => $data['portalType'],
-            'stats' => $this->getStats($data['user'])
+            'stats' => $this->getStats($data['user']),
+            'walletBalance' => $walletBalance,
+            'withdrawalHistory' => $withdrawalHistory
         ]);
     }
+
+    /**
+     * Halaman History Profit (Agent)
+     */
+    public function historyProfit($linkReferral)
+    {
+        $data = $this->getUserByLinkReferral($linkReferral);
+        if (!$data) {
+            return redirect()->route('login')->with('error', 'Login gagal. Akun Anda belum terdaftar. Silakan daftar terlebih dahulu atau hubungi tim support.');
+        }
+
+        $user = $data['user'];
+        $profitData = [
+            'current_balance' => 0,
+            'monthly_profit' => 0,
+            'yearly_profit' => 0,
+            'monthly_history' => [],
+            'yearly_history' => []
+        ];
+        
+        // Jika user adalah agent, ambil data profit
+        if ($user instanceof \App\Models\Agent) {
+            $profitData['current_balance'] = $user->saldo ?? 0;
+            $profitData['monthly_profit'] = $user->saldo_bulan ?? 0;
+            $profitData['yearly_profit'] = $user->saldo_tahun ?? 0;
+            
+            // Ambil history profit per bulan dari pesanan
+            $monthlyHistory = \App\Models\Pesanan::where('agent_id', $user->id)
+                ->whereHas('pembayaran', function($query) {
+                    $query->where('status_pembayaran', 'selesai');
+                })
+                ->selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month, SUM(profit) as total_profit, COUNT(*) as total_transactions')
+                ->groupBy('month')
+                ->orderBy('month', 'DESC')
+                ->limit(12)
+                ->get();
+            
+            // Untuk setiap bulan, ambil detail transaksinya dan restructure ke array
+            $monthlyHistoryArray = [];
+            foreach ($monthlyHistory as $monthData) {
+                $details = \App\Models\Pesanan::where('agent_id', $user->id)
+                    ->whereHas('pembayaran', function($query) {
+                        $query->where('status_pembayaran', 'selesai');
+                    })
+                    ->with('produk:id,nama_paket')
+                    ->whereRaw('DATE_FORMAT(created_at, "%Y-%m") = ?', [$monthData->month])
+                    ->select('id', 'produk_id', 'profit', 'created_at')
+                    ->orderBy('created_at', 'DESC')
+                    ->get()
+                    ->map(function($pesanan) {
+                        return [
+                            'date' => $pesanan->created_at->format('d-m-Y'),
+                            'product_name' => $pesanan->produk->nama_paket ?? 'N/A',
+                            'profit' => $pesanan->profit
+                        ];
+                    })->toArray();
+                
+                $monthlyHistoryArray[] = [
+                    'month' => $monthData->month,
+                    'total_profit' => $monthData->total_profit,
+                    'total_transactions' => $monthData->total_transactions,
+                    'details' => $details
+                ];
+            }
+            
+            $profitData['monthly_history'] = $monthlyHistoryArray;
+            
+            // Ambil history profit per tahun dari pesanan
+            $profitData['yearly_history'] = \App\Models\Pesanan::where('agent_id', $user->id)
+                ->whereHas('pembayaran', function($query) {
+                    $query->where('status_pembayaran', 'selesai');
+                })
+                ->selectRaw('YEAR(created_at) as year, SUM(profit) as total_profit, COUNT(*) as total_transactions')
+                ->groupBy('year')
+                ->orderBy('year', 'DESC')
+                ->get();
+        }
+
+        return view($data['viewPath'] . '.history-profit', [
+            'user' => $data['user'],
+            'linkReferral' => $linkReferral,
+            'portalType' => $data['portalType'],
+            'profitData' => $profitData
+        ]);
+    }
+
+    /**
+     * Detail History Profit per Bulan
+     */
+    public function historyProfitDetail($linkReferral, $month)
+    {
+        $data = $this->getUserByLinkReferral($linkReferral);
+        if (!$data) {
+            return redirect()->route('login')->with('error', 'Login gagal. Akun Anda belum terdaftar. Silakan daftar terlebih dahulu atau hubungi tim support.');
+        }
+
+        $user = $data['user'];
+        $details = [];
+        
+        // Jika user adalah agent, ambil detail transaksi bulan ini
+        if ($user instanceof \App\Models\Agent) {
+            $details = \App\Models\Pesanan::where('agent_id', $user->id)
+                ->whereHas('pembayaran', function($query) {
+                    $query->where('status_pembayaran', 'selesai');
+                })
+                ->with('produk:id,nama_paket')
+                ->whereRaw('DATE_FORMAT(created_at, "%Y-%m") = ?', [$month])
+                ->select('id', 'produk_id', 'profit', 'created_at')
+                ->orderBy('created_at', 'DESC')
+                ->get()
+                ->map(function($pesanan) {
+                    return [
+                        'date' => $pesanan->created_at->format('d-m-Y H:i'),
+                        'product_name' => $pesanan->produk->nama_paket ?? 'N/A',
+                        'profit' => $pesanan->profit
+                    ];
+                });
+        }
+
+        $totalProfit = $details->sum('profit');
+        $totalTransactions = $details->count();
+
+        return view($data['viewPath'] . '.history-profit-detail', [
+            'user' => $data['user'],
+            'linkReferral' => $linkReferral,
+            'portalType' => $data['portalType'],
+            'month' => $month,
+            'details' => $details,
+            'totalProfit' => $totalProfit,
+            'totalTransactions' => $totalTransactions
+        ]);
+    }
+
 
     /**
      * Halaman Withdraw (Agent)
@@ -511,9 +716,24 @@ class DashboardController extends Controller
             return redirect()->route('login')->with('error', 'Login gagal. Akun Anda belum terdaftar. Silakan daftar terlebih dahulu atau hubungi tim support.');
         }
 
+        $user = $data['user'];
+        $walletBalance = [
+            'balance' => 0,
+            'pendingWithdrawal' => 0
+        ];
+        
         // Load rekening untuk user (agent)
         $rekenings = [];
         if ($data['portalType'] === 'agent') {
+            // Ambil saldo dari database
+            $walletBalance['balance'] = $user->saldo ?? 0;
+            
+            // Hitung pending withdrawal dari table withdraw
+            $pendingWithdrawals = \App\Models\Withdraw::where('agent_id', $user->id)
+                ->where('status', 'pending')
+                ->sum('jumlah');
+            $walletBalance['pendingWithdrawal'] = $pendingWithdrawals;
+            
             $rekenings = \App\Models\Rekening::where('agent_id', $data['user']->id)
                 ->orderBy('created_at', 'desc')
                 ->get()
@@ -533,7 +753,8 @@ class DashboardController extends Controller
             'linkReferral' => $linkReferral,
             'portalType' => $data['portalType'],
             'stats' => $this->getStats($data['user']),
-            'rekenings' => $rekenings
+            'rekenings' => $rekenings,
+            'walletBalance' => $walletBalance
         ]);
     }
 
@@ -632,6 +853,8 @@ class DashboardController extends Controller
                 'activeAgents' => $activeAgents,
                 'activeAgentsThisMonth' => $activeAgentsThisMonth,
                 'newAgentsThisMonth' => $newAgentsThisMonth,
+                'saldoFee' => $freelance->saldo_fee ?? 0,
+                'totalFee' => $freelance->total_fee ?? 0,
             ]
         ]);
     }
@@ -681,6 +904,8 @@ class DashboardController extends Controller
                 'activeAgents' => $activeAgents,
                 'activeAgentsThisMonth' => $activeAgentsThisMonth,
                 'newAgentsThisMonth' => $newAgentsThisMonth,
+                'saldoFee' => $affiliate->saldo_fee ?? 0,
+                'totalFee' => $affiliate->total_fee ?? 0,
             ]
         ]);
     }
