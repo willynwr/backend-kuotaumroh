@@ -127,7 +127,7 @@
 
                 <!-- Telkomsel Card -->
                 <div class="rounded-2xl border border-gray-200 shadow-md overflow-hidden bg-white">
-                    <div class="h-40 sm:h-48 md:h-56 bg-cover bg-center" style="background-image: url('{{ asset('images/telkomsel.png') }}');"></div>
+                    <div class="h-40 sm:h-48 md:h-56 bg-cover bg-center" style="background-image: url('{{ asset('images/Telkomsel.png') }}');"></div>
                     <div class="px-4 py-3 flex justify-center">
                         <a href="/u/kuotaumroh" class="inline-flex items-center justify-center rounded-md bg-emerald-700 text-white font-medium text-sm py-2 px-6 w-full sm:w-auto hover:bg-emerald-800 transition-colors shadow">
                             Pilih Paket
@@ -137,7 +137,7 @@
 
                 <!-- Indosat / IM3 Card -->
                 <div class="rounded-2xl border border-gray-200 shadow-md overflow-hidden bg-white">
-                    <div class="h-40 sm:h-48 md:h-56 bg-cover bg-center" style="background-image: url('{{ asset('images/indosat.png') }}');"></div>
+                    <div class="h-40 sm:h-48 md:h-56 bg-cover bg-center" style="background-image: url('{{ asset('images/Indosat.png') }}');"></div>
                     <div class="px-4 py-3 flex justify-center">
                         <a href="/u/kuotaumroh" class="inline-flex items-center justify-center rounded-md bg-emerald-700 text-white font-medium text-sm py-2 px-6 w-full sm:w-auto hover:bg-emerald-800 transition-colors shadow">
                             Pilih Paket
@@ -147,7 +147,7 @@
 
                 <!-- XL Card -->
                 <div class="rounded-2xl border border-gray-200 shadow-md overflow-hidden bg-white">
-                    <div class="h-40 sm:h-48 md:h-56 bg-cover bg-center" style="background-image: url('{{ asset('images/xl.png') }}');"></div>
+                    <div class="h-40 sm:h-48 md:h-56 bg-cover bg-center" style="background-image: url('{{ asset('images/XL.png') }}');"></div>
                     <div class="px-4 py-3 flex justify-center">
                         <a href="/u/kuotaumroh" class="inline-flex items-center justify-center rounded-md bg-emerald-700 text-white font-medium text-sm py-2 px-6 w-full sm:w-auto hover:bg-emerald-800 transition-colors shadow">
                             Pilih Paket
@@ -157,7 +157,7 @@
 
                 <!-- Axis Card -->
                 <div class="rounded-2xl border border-gray-200 shadow-md overflow-hidden bg-white">
-                    <div class="h-40 sm:h-48 md:h-56 bg-cover bg-center" style="background-image: url('{{ asset('images/axis.png') }}');"></div>
+                    <div class="h-40 sm:h-48 md:h-56 bg-cover bg-center" style="background-image: url('{{ asset('images/AXIS.png') }}');"></div>
                     <div class="px-4 py-3 flex justify-center">
                         <a href="/u/kuotaumroh" class="inline-flex items-center justify-center rounded-md bg-emerald-700 text-white font-medium text-sm py-2 px-6 w-full sm:w-auto hover:bg-emerald-800 transition-colors shadow">
                             Pilih Paket
@@ -177,7 +177,7 @@
 
                 <!-- by.U Card -->
                 <div class="rounded-2xl border border-gray-200 shadow-md overflow-hidden bg-white">
-                    <div class="h-40 sm:h-48 md:h-56 bg-cover bg-center" style="background-image: url('{{ asset('images/byu.png') }}');"></div>
+                    <div class="h-40 sm:h-48 md:h-56 bg-cover bg-center" style="background-image: url('{{ asset('images/ByU.png') }}');"></div>
                     <div class="px-4 py-3 flex justify-center">
                         <a href="/u/kuotaumroh" class="inline-flex items-center justify-center rounded-md bg-emerald-700 text-white font-medium text-sm py-2 px-6 w-full sm:w-auto hover:bg-emerald-800 transition-colors shadow">
                             Pilih Paket
