@@ -40,6 +40,7 @@
           <table class="w-full">
             <thead>
               <tr class="border-b bg-muted/50">
+                <th class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Aksi</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Nama Paket</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Tipe Paket</th>
                 <th class="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Masa Aktif</th>
@@ -49,27 +50,13 @@
                 <th class="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Telp</th>
                 <th class="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">SMS</th>
                 <th class="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Harga Modal</th>
-                <th class="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Harga EUP</th>
-                <th class="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">% Margin Star</th>
-                <th class="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Margin Star</th>
-                <th class="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Margin Total</th>
-                <th class="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Fee Travel</th>
-                <th class="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">% Fee Travel</th>
-                <th class="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">% Fee Affiliate</th>
-                <th class="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Fee Affiliate</th>
-                <th class="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">% Fee Host</th>
-                <th class="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Fee Host</th>
-                <th class="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Harga TP Travel</th>
-                <th class="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Harga TP Host</th>
-                <th class="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Poin</th>
-                <th class="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Profit</th>
               </tr>
             </thead>
             <tbody>
               <!-- Loading State -->
               <template x-if="loading">
                 <tr>
-                  <td colspan="24" class="p-8 text-center text-muted-foreground">
+                  <td colspan="10" class="p-8 text-center text-muted-foreground">
                     <div class="flex items-center justify-center gap-3">
                       <span>Memuat paket...</span>
                     </div>
@@ -77,8 +64,23 @@
                 </tr>
               </template>
               <!-- Package List -->
-              <template x-if="!loading" x-for="pkg in filteredPackages" :key="pkg.id">
-                <tr class="border-b transition-colors hover:bg-muted/30">
+              <template x-if="!loading">
+                <template x-for="pkg in filteredPackages" :key="pkg.id">
+                  <tr class="border-b transition-colors hover:bg-muted/30">
+                  <td class="px-4 py-3 text-sm align-middle">
+                    <div class="flex items-center gap-2">
+                      <button @click="editPackage(pkg)" class="inline-flex items-center justify-center w-8 h-8 rounded hover:bg-blue-50 text-blue-600" title="Edit">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                      <button @click="deletePackage(pkg)" class="inline-flex items-center justify-center w-8 h-8 rounded hover:bg-red-50 text-red-600" title="Hapus">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
                   <td class="px-4 py-3 text-sm align-middle font-medium" x-text="pkg.nama_paket"></td>
                   <td class="px-4 py-3 text-sm align-middle" x-text="pkg.tipe_paket"></td>
                   <td class="px-4 py-3 text-sm align-middle text-center" x-text="pkg.masa_aktif"></td>
@@ -88,27 +90,11 @@
                   <td class="px-4 py-3 text-sm align-middle text-right" x-text="pkg.telp"></td>
                   <td class="px-4 py-3 text-sm align-middle text-right" x-text="pkg.sms"></td>
                   <td class="px-4 py-3 text-sm align-middle text-right" x-text="formatRupiah(pkg.harga_modal)"></td>
-                  <td class="px-4 py-3 text-sm align-middle text-right" x-text="formatRupiah(pkg.harga_eup)"></td>
-                  <td class="px-4 py-3 text-sm align-middle text-right" x-text="pkg.persentase_margin_star + '%'"></td>
-                  <td class="px-4 py-3 text-sm align-middle text-right" x-text="formatRupiah(pkg.margin_star)"></td>
-                  <td class="px-4 py-3 text-sm align-middle text-right" x-text="formatRupiah(pkg.margin_total)"></td>
-                  <td class="px-4 py-3 text-sm align-middle text-right" x-text="formatRupiah(pkg.fee_travel)"></td>
-                  <td class="px-4 py-3 text-sm align-middle text-right" x-text="pkg.persentase_fee_travel + '%'"></td>
-                  <td class="px-4 py-3 text-sm align-middle text-right" x-text="pkg.persentase_fee_affiliate + '%'"></td>
-                  <td class="px-4 py-3 text-sm align-middle text-right" x-text="formatRupiah(pkg.fee_affiliate)"></td>
-                  <td class="px-4 py-3 text-sm align-middle text-right" x-text="pkg.persentase_fee_host + '%'"></td>
-                  <td class="px-4 py-3 text-sm align-middle text-right" x-text="formatRupiah(pkg.fee_host)"></td>
-                  <td class="px-4 py-3 text-sm align-middle text-right" x-text="formatRupiah(pkg.harga_tp_travel)"></td>
-                  <td class="px-4 py-3 text-sm align-middle text-right" x-text="formatRupiah(pkg.harga_tp_host)"></td>
-                  <td class="px-4 py-3 text-sm align-middle text-right" x-text="pkg.poin"></td>
-                  <td class="px-4 py-3 text-sm align-middle text-right font-semibold" x-text="formatRupiah(pkg.profit)"></td>
-                </td>
-                </tr>
-              </template>
+                </tr>                </template>              </template>
               <!-- Empty State -->
               <template x-if="!loading && filteredPackages.length === 0">
                 <tr>
-                  <td colspan="24" class="p-8 text-center text-muted-foreground">Tidak ada paket ditemukan</td>
+                  <td colspan="10" class="p-8 text-center text-muted-foreground">Tidak ada paket ditemukan</td>
                 </tr>
               </template>
             </tbody>
@@ -159,62 +145,6 @@
           <div>
             <label class="block text-sm font-medium mb-1">Harga Modal</label>
             <input type="number" x-model="formData.harga_modal" class="w-full h-10 rounded-md border px-3" required>
-          </div>
-          <div>
-            <label class="block text-sm font-medium mb-1">Harga EUP</label>
-            <input type="number" x-model="formData.harga_eup" class="w-full h-10 rounded-md border px-3" required>
-          </div>
-          <div>
-            <label class="block text-sm font-medium mb-1">% Margin Star</label>
-            <input type="number" step="0.01" x-model="formData.persentase_margin_star" class="w-full h-10 rounded-md border px-3" required>
-          </div>
-          <div>
-            <label class="block text-sm font-medium mb-1">Margin Star</label>
-            <input type="number" x-model="formData.margin_star" class="w-full h-10 rounded-md border px-3" required>
-          </div>
-          <div>
-            <label class="block text-sm font-medium mb-1">Margin Total</label>
-            <input type="number" x-model="formData.margin_total" class="w-full h-10 rounded-md border px-3" required>
-          </div>
-          <div>
-            <label class="block text-sm font-medium mb-1">Fee Travel</label>
-            <input type="number" x-model="formData.fee_travel" class="w-full h-10 rounded-md border px-3" required>
-          </div>
-          <div>
-            <label class="block text-sm font-medium mb-1">% Fee Travel</label>
-            <input type="number" step="0.01" x-model="formData.persentase_fee_travel" class="w-full h-10 rounded-md border px-3" required>
-          </div>
-          <div>
-            <label class="block text-sm font-medium mb-1">% Fee Affiliate</label>
-            <input type="number" step="0.01" x-model="formData.persentase_fee_affiliate" class="w-full h-10 rounded-md border px-3" required>
-          </div>
-          <div>
-            <label class="block text-sm font-medium mb-1">Fee Affiliate</label>
-            <input type="number" x-model="formData.fee_affiliate" class="w-full h-10 rounded-md border px-3" required>
-          </div>
-          <div>
-            <label class="block text-sm font-medium mb-1">% Fee Host</label>
-            <input type="number" step="0.01" x-model="formData.persentase_fee_host" class="w-full h-10 rounded-md border px-3" required>
-          </div>
-          <div>
-            <label class="block text-sm font-medium mb-1">Fee Host</label>
-            <input type="number" x-model="formData.fee_host" class="w-full h-10 rounded-md border px-3" required>
-          </div>
-          <div>
-            <label class="block text-sm font-medium mb-1">Harga TP Travel</label>
-            <input type="number" x-model="formData.harga_tp_travel" class="w-full h-10 rounded-md border px-3" required>
-          </div>
-          <div>
-            <label class="block text-sm font-medium mb-1">Harga TP Host</label>
-            <input type="number" x-model="formData.harga_tp_host" class="w-full h-10 rounded-md border px-3" required>
-          </div>
-          <div>
-            <label class="block text-sm font-medium mb-1">Poin</label>
-            <input type="number" x-model="formData.poin" class="w-full h-10 rounded-md border px-3" required>
-          </div>
-          <div>
-            <label class="block text-sm font-medium mb-1">Profit</label>
-            <input type="number" x-model="formData.profit" class="w-full h-10 rounded-md border px-3" required>
           </div>
         </div>
         <div class="flex justify-end gap-2 mt-6">
@@ -272,21 +202,7 @@
         kuota_bonus: '',
         telp: '',
         sms: '',
-        harga_modal: '',
-        harga_eup: '',
-        persentase_margin_star: '',
-        margin_star: '',
-        margin_total: '',
-        fee_travel: '',
-        persentase_fee_travel: '',
-        persentase_fee_affiliate: '',
-        fee_affiliate: '',
-        persentase_fee_host: '',
-        fee_host: '',
-        harga_tp_travel: '',
-        harga_tp_host: '',
-        poin: '',
-        profit: ''
+        harga_modal: ''
       },
       toastVisible: false,
       toastTitle: '',
@@ -321,6 +237,33 @@
       editPackage(pkg) {
         this.editingPackage = pkg;
         this.formData = { ...pkg };
+        this.showAddModal = true;
+      },
+
+      async deletePackage(pkg) {
+        if (!confirm(`Apakah Anda yakin ingin menghapus paket "${pkg.nama_paket}"?`)) {
+          return;
+        }
+
+        try {
+          const response = await fetch(`/admin/packages/${pkg.id}`, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+          });
+
+          if (response.ok) {
+            this.packages = this.packages.filter(p => p.id !== pkg.id);
+            this.showToast('Berhasil', `Paket "${pkg.nama_paket}" telah dihapus`);
+          } else {
+            this.showToast('Error', 'Gagal menghapus paket');
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          this.showToast('Error', 'Gagal menghapus paket');
+        }
       },
 
       openConfirmModal(pkg) {
@@ -358,21 +301,7 @@
           kuota_bonus: '',
           telp: '',
           sms: '',
-          harga_modal: '',
-          harga_eup: '',
-          persentase_margin_star: '',
-          margin_star: '',
-          margin_total: '',
-          fee_travel: '',
-          persentase_fee_travel: '',
-          persentase_fee_affiliate: '',
-          fee_affiliate: '',
-          persentase_fee_host: '',
-          fee_host: '',
-          harga_tp_travel: '',
-          harga_tp_host: '',
-          poin: '',
-          profit: ''
+          harga_modal: ''
         };
       },
 
