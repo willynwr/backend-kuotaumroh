@@ -515,15 +515,12 @@
                     <!-- Left Column -->
                     <div class="space-y-4">
                         <div class="flex items-center gap-2">
-                            @if($agent->logo)
-                                <img src="{{ Storage::url($agent->logo) }}" alt="{{ $agent->nama_travel }}" class="h-10 w-10 object-contain rounded-full border border-white">
-                            @else
-                                <img src="{{ asset('images/LOGO.png') }}" alt="Kuotaumroh.id" class="h-10 w-10 object-contain">
-                            @endif
-                            <span class="text-2xl font-bold">{{ $agent->nama_travel }}</span>
+                            <img src="{{ asset('images/LOGO.png') }}" alt="Kuotaumroh.id" class="h-10 w-10 object-contain">
+                            <span class="text-2xl font-bold">Kuotaumroh.id</span>
                         </div>
                         <p class="max-w-md text-primary-foreground/90">
-                            Kuota Umroh menyediakan layanan internet stabil dan aman selama di Tanah Suci. Mendukung kebutuhan komunikasi jamaah umroh dan haji Indonesia.
+                            Kuota Umroh menyediakan layanan internet stabil dan aman selama di Tanah Suci. 
+                            Mendukung kebutuhan komunikasi jamaah umroh dan haji Indonesia.
                         </p>
                     </div>
 
@@ -532,28 +529,28 @@
                         <div>
                             <h3 class="font-bold text-lg mb-2">Customer Service</h3>
                             <div class="space-y-1">
-                                <p class="text-primary-foreground/90">Email: {{ $agent->email }}</p>
-                                <p class="text-primary-foreground/90">WhatsApp: {{ $agent->no_hp }}</p>
+                                <p>Email: support@kuotaumroh.id</p>
+                                <p>WhatsApp: +62 811-2994-499</p>
                             </div>
                         </div>
-                        @if($agent->alamat_lengkap)
-                            <div>
-                                <p class="text-primary-foreground/90 leading-relaxed">
-                                    {{ $agent->alamat_lengkap }}
-                                </p>
-                            </div>
-                        @endif
+                        <div>
+                            <h3 class="font-bold text-lg mb-2">Alamat</h3>
+                            <p class="text-primary-foreground/90 leading-relaxed">
+                                Jl. Harmoni No. 123, Jakarta<br>
+                                Indonesia
+                            </p>
+                        </div>
                     </div>
                 </div>
                 
                 <div class="border-t border-primary-foreground/20 pt-8 text-center text-sm text-primary-foreground/80">
-                    <p>© 2026 {{ $agent->nama_travel }} - Powered by Kuotaumroh.id</p>
+                    <p>© 2026 Kuotaumroh.id. All rights reserved.</p>
                 </div>
             </div>
         </footer>
 
         <!-- Floating WhatsApp Button -->
-        <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $agent->no_hp) }}" target="_blank"
+        <a href="https://wa.me/628112994499" target="_blank"
             class="fixed bottom-6 right-6 z-50 inline-flex items-center gap-2 bg-green-500 text-white px-4 py-3 rounded-full shadow-lg hover:bg-green-600 transition">
             <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M12 2.04c-5.5 0-9.96 4.46-9.96 9.96 0 1.76.46 3.47 1.34 4.99L2 22l5.12-1.35c1.46.8 3.1 1.22 4.78 1.22h.01c5.5 0 9.96-4.46 9.96-9.96S17.5 2.04 12 2.04Zm4.93 13.96c-.21.6-1.23 1.16-1.7 1.22-.44.06-1 .08-1.62-.1-.37-.12-.85-.28-1.45-.55-2.55-1.1-4.2-3.67-4.33-3.85-.12-.18-1.03-1.37-1.03-2.62 0-1.25.65-1.86.88-2.11.23-.25.51-.31.68-.31.17 0 .34 0 .49.01.16.01.37-.06.58.44.21.5.72 1.73.78 1.85.06.12.1.26.02.42-.08.16-.12.26-.23.4-.12.14-.26.31-.37.42-.12.12-.24.25-.1.5.14.25.62 1.02 1.33 1.65.92.82 1.7 1.08 1.95 1.2.25.12.39.1.53-.06.14-.16.61-.71.77-.95.16-.25.33-.2.55-.12.22.08 1.4.66 1.64.78.24.12.4.18.46.28.06.1.06.58-.15 1.18Z" />
