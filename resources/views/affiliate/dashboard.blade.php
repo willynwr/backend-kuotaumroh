@@ -61,32 +61,33 @@
                                 </div>
                             </div>
                             
-                            <!-- Next Milestone -->
-                            <div class="mt-1.5 flex items-center justify-between text-[9px]">
-                                <div class="flex items-center gap-1">
-                                    <svg class="h-2.5 w-2.5 text-yellow-300" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-                                    </svg>
-                                    <span class="font-semibold text-white/90" x-text="stats.nextRewardName"></span>
+                            <!-- Next Milestone & Total Earned -->
+                            <div class="mt-1.5 space-y-1.5">
+                                <div class="flex items-center justify-between text-[9px]">
+                                    <div class="flex items-center gap-1">
+                                        <svg class="h-2.5 w-2.5 text-yellow-300" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+                                        </svg>
+                                        <span class="font-semibold text-white/90" x-text="stats.nextRewardName"></span>
+                                    </div>
+                                    <span class="font-bold text-yellow-300" x-text="stats.nextRewardPoints.toLocaleString('id-ID')"></span>
                                 </div>
-                                <span class="font-bold text-yellow-300" x-text="stats.nextRewardPoints.toLocaleString('id-ID')"></span>
-                            </div>
-                        </div>
-
-                        <!-- Total Earned Stats -->
-                        <div class="mt-2 flex items-center justify-between pt-2 border-t border-white/20">
-                            <div class="min-w-0 flex-1">
-                                <p class="text-[10px] sm:text-xs font-bold uppercase text-white/70 tracking-wide">Total Diperoleh</p>
-                                <p class="text-base sm:text-lg font-extrabold text-white break-words"
-                                    x-text="stats.totalPointsEarned.toLocaleString('id-ID') + ' poin'"></p>
-                            </div>
-                            <!-- Animated Mini Chart -->
-                            <div class="flex items-end gap-1 opacity-80">
-                                <div class="h-3 w-2 rounded-t-sm bg-white/40 animate-pulse"></div>
-                                <div class="h-5 w-2 rounded-t-sm bg-white/50 animate-pulse" style="animation-delay: 0.1s;"></div>
-                                <div class="h-4 w-2 rounded-t-sm bg-white/45 animate-pulse" style="animation-delay: 0.2s;"></div>
-                                <div class="h-7 w-2 rounded-t-sm bg-white/60 animate-pulse" style="animation-delay: 0.3s;"></div>
-                                <div class="h-8 w-2 rounded-t-sm bg-white/70 animate-pulse" style="animation-delay: 0.4s;"></div>
+                                
+                                <div class="flex items-center justify-between pt-1.5 border-t border-white/10">
+                                    <div class="min-w-0 flex-1">
+                                        <p class="text-[9px] font-bold uppercase text-white/60 tracking-wide">Total Diperoleh</p>
+                                        <p class="text-xs font-extrabold text-white break-words"
+                                            x-text="stats.totalPointsEarned.toLocaleString('id-ID') + ' poin'"></p>
+                                    </div>
+                                    <!-- Animated Mini Chart -->
+                                    <div class="flex items-end gap-0.5 opacity-70">
+                                        <div class="h-2.5 w-1.5 rounded-t-sm bg-white/40 animate-pulse"></div>
+                                        <div class="h-3.5 w-1.5 rounded-t-sm bg-white/50 animate-pulse" style="animation-delay: 0.1s;"></div>
+                                        <div class="h-3 w-1.5 rounded-t-sm bg-white/45 animate-pulse" style="animation-delay: 0.2s;"></div>
+                                        <div class="h-5 w-1.5 rounded-t-sm bg-white/60 animate-pulse" style="animation-delay: 0.3s;"></div>
+                                        <div class="h-6 w-1.5 rounded-t-sm bg-white/70 animate-pulse" style="animation-delay: 0.4s;"></div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -225,8 +226,8 @@
                 initials: ''
             },
             stats: {
-                pointsBalance: 0,
-                totalPointsEarned: 0,
+                pointsBalance: {{ $stats['saldoFee'] ?? 0 }},
+                totalPointsEarned: {{ $stats['totalFee'] ?? 0 }},
                 totalDownlines: {{ $stats['totalAgents'] ?? 0 }},
                 pendingClaims: 0,
                 activeAgentsThisMonth: {{ $stats['activeAgentsThisMonth'] ?? 0 }},
