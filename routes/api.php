@@ -6,6 +6,7 @@ use App\Http\Controllers\AgentController;
 use App\Http\Controllers\AffiliateController;
 use App\Http\Controllers\FreelanceController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\UmrohPaymentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -26,4 +27,41 @@ Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallbac
 Route::middleware('web')->group(function () {
     Route::post('/auth/session', [App\Http\Controllers\Api\AuthController::class, 'saveSession']);
     Route::post('/auth/logout', [App\Http\Controllers\Api\AuthController::class, 'destroySession']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Umroh Payment API Routes
+|--------------------------------------------------------------------------
+|
+| API endpoints untuk sistem pembayaran paket Umroh
+|
+*/
+Route::prefix('umroh')->group(function () {
+    // 1. GET Catalog Paket
+    // GET /api/umroh/package?ref_code=bulk_umroh
+    Route::get('/package', [UmrohPaymentController::class, 'getPackages']);
+
+    // 2. POST Order Bulk Payment
+    // POST /api/umroh/bulkpayment
+    Route::post('/bulkpayment', [UmrohPaymentController::class, 'createBulkPayment']);
+
+    // 4. GET Order Bulk History
+    // GET /api/umroh/bulkpayment?agent_id=600001
+    Route::get('/bulkpayment', [UmrohPaymentController::class, 'getHistory']);
+
+    // 5. GET Detail MSISDN Bulk Order
+    // GET /api/umroh/bulkpayment/detail?id=123456789&agent_id=600001
+    Route::get('/bulkpayment/detail', [UmrohPaymentController::class, 'getDetail']);
+
+    // Payment Status & Verification
+    // GET /api/umroh/payment/status?id=123
+    Route::get('/payment/status', [UmrohPaymentController::class, 'getPaymentStatus']);
+
+    // POST /api/umroh/payment/verify
+    Route::post('/payment/verify', [UmrohPaymentController::class, 'verifyPayment']);
+
+    // Payment Callback (from QRIS provider)
+    // POST /api/umroh/payment/callback
+    Route::post('/payment/callback', [UmrohPaymentController::class, 'paymentCallback']);
 });
