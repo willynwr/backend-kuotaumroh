@@ -17,7 +17,9 @@ use App\Http\Controllers\DashboardController;
 |
 */
 
-Route::get('/', [App\Http\Controllers\AgentController::class, 'showWelcome'])->name('welcome');
+Route::get('/', function () {
+    return view('welcome');
+})->name('welcome');
 
 // Auth Routes - Unified Login for all users (Agent, Affiliate, Freelance) 
 // Agent login on /agent (before prefix group to avoid conflict)
@@ -157,6 +159,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\Admin\AdminController::class, 'dashboard'])->name('dashboard');
     Route::get('/users', [App\Http\Controllers\Admin\AdminController::class, 'users'])->name('users');
     Route::get('/packages', [App\Http\Controllers\Admin\AdminController::class, 'packages'])->name('packages');
+    
+    // Margin routes
+    Route::post('/margins', [App\Http\Controllers\Admin\AdminController::class, 'storeMargin'])->name('margins.store');
+    Route::put('/margins/{id}', [App\Http\Controllers\Admin\AdminController::class, 'updateMargin'])->name('margins.update');
+    Route::delete('/margins/{id}', [App\Http\Controllers\Admin\AdminController::class, 'deleteMargin'])->name('margins.delete');
+    
     Route::get('/transactions', [App\Http\Controllers\Admin\AdminController::class, 'transactions'])->name('transactions');
     Route::get('/withdrawals', [App\Http\Controllers\Admin\AdminController::class, 'withdrawals'])->name('withdrawals');
     Route::post('/withdrawals/{id}/approve', [App\Http\Controllers\Admin\AdminController::class, 'approveWithdrawal'])->name('withdrawals.approve');
