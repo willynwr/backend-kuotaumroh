@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Kuotaumroh.id')</title>
 
-    <!-- Favicon -->
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('favicon/apple-icon-180x180.png') }}">
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon/favicon-32x32.png') }}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon/favicon-16x16.png') }}">
+    <!-- Favicon (match Agent) -->
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('images/LOGO.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/LOGO.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('images/LOGO.png') }}">
     <meta name="theme-color" content="#10b981">
 
     <!-- Google Fonts - Figtree -->
