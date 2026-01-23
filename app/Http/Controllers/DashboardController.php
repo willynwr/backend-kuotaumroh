@@ -80,6 +80,8 @@ class DashboardController extends Controller
                     'activeAgents' => $activeAgents,
                     'activeAgentsThisMonth' => $activeAgentsThisMonth,
                     'newAgentsThisMonth' => $newAgentsThisMonth,
+                    'saldoFee' => $affiliate->saldo_fee ?? 0,
+                    'totalFee' => $affiliate->total_fee ?? 0,
                 ]
             ]);
         }
@@ -119,6 +121,8 @@ class DashboardController extends Controller
                     'activeAgents' => $activeAgents,
                     'activeAgentsThisMonth' => $activeAgentsThisMonth,
                     'newAgentsThisMonth' => $newAgentsThisMonth,
+                    'saldoFee' => $freelance->saldo_fee ?? 0,
+                    'totalFee' => $freelance->total_fee ?? 0,
                 ]
             ]);
         }
@@ -632,6 +636,8 @@ class DashboardController extends Controller
                 'activeAgents' => $activeAgents,
                 'activeAgentsThisMonth' => $activeAgentsThisMonth,
                 'newAgentsThisMonth' => $newAgentsThisMonth,
+                'saldoFee' => $freelance->saldo_fee ?? 0,
+                'totalFee' => $freelance->total_fee ?? 0,
             ]
         ]);
     }
@@ -681,6 +687,8 @@ class DashboardController extends Controller
                 'activeAgents' => $activeAgents,
                 'activeAgentsThisMonth' => $activeAgentsThisMonth,
                 'newAgentsThisMonth' => $newAgentsThisMonth,
+                'saldoFee' => $affiliate->saldo_fee ?? 0,
+                'totalFee' => $affiliate->total_fee ?? 0,
             ]
         ]);
     }
