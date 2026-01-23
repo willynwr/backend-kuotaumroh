@@ -13,6 +13,37 @@ use Illuminate\Support\Facades\Storage;
 class AgentController extends Controller
 {
     /**
+     * Tampilkan halaman welcome (homepage) dengan default agent
+     * Route: /
+     */
+    public function showWelcome()
+    {
+        // Cari agent dengan link_referal 'kuotaumroh' di database
+        $defaultAgent = Agent::where('link_referal', 'kuotaumroh')->first();
+        
+        if ($defaultAgent) {
+            // Gunakan agent dari database
+            $agent = $defaultAgent;
+        } else {
+            // Fallback: Create a virtual agent object for default store
+            // Gunakan ID 1 sebagai default ref_code
+            $agent = (object) [
+                'id' => 1, // ID agent default, sesuaikan dengan database Anda
+                'nama_travel' => 'Kuotaumroh.id',
+                'nama_pic' => 'Official Store',
+                'email' => 'support@kuotaumroh.id',
+                'no_hp' => '628112994499',
+                'alamat_lengkap' => 'Indonesia',
+                'logo' => null,
+                'link_referal' => 'kuotaumroh',
+                'is_active' => true,
+            ];
+        }
+
+        return view('welcome', compact('agent'));
+    }
+
+    /**
      * Handle agent signup dengan referral link dari affiliate/freelance
      * Route: /agent/{link_referral}
      */
@@ -56,19 +87,27 @@ class AgentController extends Controller
     {
         // Handle default store "kuotaumroh"
         if ($linkReferal === 'kuotaumroh') {
-            // Create a virtual agent object for default store
-            $agent = (object) [
-                'id' => 0,
-                'nama_travel' => 'Kuotaumroh.id',
-                'nama_pic' => 'Official Store',
-                'email' => 'support@kuotaumroh.id',
-                'no_hp' => '628112994499',
-                'alamat_lengkap' => 'Indonesia',
-                'logo' => null,
-                'link_referal' => 'kuotaumroh',
-                'is_active' => true,
-                'ref_code' => 'bulk_umroh', // ref_code untuk API
-            ];
+            // Cari agent dengan link_referal 'kuotaumroh' di database
+            $defaultAgent = Agent::where('link_referal', 'kuotaumroh')->first();
+            
+            if ($defaultAgent) {
+                // Gunakan agent dari database
+                $agent = $defaultAgent;
+            } else {
+                // Fallback: Create a virtual agent object for default store
+                // Gunakan ID 1 sebagai default ref_code
+                $agent = (object) [
+                    'id' => 1, // ID agent default, sesuaikan dengan database Anda
+                    'nama_travel' => 'Kuotaumroh.id',
+                    'nama_pic' => 'Official Store',
+                    'email' => 'support@kuotaumroh.id',
+                    'no_hp' => '628112994499',
+                    'alamat_lengkap' => 'Indonesia',
+                    'logo' => null,
+                    'link_referal' => 'kuotaumroh',
+                    'is_active' => true,
+                ];
+            }
 
             return view('agent.store', compact('agent'));
         }

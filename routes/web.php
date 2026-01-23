@@ -17,9 +17,7 @@ use App\Http\Controllers\DashboardController;
 |
 */
 
-Route::get('/', function () {
-    return redirect('/u/kuotaumroh');
-})->name('welcome');
+Route::get('/', [App\Http\Controllers\AgentController::class, 'showWelcome'])->name('welcome');
 
 // Auth Routes - Unified Login for all users (Agent, Affiliate, Freelance) 
 // Agent login on /agent (before prefix group to avoid conflict)
