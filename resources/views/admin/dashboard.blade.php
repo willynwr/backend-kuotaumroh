@@ -120,7 +120,7 @@
                   :src="`{{ asset('images') }}/${item.icon}.png`"
                   :alt="item.title"
                   class="h-20 w-20 object-contain transition-transform group-hover:scale-110"
-                  onerror="this.src='{{ asset('images/kabah.png') }}'"
+                  onerror="this.src='{{ asset('images/LOGO.png') }}'"
                 />
                 <h3
                   class="text-xs font-bold uppercase tracking-wide leading-tight"

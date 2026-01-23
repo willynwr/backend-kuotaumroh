@@ -18,7 +18,7 @@ use App\Http\Controllers\DashboardController;
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect('/u/kuotaumroh');
 })->name('welcome');
 
 // Auth Routes - Unified Login for all users (Agent, Affiliate, Freelance) 
@@ -29,6 +29,55 @@ Route::get('/agent', function () {
 
 // Agent Signup tanpa Referral (default affiliate_id = 1)
 Route::get('/signup', [App\Http\Controllers\AgentController::class, 'signup'])->name('signup');
+
+// Route khusus untuk agent pending (by ID, karena belum punya link_referal)
+// HARUS SEBELUM /agent/{link_referral} untuk menghindari conflict
+Route::get('/agent/pending', function(Request $request) {
+    try {
+        \Log::info('=== AGENT PENDING ROUTE ACCESSED ===');
+        
+        $agentId = $request->query('id');
+        \Log::info('Agent ID from query: ' . $agentId);
+        
+        if (!$agentId) {
+            \Log::warning('No agent ID provided');
+            return redirect()->route('login')->with('error', 'ID agent tidak ditemukan');
+        }
+        
+        $agent = \App\Models\Agent::find($agentId);
+        \Log::info('Agent found: ' . ($agent ? 'YES' : 'NO'));
+        
+        if (!$agent) {
+            \Log::warning('Agent not found with ID: ' . $agentId);
+            return redirect()->route('login')->with('error', 'Akun tidak ditemukan');
+        }
+        
+        \Log::info('Agent status: ' . $agent->status);
+        
+        if ($agent->status !== 'pending') {
+            // Jika sudah approved, redirect ke dashboard normal
+            if ($agent->link_referal) {
+                \Log::info('Agent approved, redirecting to: /dash/' . $agent->link_referal);
+                return redirect('/dash/' . $agent->link_referal);
+            }
+            \Log::warning('Agent approved but no link_referal');
+            return redirect()->route('login')->with('error', 'Akun Anda sudah disetujui, silakan login ulang');
+        }
+        
+        \Log::info('Rendering pending dashboard for agent ID: ' . $agentId);
+        
+        // Render dashboard khusus untuk agent pending
+        return view('agent.pending.dashboard', [
+            'user' => $agent,
+            'linkReferral' => null,
+            'portalType' => 'agent',
+        ]);
+    } catch (\Exception $e) {
+        \Log::error('Error in agent pending route: ' . $e->getMessage());
+        \Log::error('Stack trace: ' . $e->getTraceAsString());
+        return redirect()->route('login')->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+    }
+})->name('agent.pending');
 
 // Agent Signup dengan Referral Link dari Affiliate/Freelance
 Route::get('/agent/{link_referral}', [App\Http\Controllers\AgentController::class, 'signupWithReferral'])->name('agent.signup.referral');
@@ -43,6 +92,11 @@ Route::get('/callback', function () {
 Route::get('/checkout', function () {
     return view('checkout');
 })->name('checkout');
+
+// Halaman Payment Umroh - /umroh/payment?id=xxx
+Route::get('/umroh/payment', function () {
+    return view('payment');
+})->name('umroh.payment');
 
 Route::get('/admin/login', function () {
     return view('auth.admin.login');
@@ -59,12 +113,31 @@ Route::prefix('dash')->name('dash.')->middleware('web')->group(function () {
     
     // Agent specific routes
     Route::get('/{link_referral}/order', [DashboardController::class, 'order'])->name('order');
+    Route::get('/{link_referral}/checkout', [DashboardController::class, 'checkout'])->name('checkout');
     Route::get('/{link_referral}/history', [DashboardController::class, 'history'])->name('history');
     Route::get('/{link_referral}/wallet', [DashboardController::class, 'wallet'])->name('wallet');
     Route::get('/{link_referral}/withdraw', [DashboardController::class, 'withdraw'])->name('withdraw');
     Route::get('/{link_referral}/referrals', [DashboardController::class, 'referrals'])->name('referrals');
     Route::get('/{link_referral}/catalog', [DashboardController::class, 'catalog'])->name('catalog');
 });
+
+
+// Route khusus untuk agent pending (by link_referal, untuk yang sudah punya)
+Route::get('/agent/pending/{linkReferral}', function($linkReferral) {
+    $agent = \App\Models\Agent::where('link_referal', $linkReferral)
+        ->where('status', 'pending')
+        ->first();
+    
+    if (!$agent) {
+        return redirect()->route('login')->with('error', 'Akun tidak ditemukan');
+    }
+    
+    return view('agent.pending.dashboard', [
+        'user' => $agent,
+        'linkReferral' => $linkReferral,
+        'portalType' => 'agent',
+    ]);
+})->name('agent.pending.dashboard');
 
 // API Routes untuk mendapatkan data dashboard
 Route::prefix('api/dash')->name('api.dash.')->group(function () {
@@ -149,12 +222,25 @@ Route::prefix('agent')->name('agent.')->group(function () {
     Route::get('/dashboard', [AgentController::class, 'dashboard'])->name('dashboard');
     Route::get('/catalog', [AgentController::class, 'catalog'])->name('catalog');
     Route::get('/history', [AgentController::class, 'history'])->name('history');
+    Route::get('/orders', [AgentController::class, 'history'])->name('orders');
     Route::get('/order', [AgentController::class, 'order'])->name('order');
+    Route::get('/checkout', [AgentController::class, 'checkout'])->name('checkout');
     Route::get('/wallet', [AgentController::class, 'wallet'])->name('wallet');
-    Route::get('/withdraw', [AgentController::class, 'withdraw'])->name('withdraw');
     Route::get('/profile', [AgentController::class, 'profile'])->name('profile');
     Route::get('/referrals', [AgentController::class, 'referrals'])->name('referrals');
+    
+    // Withdraw routes
+    Route::post('/withdraws', [App\Http\Controllers\Agent\WithdrawController::class, 'store'])->name('withdraws.store');
+    Route::get('/withdraws', [App\Http\Controllers\Agent\WithdrawController::class, 'index'])->name('withdraws.index');
+    
+    // Rekening routes
+    Route::get('/rekenings', [App\Http\Controllers\Agent\RekeningController::class, 'index'])->name('rekenings.index');
+    Route::post('/rekenings', [App\Http\Controllers\Agent\RekeningController::class, 'store'])->name('rekenings.store');
+    Route::delete('/rekenings/{id}', [App\Http\Controllers\Agent\RekeningController::class, 'destroy'])->name('rekenings.destroy');
 });
+
+// Agent Signup dengan Referral Link dari Affiliate/Freelance (Must be after agent.* routes)
+Route::get('/agent/{link_referral}', [App\Http\Controllers\AgentController::class, 'signupWithReferral'])->name('agent.signup.referral');
 
 // agent routes
 Route::get('/agents', [App\Http\Controllers\AgentController::class, 'index']);
@@ -191,6 +277,15 @@ Route::prefix('affiliate')->group(function () {
     Route::get('downlines', function () {
         return view('affiliate.downlines');
     })->name('affiliate.downlines');
+    Route::get('orders', function () {
+        return view('affiliate.history');
+    })->name('affiliate.orders');
+    Route::get('order', function () {
+        return view('affiliate.order');
+    })->name('affiliate.order');
+    Route::get('checkout', function () {
+        return view('affiliate.checkout');
+    })->name('affiliate.checkout');
     Route::get('invite', function () {
         return view('affiliate.invite');
     })->name('affiliate.invite');
@@ -214,6 +309,15 @@ Route::prefix('freelance')->group(function () {
     Route::get('downlines', function () {
         return view('freelance.downlines');
     })->name('freelance.downlines');
+    Route::get('orders', function () {
+        return view('freelance.history');
+    })->name('freelance.orders');
+    Route::get('order', function () {
+        return view('freelance.order');
+    })->name('freelance.order');
+    Route::get('checkout', function () {
+        return view('freelance.checkout');
+    })->name('freelance.checkout');
     Route::get('invite', function () {
         return view('freelance.invite');
     })->name('freelance.invite');

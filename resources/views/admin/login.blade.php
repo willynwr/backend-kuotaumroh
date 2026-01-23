@@ -6,8 +6,8 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>Login Admin - Kuotaumroh.id</title>
 
-  <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('images/kabah.png') }}">
-  <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/kabah.png') }}">
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('images/LOGO.png') }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/LOGO.png') }}">
   <meta name="theme-color" content="#10b981">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -72,7 +72,7 @@
 
         <!-- Logo -->
         <div class="flex flex-col items-center space-y-2">
-          <img src="{{ asset('images/kabah.png') }}" alt="Kuotaumroh.id Logo" class="h-24 w-24 object-contain">
+          <img src="{{ asset('images/LOGO.png') }}" alt="Kuotaumroh.id Logo" class="h-24 w-24 object-contain">
           <h1 class="text-xl font-bold">Kuotaumroh.id</h1>
           <p class="text-muted-foreground text-center">Portal Administrator</p>
         </div>

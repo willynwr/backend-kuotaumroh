@@ -54,6 +54,25 @@ class AgentController extends Controller
      */
     public function showStore($linkReferal)
     {
+        // Handle default store "kuotaumroh"
+        if ($linkReferal === 'kuotaumroh') {
+            // Create a virtual agent object for default store
+            $agent = (object) [
+                'id' => 0,
+                'nama_travel' => 'Kuotaumroh.id',
+                'nama_pic' => 'Official Store',
+                'email' => 'support@kuotaumroh.id',
+                'no_hp' => '628112994499',
+                'alamat_lengkap' => 'Indonesia',
+                'logo' => null,
+                'link_referal' => 'kuotaumroh',
+                'is_active' => true,
+                'ref_code' => 'bulk_umroh', // ref_code untuk API
+            ];
+
+            return view('agent.store', compact('agent'));
+        }
+
         // Cari agent berdasarkan link_referal
         $agent = Agent::where('link_referal', $linkReferal)
             ->where('is_active', true)
@@ -61,7 +80,7 @@ class AgentController extends Controller
 
         // Jika agent tidak ditemukan, redirect ke home
         if (!$agent) {
-            return redirect('/')->with('error', 'Toko tidak ditemukan atau sudah tidak aktif');
+            return redirect('/u/kuotaumroh')->with('error', 'Toko tidak ditemukan atau sudah tidak aktif');
         }
 
         // Tampilkan halaman toko agent
@@ -123,14 +142,14 @@ class AgentController extends Controller
         return view('agent.order');
     }
 
+    public function checkout()
+    {
+        return view('agent.checkout');
+    }
+
     public function wallet()
     {
         return view('agent.wallet');
-    }
-
-    public function withdraw()
-    {
-        return view('agent.withdraw');
     }
 
     public function profile()
