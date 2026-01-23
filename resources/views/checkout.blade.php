@@ -508,9 +508,21 @@
                             this.paymentId = response.data.payment_id;
                             this.batchId = response.data.batch_id;
                             
-                            // Set QR code URL
+                            console.log('🔍 Checking QRIS data:', {
+                                has_qris: !!response.data.qris,
+                                qris: response.data.qris,
+                                qr_code_url: response.data.qris?.qr_code_url
+                            });
+                            
+                            // Set QR code URL - cek multiple possible locations
                             if (response.data.qris && response.data.qris.qr_code_url) {
                                 this.qrCodeUrl = response.data.qris.qr_code_url;
+                                console.log('✅ QR Code URL set:', this.qrCodeUrl);
+                            } else if (response.data.qr_code_url) {
+                                this.qrCodeUrl = response.data.qr_code_url;
+                                console.log('✅ QR Code URL set (fallback):', this.qrCodeUrl);
+                            } else {
+                                console.warn('⚠️ QR Code URL not found in response');
                             }
                             
                             // Update time remaining from server
@@ -544,6 +556,12 @@
                             const response = await getPaymentStatus(this.paymentId);
 
                             if (response.success && response.data) {
+                                // Update QR code URL jika belum ada dan ada di response
+                                if (!this.qrCodeUrl && response.data.qris && response.data.qris.qr_code_url) {
+                                    this.qrCodeUrl = response.data.qris.qr_code_url;
+                                    console.log('✅ QR Code URL updated from polling:', this.qrCodeUrl);
+                                }
+                                
                                 if (response.data.status === 'success') {
                                     this.paymentStatus = 'success';
                                     clearInterval(this.paymentCheckInterval);
