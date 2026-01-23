@@ -115,6 +115,7 @@ Route::prefix('dash')->name('dash.')->middleware('web')->group(function () {
     Route::get('/{link_referral}/history', [DashboardController::class, 'history'])->name('history');
     Route::get('/{link_referral}/wallet', [DashboardController::class, 'wallet'])->name('wallet');
     Route::get('/{link_referral}/history-profit', [DashboardController::class, 'historyProfit'])->name('history-profit');
+    Route::get('/{link_referral}/history-profit/{month}', [DashboardController::class, 'historyProfitDetail'])->name('history-profit.detail');
     Route::get('/{link_referral}/withdraw', [DashboardController::class, 'withdraw'])->name('withdraw');
     Route::get('/{link_referral}/referrals', [DashboardController::class, 'referrals'])->name('referrals');
     Route::get('/{link_referral}/catalog', [DashboardController::class, 'catalog'])->name('catalog');

@@ -96,10 +96,10 @@
                         <td class="p-4 align-middle text-right" x-text="item.total_transactions"></td>
                         <td class="p-4 align-middle text-right font-semibold text-primary" x-text="formatRupiah(item.total_profit)"></td>
                         <td class="p-4 align-middle text-center">
-                          <button type="button" @click="showDetail(item)" class="inline-flex items-center justify-center rounded-md text-sm font-medium border border-primary text-primary hover:bg-primary/10 h-8 px-3 transition-colors cursor-pointer">
+                          <a :href="`{{ isset($linkReferral) ? url('/dash/' . $linkReferral . '/history-profit/') : route('agent.history-profit') }}/${item.month}`" class="inline-flex items-center justify-center rounded-md text-sm font-medium border border-primary text-primary hover:bg-primary/10 h-8 px-3 transition-colors">
                             <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                             Lihat Detail
-                          </button>
+                          </a>
                         </td>
                       </tr>
                     </template>
@@ -136,114 +136,31 @@
         </div>
       </div>
     </main>
-
-    <!-- Modal Detail Transaksi -->
-    <div 
-      x-show="showModal" 
-      x-transition:enter="transition ease-out duration-200"
-      x-transition:enter-start="opacity-0"
-      x-transition:enter-end="opacity-100"
-      x-transition:leave="transition ease-in duration-150"
-      x-transition:leave-start="opacity-100"
-      x-transition:leave-end="opacity-0"
-      @click.self="showModal = false" 
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      style="display: none;"
-    >
-      <div 
-        @click.stop 
-        x-transition:enter="transition ease-out duration-200"
-        x-transition:enter-start="opacity-0 scale-95"
-        x-transition:enter-end="opacity-100 scale-100"
-        x-transition:leave="transition ease-in duration-150"
-        x-transition:leave-start="opacity-100 scale-100"
-        x-transition:leave-end="opacity-0 scale-95"
-        class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
-        <div class="flex items-center justify-between p-6 border-b">
-          <h3 class="text-xl font-semibold" x-text="'Detail Transaksi ' + formatMonth(selectedMonth?.month)"></h3>
-          <button @click="showModal = false" class="rounded-md p-2 hover:bg-muted transition-colors">
-            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-          </button>
-        </div>
-        <div class="p-6 overflow-y-auto max-h-[calc(80vh-140px)]">
-          <div class="overflow-auto">
-            <table class="w-full caption-bottom text-sm">
-              <thead class="border-b">
-                <tr class="border-b transition-colors hover:bg-muted/50">
-                  <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Tanggal</th>
-                  <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Nama Produk</th>
-                  <th class="h-12 px-4 text-right align-middle font-medium text-muted-foreground">Profit</th>
-                </tr>
-              </thead>
-              <tbody>
-                <template x-for="(detail, index) in selectedMonth?.details" :key="index">
-                  <tr class="border-b transition-colors hover:bg-muted/50">
-                    <td class="p-4 align-middle" x-text="detail.date"></td>
-                    <td class="p-4 align-middle" x-text="detail.product_name"></td>
-                    <td class="p-4 align-middle text-right font-semibold text-primary" x-text="formatRupiah(detail.profit)"></td>
-                  </tr>
-                </template>
-                <template x-if="!selectedMonth?.details || selectedMonth.details.length === 0">
-                  <tr>
-                    <td colspan="3" class="p-8 text-center text-muted-foreground">
-                      <div class="flex flex-col items-center gap-2">
-                        <svg class="h-12 w-12 text-muted-foreground/50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" /></svg>
-                        <p>Tidak ada detail transaksi</p>
-                      </div>
-                    </td>
-                  </tr>
-                </template>
-              </tbody>
-              <tfoot class="border-t bg-muted/30">
-                <tr>
-                  <td colspan="2" class="p-4 align-middle font-semibold">Total</td>
-                  <td class="p-4 align-middle text-right font-bold text-primary" x-text="formatRupiah(selectedMonth?.total_profit)"></td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        </div>
-        <div class="flex justify-end gap-2 p-6 border-t">
-          <button @click="showModal = false" class="inline-flex items-center justify-center rounded-md border bg-white hover:bg-muted h-10 px-4 text-sm font-medium transition-colors">
-            Tutup
-          </button>
-        </div>
-      </div>
-    </div>
   </div>
 @endsection
 
 @section('scripts')
   <script>
     function historyProfitApp() {
-      const data = {
+      return {
         profitData: @json($profitData),
         monthlyHistory: @json($profitData['monthly_history'] ?? []),
         yearlyHistory: @json($profitData['yearly_history'] ?? []),
-        showModal: false,
-        selectedMonth: null,
         selectedYear: new Date().getFullYear(),
         
         init() {
-          console.log('App initialized');
-          console.log('Monthly History:', this.monthlyHistory);
-          console.log('Initial showModal:', this.showModal);
-          // Pastikan modal tidak muncul saat load
-          this.showModal = false;
+          console.log('historyProfitApp initialized');
         },
         
         get availableYears() {
-          // Ambil semua tahun unik dari monthlyHistory
           const years = [...new Set(this.monthlyHistory.map(item => {
             const [year] = item.month.split('-');
             return parseInt(year);
           }))];
-          // Urutkan descending
           return years.sort((a, b) => b - a);
         },
         
         get filteredMonthlyHistory() {
-          // Filter monthlyHistory berdasarkan tahun yang dipilih
           return this.monthlyHistory.filter(item => {
             const [year] = item.month.split('-');
             return parseInt(year) === parseInt(this.selectedYear);
@@ -257,46 +174,12 @@
         
         formatMonth(monthString) {
           if (!monthString) return '';
-          // Format: 2024-01 -> Januari 2024
           const [year, month] = monthString.split('-');
           const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 
                          'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
           return `${months[parseInt(month) - 1]} ${year}`;
-        },
-        
-        showDetail(monthData) {
-          console.log('=== showDetail called ===');
-          console.log('Raw monthData:', JSON.stringify(monthData, null, 2));
-          console.log('Current showModal value:', this.showModal);
-          
-          // Extract data from proxy
-          const details = Array.isArray(monthData.details) ? monthData.details : [];
-          
-          console.log('Extracted details:', details);
-          console.log('Details count:', details.length);
-          
-          this.selectedMonth = {
-            month: monthData.month,
-            total_profit: monthData.total_profit,
-            total_transactions: monthData.total_transactions,
-            details: details
-          };
-          
-          console.log('selectedMonth after set:', JSON.stringify(this.selectedMonth, null, 2));
-          
-          // Set modal to show
-          this.showModal = true;
-          
-          console.log('showModal after set:', this.showModal);
-          
-          // Force a small delay to ensure Alpine has processed the change
-          this.$nextTick(() => {
-            console.log('NextTick - showModal:', this.showModal);
-          });
         }
       };
-      
-      return data;
     }
   </script>
 @endsection

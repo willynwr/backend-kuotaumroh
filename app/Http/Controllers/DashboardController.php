@@ -659,6 +659,54 @@ class DashboardController extends Controller
     }
 
     /**
+     * Detail History Profit per Bulan
+     */
+    public function historyProfitDetail($linkReferral, $month)
+    {
+        $data = $this->getUserByLinkReferral($linkReferral);
+        if (!$data) {
+            return redirect()->route('login')->with('error', 'Login gagal. Akun Anda belum terdaftar. Silakan daftar terlebih dahulu atau hubungi tim support.');
+        }
+
+        $user = $data['user'];
+        $details = [];
+        
+        // Jika user adalah agent, ambil detail transaksi bulan ini
+        if ($user instanceof \App\Models\Agent) {
+            $details = \App\Models\Pesanan::where('agent_id', $user->id)
+                ->whereHas('pembayaran', function($query) {
+                    $query->where('status_pembayaran', 'selesai');
+                })
+                ->with('produk:id,nama_paket')
+                ->whereRaw('DATE_FORMAT(created_at, "%Y-%m") = ?', [$month])
+                ->select('id', 'produk_id', 'profit', 'created_at')
+                ->orderBy('created_at', 'DESC')
+                ->get()
+                ->map(function($pesanan) {
+                    return [
+                        'date' => $pesanan->created_at->format('d-m-Y H:i'),
+                        'product_name' => $pesanan->produk->nama_paket ?? 'N/A',
+                        'profit' => $pesanan->profit
+                    ];
+                });
+        }
+
+        $totalProfit = $details->sum('profit');
+        $totalTransactions = $details->count();
+
+        return view($data['viewPath'] . '.history-profit-detail', [
+            'user' => $data['user'],
+            'linkReferral' => $linkReferral,
+            'portalType' => $data['portalType'],
+            'month' => $month,
+            'details' => $details,
+            'totalProfit' => $totalProfit,
+            'totalTransactions' => $totalTransactions
+        ]);
+    }
+
+
+    /**
      * Halaman Withdraw (Agent)
      */
     public function withdraw($linkReferral)
