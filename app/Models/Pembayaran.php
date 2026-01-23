@@ -86,6 +86,14 @@ class Pembayaran extends Model
     }
 
     /**
+     * Relasi ke Produk
+     */
+    public function produk()
+    {
+        return $this->belongsTo(Produk::class);
+    }
+
+    /**
      * Scope: Filter by ref_code from pesanan
      */
     public function scopeByRefCode($query, $refCode)
