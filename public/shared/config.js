@@ -13,15 +13,15 @@
 /**
  * Base URL untuk API Backend
  * 
- * DEVELOPMENT/LOCAL: Gunakan external API langsung
- * PRODUCTION: Akan otomatis menggunakan domain yang sama
+ * PENTING: Selalu gunakan proxy Laravel (same-origin) untuk keamanan dan menghindari CORS
+ * Proxy Laravel akan meneruskan request ke external API
  * 
- * NOTE: Untuk testing QRIS payment, wajib deploy ke server dengan domain publik
- * atau gunakan ngrok untuk expose localhost
+ * Ini akan:
+ * 1. Mengatasi CORS issues
+ * 2. Menyembunyikan endpoint external API dari user
+ * 3. Memungkinkan auth middleware di Laravel
  */
-const API_BASE_URL = window.location.hostname === 'kuotaumroh.id' 
-    ? '' // Production: use same origin
-    : 'https://kuotaumroh.id'; // Development: use external API directly
+const API_BASE_URL = ''; // Always use same-origin (Laravel proxy)
 
 /**
  * Base URL untuk API endpoints
