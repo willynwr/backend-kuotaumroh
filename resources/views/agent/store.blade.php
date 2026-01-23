@@ -49,7 +49,8 @@
     <!-- Store Config -->
     <script>
         const STORE_CONFIG = {
-            ref_code: '{{ $agent->ref_code ?? "bulk_umroh" }}',
+            agent_id: '{{ $agent->id ?? 1 }}',           // Agent ID untuk payment ref_code
+            catalog_ref_code: 'bulk_umroh',              // Selalu bulk_umroh untuk dapat harga bulk
             link_referal: '{{ $agent->link_referal ?? "kuotaumroh" }}',
             nama_travel: '{{ $agent->nama_travel ?? "Kuotaumroh.id" }}',
         };
@@ -591,40 +592,53 @@
                 async loadAllPackages() {
                     try {
                         this.packagesLoading = true;
-                        const refCode = STORE_CONFIG.ref_code || 'bulk_umroh';
-                        const response = await fetch(`${API_BASE_URL}/api/umroh/package?ref_code=${refCode}`);
+                        // Selalu gunakan bulk_umroh untuk dapat harga bulk
+                        const catalogRefCode = STORE_CONFIG.catalog_ref_code || 'bulk_umroh';
+                        const response = await fetch(`${API_BASE_URL}/api/umroh/package?ref_code=${catalogRefCode}`);
                         if (!response.ok) {
                             throw new Error('Failed to fetch packages');
                         }
                         
                         const data = await response.json();
+                        console.log('📦 API Response:', data);
+                        
                         // Response langsung array, tidak wrapped
                         if (Array.isArray(data)) {
-                            this.allPackages = data.map(pkg => ({
-                                id: pkg.id,
-                                package_id: pkg.id,
-                                packageId: pkg.id,
-                                name: pkg.name,
-                                packageName: pkg.name,
-                                provider: pkg.type, // type = provider (TELKOMSEL, XL, etc)
-                                days: parseInt(pkg.days),
-                                masa_aktif: parseInt(pkg.days),
-                                quota: pkg.quota,
-                                total_kuota: pkg.quota,
-                                kuota_utama: pkg.quota,
-                                kuota_bonus: pkg.bonus,
-                                bonus: pkg.bonus,
-                                telp: pkg.telp,
-                                sms: pkg.sms,
-                                price: parseInt(pkg.price_bulk), // untuk bulk_umroh gunakan price_bulk
-                                harga: parseInt(pkg.price_bulk),
-                                price_customer: parseInt(pkg.price_customer),
-                                profit: parseInt(pkg.price_customer) - parseInt(pkg.price_bulk),
-                                subType: pkg.sub_type,
-                                tipe_paket: pkg.sub_type,
-                                is_active: pkg.is_active,
-                                promo: pkg.promo,
-                            }));
+                            this.allPackages = data.map(pkg => {
+                                // Parse harga dengan fallback
+                                const priceBulk = parseInt(pkg.price_bulk) || 0;
+                                const priceCustomer = parseInt(pkg.price_customer) || priceBulk;
+                                
+                                return {
+                                    id: pkg.id,
+                                    package_id: pkg.id,
+                                    packageId: pkg.id,
+                                    name: pkg.name,
+                                    packageName: pkg.name,
+                                    provider: pkg.type, // type = provider (TELKOMSEL, XL, etc)
+                                    days: parseInt(pkg.days) || 0,
+                                    masa_aktif: parseInt(pkg.days) || 0,
+                                    quota: pkg.quota || '',
+                                    total_kuota: pkg.quota || '',
+                                    kuota_utama: pkg.quota || '',
+                                    kuota_bonus: pkg.bonus || '',
+                                    bonus: pkg.bonus || '',
+                                    telp: pkg.telp || '',
+                                    sms: pkg.sms || '',
+                                    price: priceCustomer,        // Harga jual ke customer
+                                    harga: priceCustomer,
+                                    sellPrice: priceCustomer,
+                                    displayPrice: priceCustomer,
+                                    price_bulk: priceBulk,       // Harga modal
+                                    price_customer: priceCustomer,
+                                    profit: priceCustomer - priceBulk,
+                                    subType: pkg.sub_type || '',
+                                    tipe_paket: pkg.sub_type || '',
+                                    is_active: pkg.is_active,
+                                    promo: pkg.promo || null,
+                                };
+                            });
+                            console.log('📦 Mapped packages:', this.allPackages.length);
                         }
                         this.packagesLoading = false;
                     } catch (error) {
@@ -811,7 +825,7 @@
                         activationTime: this.activationTime,
                         scheduleDate: scheduleDate,
                         scheduledTime: this.scheduledTime,
-                        refCode: STORE_CONFIG.ref_code || 'bulk_umroh',
+                        refCode: STORE_CONFIG.agent_id || '1',  // Agent ID untuk payment
                         linkReferal: STORE_CONFIG.link_referal || 'kuotaumroh',
                         mode: 'store',
                         createdAt: new Date().toISOString(),
