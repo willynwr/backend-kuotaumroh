@@ -32,11 +32,17 @@ class AdminController extends Controller
     }
     public function dashboard()
     {
+        // Calculate total revenue and orders from QRIS payments with status 'berhasil'
+        $qrisSuccessPayments = \App\Models\Pembayaran::where('metode_pembayaran', 'qris')
+            ->where('status_pembayaran', 'berhasil')
+            ->selectRaw('COUNT(*) as total_orders, SUM(total_pembayaran) as total_revenue')
+            ->first();
+
         $stats = [
             'totalAgents' => Agent::count(),
             'totalAffiliates' => Affiliate::count(),
-            'totalOrders' => 0, // TODO: Implement when Order model is ready
-            'totalRevenue' => 0, // TODO: Implement when Transaction model is ready
+            'totalOrders' => $qrisSuccessPayments->total_orders ?? 0,
+            'totalRevenue' => $qrisSuccessPayments->total_revenue ?? 0,
             'pendingWithdrawals' => 0, // TODO: Implement when Withdrawal model is ready
             'pendingClaims' => 0, // TODO: Implement when RewardClaim model is ready
         ];
@@ -285,10 +291,52 @@ class AdminController extends Controller
 
     public function transactions()
     {
-        // TODO: Implement when Transaction model is ready
-        $transactions = [];
+        $transactions = \App\Models\Pembayaran::with(['agent', 'produk', 'pesanan'])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function($pembayaran) {
+                return [
+                    'id' => $pembayaran->batch_id,
+                    'user_name' => $pembayaran->agent->nama_pic ?? 'N/A',
+                    'user_email' => $pembayaran->agent->email ?? 'N/A',
+                    'package_name' => $pembayaran->produk->nama_paket ?? 'N/A',
+                    'total' => $pembayaran->total_pembayaran ?? 0,
+                    'status' => $this->mapStatusToPembayaran($pembayaran),
+                    'created_at' => $pembayaran->created_at,
+                ];
+            });
         
         return view('admin.transactions', compact('transactions'));
+    }
+
+    private function mapStatusToPembayaran($pembayaran)
+    {
+        // Jika pembayaran waiting
+        if ($pembayaran->status_pembayaran === 'waiting') {
+            return 'pending';
+        }
+        
+        // Jika pembayaran sudah paid
+        if ($pembayaran->status_pembayaran === 'paid') {
+            // Cek apakah ada pesanan yang sudah berhasil aktivasi
+            $hasSuccessActivation = $pembayaran->pesanan()->where('status_aktivasi', 'berhasil')->exists();
+            $hasFailedActivation = $pembayaran->pesanan()->where('status_aktivasi', 'gagal')->exists();
+            
+            if ($hasSuccessActivation) {
+                return 'success';
+            } elseif ($hasFailedActivation) {
+                return 'failed';
+            } else {
+                return 'pending'; // masih proses aktivasi
+            }
+        }
+        
+        // Status pembayaran failed/cancelled/expired
+        if (in_array($pembayaran->status_pembayaran, ['failed', 'cancelled', 'expired'])) {
+            return 'failed';
+        }
+        
+        return 'pending';
     }
 
     public function withdrawals()

@@ -123,20 +123,9 @@
     <!-- Header -->
     <header class="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
       <div class="container mx-auto flex h-16 items-center justify-between px-4">
-        <div class="flex items-center gap-2">
-          <!-- Desktop Logo -->
-          <div class="hidden md:flex items-center gap-2">
-            <img src="{{ asset('images/LOGO.png') }}" alt="Kuotaumroh.id" class="h-9 w-9 object-contain">
-            <span class="text-xl font-semibold">Kuotaumroh.id</span>
-          </div>
-          <!-- Mobile Banner Logo -->
-          <div class="md:hidden">
-            <img src="{{ asset('images/bannermobile.png') }}" alt="Kuotaumroh.id" class="h-10 object-contain">
-          </div>
-        </div>
-        <a href="{{ url('/login') }}"
-          class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground h-9 px-4 text-sm font-medium hover:bg-primary/90 transition-colors">
-          Login
+        <a href="{{ url('/') }}" class="flex items-center gap-2">
+          <img src="{{ asset('images/LOGO.png') }}" alt="Kuotaumroh.id Logo" class="h-9 w-9 object-contain">
+          <span class="text-xl font-semibold">Kuotaumroh.id</span>
         </a>
       </div>
     </header>
@@ -278,60 +267,6 @@
                       class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                       :class="errors.travel_member && 'border-destructive focus:ring-destructive'">
                     <p x-show="errors.travel_member" class="text-xs text-destructive" x-text="errors.travel_member"></p>
-                  </div>
-
-                  <!-- Logo Upload Section -->
-                  <div class="space-y-2">
-                    <label class="text-sm font-medium">Logo Travel (Opsional)</label>
-                    <div class="flex items-center gap-4">
-                      <input type="file" @change="handleFileUpload($event)"
-                        accept="image/png,image/jpeg,image/jpg,image/gif"
-                        class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium file:cursor-pointer hover:file:text-primary transition-colors cursor-pointer">
-                    </div>
-                    <p class="text-xs text-muted-foreground">Format: PNG, JPG, GIF. Maksimal 2MB</p>
-
-                    <!-- Logo Preview -->
-                    <div x-show="logoPreview" class="mt-2">
-                      <img :src="logoPreview" alt="Logo preview" class="h-24 w-24 object-contain border rounded-md">
-                    </div>
-                  </div>
-
-                  <!-- Kerjasama Section -->
-                  <div class="space-y-2">
-                    <label class="text-sm font-medium">Surat PPIU <span class="text-destructive">*</span></label>
-                    <div class="flex items-center gap-4">
-                      <input type="file" @change="handleCooperationLetterUpload($event)"
-                        accept="application/pdf,image/png,image/jpeg,image/jpg"
-                        class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium file:cursor-pointer hover:file:text-primary transition-colors cursor-pointer"
-                        :class="errors.cooperationLetterFile && 'border-destructive focus:ring-destructive'">
-                    </div>
-                    <p x-show="errors.cooperationLetterFile" class="text-xs text-destructive"
-                      x-text="errors.cooperationLetterFile"></p>
-                    <p class="text-xs text-muted-foreground">Format: PDF, PNG, JPG. Maksimal 5MB</p>
-
-                    <!-- File Preview -->
-                    <div x-show="cooperationLetterFile" class="mt-2 p-3 border rounded-md bg-muted/30">
-                      <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                          <svg class="h-6 w-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                          </svg>
-                          <div class="overflow-hidden">
-                            <p class="text-sm font-medium truncate" x-text="cooperationLetterFile?.name"></p>
-                            <p class="text-xs text-muted-foreground"
-                              x-text="formatFileSize(cooperationLetterFile?.size)"></p>
-                          </div>
-                        </div>
-                        <button type="button" @click="removeCooperationLetter()"
-                          class="text-destructive hover:text-destructive/80 transition-colors">
-                          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
                   </div>
                 </div>
 
@@ -535,6 +470,63 @@
                     <input id="longitude" type="number" step="any" x-model.number="formData.longitude"
                       @input="updateMapFromCoordinates()" placeholder="106.xxxxx"
                       class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+                  </div>
+                </div>
+
+                <!-- Logo Travel & Surat PPIU -->
+                <div x-show="formData.city" class="space-y-4 pt-4">
+                  <!-- Logo Upload Section -->
+                  <div class="space-y-2">
+                    <label class="text-sm font-medium">Logo Travel (Opsional)</label>
+                    <div class="flex items-center gap-4">
+                      <input type="file" @change="handleFileUpload($event)"
+                        accept="image/png,image/jpeg,image/jpg,image/gif"
+                        class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium file:cursor-pointer hover:file:text-primary transition-colors cursor-pointer">
+                    </div>
+                    <p class="text-xs text-muted-foreground">Format: PNG, JPG, GIF. Maksimal 2MB</p>
+
+                    <!-- Logo Preview -->
+                    <div x-show="logoPreview" class="mt-2">
+                      <img :src="logoPreview" alt="Logo preview" class="h-24 w-24 object-contain border rounded-md">
+                    </div>
+                  </div>
+
+                  <!-- Kerjasama Section -->
+                  <div class="space-y-2">
+                    <label class="text-sm font-medium">Surat PPIU <span class="text-destructive">*</span></label>
+                    <div class="flex items-center gap-4">
+                      <input type="file" @change="handleCooperationLetterUpload($event)"
+                        accept="application/pdf,image/png,image/jpeg,image/jpg"
+                        class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium file:cursor-pointer hover:file:text-primary transition-colors cursor-pointer"
+                        :class="errors.cooperationLetterFile && 'border-destructive focus:ring-destructive'">
+                    </div>
+                    <p x-show="errors.cooperationLetterFile" class="text-xs text-destructive"
+                      x-text="errors.cooperationLetterFile"></p>
+                    <p class="text-xs text-muted-foreground">Format: PDF, PNG, JPG. Maksimal 5MB</p>
+
+                    <!-- File Preview -->
+                    <div x-show="cooperationLetterFile" class="mt-2 p-3 border rounded-md bg-muted/30">
+                      <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                          <svg class="h-6 w-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          <div class="overflow-hidden">
+                            <p class="text-sm font-medium truncate" x-text="cooperationLetterFile?.name"></p>
+                            <p class="text-xs text-muted-foreground"
+                              x-text="formatFileSize(cooperationLetterFile?.size)"></p>
+                          </div>
+                        </div>
+                        <button type="button" @click="removeCooperationLetter()"
+                          class="text-destructive hover:text-destructive/80 transition-colors">
+                          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

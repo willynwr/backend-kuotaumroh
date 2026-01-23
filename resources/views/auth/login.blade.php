@@ -142,10 +142,10 @@
           <div class="w-full max-w-md mx-auto md:max-w-none">
             <div class="rounded-2xl bg-white/50 backdrop-blur shadow-2xl border border-white/40 p-4 sm:p-5 lg:p-7 space-y-4 sm:space-y-5">
               <div class="space-y-3 text-center">
-                <p class="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Masuk Agen</p>
+                <p class="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Masuk Agent</p>
                 <h3 class="text-lg sm:text-xl lg:text-2xl font-bold text-slate-900">Lanjutkan dengan Google</h3>
                 <p class="text-xs sm:text-sm text-slate-600" x-show="!referrerName">
-                  Gunakan akun Google yang sudah terdaftar sebagai agen.
+                  Gunakan akun Google yang sudah terdaftar sebagai agent.
                 </p>
                 <!-- Improved Referral Banner -->
                 <div x-show="referrerName" class="mt-4 p-3 sm:p-4 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border-2 border-primary/30 shadow-sm">
@@ -184,7 +184,7 @@
 
               <button @click="handleGoogleSignup()" :disabled="loading"
                 class="w-full inline-flex items-center justify-center h-10 sm:h-11 rounded-full bg-primary text-white text-sm sm:text-base font-semibold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
-                <span x-show="!loading">Daftar sebagai Agen</span>
+                <span x-show="!loading">Daftar sebagai Agent</span>
                 <span x-show="loading">Memproses...</span>
               </button>
             </div>
