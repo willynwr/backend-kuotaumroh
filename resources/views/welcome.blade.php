@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kuotaumroh.id - Paket Internet Umroh & Haji</title>
+    <title>{{ $agent->nama_travel ?? 'Kuotaumroh.id' }} - Paket Internet Umroh & Haji</title>
 
     <!-- Favicon -->
     <link rel="apple-touch-icon" sizes="57x57" href="{{ asset('favicon/apple-icon-57x57.png') }}">
@@ -45,6 +45,16 @@
 
     <!-- Shared Scripts -->
     <script src="{{ asset('shared/utils.js') }}?v={{ time() }}"></script>
+    
+    <!-- Store Config - PENTING: agent_id untuk payment ref_code -->
+    <script>
+        const STORE_CONFIG = {
+            agent_id: '{{ $agent->id ?? 1 }}',           // Agent ID untuk payment ref_code
+            catalog_ref_code: 'bulk_umroh',              // Selalu bulk_umroh untuk dapat harga bulk
+            link_referal: '{{ $agent->link_referal ?? "kuotaumroh" }}',
+            nama_travel: '{{ $agent->nama_travel ?? "Kuotaumroh.id" }}',
+        };
+    </script>
     <script>
         tailwind.config = {
             theme: {
@@ -97,12 +107,22 @@
 <body class="min-h-screen bg-background">
     <div x-data="publicOrderApp()">
 
-        <!-- Header -->
+        <!-- Header dengan Info Agent -->
+
         <header class="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
             <div class="container mx-auto flex h-16 items-center justify-between px-4">
-                <div class="flex items-center gap-2">
-                    <img src="{{ asset('images/LOGO.png') }}" alt="Kuotaumroh.id" class="h-9 w-9 object-contain">
-                    <span class="text-xl font-semibold">Kuotaumroh.id</span>
+                <div class="flex items-center gap-3">
+                    @if(isset($agent->logo) && $agent->logo)
+                        <img src="{{ \Illuminate\Support\Facades\Storage::url($agent->logo) }}" alt="{{ $agent->nama_travel }}" class="h-10 w-10 object-contain rounded-full border">
+                    @else
+                        <img src="{{ asset('images/LOGO.png') }}" alt="Kuotaumroh.id" class="h-9 w-9 object-contain">
+                    @endif
+                    <div>
+                        <span class="text-lg font-semibold">{{ $agent->nama_travel ?? 'Kuotaumroh.id' }}</span>
+                        @if(isset($agent->nama_pic) && $agent->nama_pic)
+                            <p class="text-xs text-muted-foreground">{{ $agent->nama_pic }}</p>
+                        @endif
+                    </div>
                 </div>
                 <a href="{{ route('login') }}"
                     class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground h-9 px-4 text-sm font-medium hover:bg-primary/90 transition-colors">
@@ -120,13 +140,19 @@
         <!-- Main Content -->
         <main class="container mx-auto py-8 px-4 max-w-6xl animate-fade-in -mt-[50px] relative z-10">
 
-            <!-- Hero Section -->
+            <!-- Hero Section dengan Info Agent -->
             <div class="text-center mb-12">
                 <h1 class="text-4xl font-bold tracking-tight mb-4">Paket Internet Umroh & Haji</h1>
                 <p class="text-lg text-muted-foreground max-w-2xl mx-auto">
                     Dapatkan kuota internet terbaik untuk perjalanan umroh dan haji Anda. Proses cepat, harga
                     terjangkau.
                 </p>
+                <div class="mt-4 inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full text-sm text-primary">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Dilayani oleh: {{ $agent->nama_travel ?? 'Kuotaumroh.id' }}
+                </div>
             </div>
 
             <!-- Order Form -->
@@ -700,39 +726,53 @@
                 async loadAllPackages() {
                     try {
                         this.packagesLoading = true;
-                        const response = await fetch(`${API_BASE_URL}/api/umroh/package?ref_code=bulk_umroh`);
+                        // Selalu gunakan catalog_ref_code = bulk_umroh untuk dapat harga bulk
+                        const catalogRefCode = STORE_CONFIG?.catalog_ref_code || 'bulk_umroh';
+                        const response = await fetch(`${API_BASE_URL}/api/umroh/package?ref_code=${catalogRefCode}`);
                         if (!response.ok) {
                             throw new Error('Failed to fetch packages');
                         }
                         
                         const data = await response.json();
+                        console.log('📦 API Response:', data);
+                        
                         // Response langsung array, tidak wrapped
                         if (Array.isArray(data)) {
-                            this.allPackages = data.map(pkg => ({
-                                id: pkg.id,
-                                package_id: pkg.id,
-                                packageId: pkg.id,
-                                name: pkg.name,
-                                packageName: pkg.name,
-                                provider: pkg.type, // type = provider (TELKOMSEL, XL, etc)
-                                days: parseInt(pkg.days),
-                                masa_aktif: parseInt(pkg.days),
-                                quota: pkg.quota,
-                                total_kuota: pkg.quota,
-                                kuota_utama: pkg.quota,
-                                kuota_bonus: pkg.bonus,
-                                bonus: pkg.bonus,
-                                telp: pkg.telp,
-                                sms: pkg.sms,
-                                price: parseInt(pkg.price_bulk), // untuk bulk_umroh gunakan price_bulk
-                                harga: parseInt(pkg.price_bulk),
-                                price_customer: parseInt(pkg.price_customer),
-                                profit: parseInt(pkg.price_customer) - parseInt(pkg.price_bulk),
-                                subType: pkg.sub_type,
-                                tipe_paket: pkg.sub_type,
-                                is_active: pkg.is_active,
-                                promo: pkg.promo,
-                            }));
+                            this.allPackages = data.map(pkg => {
+                                // Parse harga dengan fallback - GUNAKAN price_customer untuk harga jual
+                                const priceBulk = parseInt(pkg.price_bulk) || 0;
+                                const priceCustomer = parseInt(pkg.price_customer) || priceBulk;
+                                
+                                return {
+                                    id: pkg.id,
+                                    package_id: pkg.id,
+                                    packageId: pkg.id,
+                                    name: pkg.name,
+                                    packageName: pkg.name,
+                                    provider: pkg.type, // type = provider (TELKOMSEL, XL, etc)
+                                    days: parseInt(pkg.days) || 0,
+                                    masa_aktif: parseInt(pkg.days) || 0,
+                                    quota: pkg.quota || '',
+                                    total_kuota: pkg.quota || '',
+                                    kuota_utama: pkg.quota || '',
+                                    kuota_bonus: pkg.bonus || '',
+                                    bonus: pkg.bonus || '',
+                                    telp: pkg.telp || '',
+                                    sms: pkg.sms || '',
+                                    price: priceCustomer,        // Harga jual ke customer
+                                    harga: priceCustomer,
+                                    sellPrice: priceCustomer,
+                                    displayPrice: priceCustomer,
+                                    price_bulk: priceBulk,       // Harga modal
+                                    price_customer: priceCustomer,
+                                    profit: priceCustomer - priceBulk,
+                                    subType: pkg.sub_type || '',
+                                    tipe_paket: pkg.sub_type || '',
+                                    is_active: pkg.is_active,
+                                    promo: pkg.promo || null,
+                                };
+                            });
+                            console.log('📦 Mapped packages:', this.allPackages.length);
                         }
                         this.packagesLoading = false;
                     } catch (error) {
@@ -902,14 +942,15 @@
                     }
 
                     // Prepare order data dengan format yang sesuai untuk API
+                    // PENTING: Gunakan STORE_CONFIG.agent_id sebagai refCode untuk payment
                     const orderData = {
                         items: [{
                             msisdn: this.msisdn,
                             provider: this.provider,
                             package_id: this.selectedPackage.package_id || this.selectedPackage.packageId || this.selectedPackage.id,
                             packageId: this.selectedPackage.package_id || this.selectedPackage.packageId || this.selectedPackage.id,
-                            packageName: this.selectedPackage.name || this.selectedPackage.packageName || this.selectedPackage.nama_paket,
-                            nama_paket: this.selectedPackage.nama_paket || this.selectedPackage.name,
+                            packageName: this.selectedPackage.name || this.selectedPackage.packageName,
+                            nama_paket: this.selectedPackage.name,
                             tipe_paket: this.selectedPackage.tipe_paket || this.selectedPackage.subType,
                             masa_aktif: this.selectedPackage.masa_aktif || this.selectedPackage.days,
                             days: this.selectedPackage.days || this.selectedPackage.masa_aktif,
@@ -924,8 +965,9 @@
                         activationTime: this.activationTime,
                         scheduleDate: scheduleDate,
                         scheduledTime: this.scheduledTime,
-                        refCode: 'bulk_umroh',  // Default ref_code for public orders
-                        mode: 'public',
+                        refCode: STORE_CONFIG.agent_id || '1',  // Agent ID untuk payment
+                        linkReferal: STORE_CONFIG.link_referal || 'kuotaumroh',
+                        mode: 'store',
                         createdAt: new Date().toISOString(),
                     };
 
