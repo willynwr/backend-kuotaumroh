@@ -1,6 +1,9 @@
 <script>
-// Utility Functions (Moved from order-utils.js)
-function normalizeMsisdn(input) {
+// Use shared utils.js functions: normalizeMsisdn, validateMsisdn, detectProvider, normalizeProviderForApi, formatRupiah
+// These are loaded from /shared/utils.js in layout.blade.php
+
+// Local wrapper for MSISDN normalization (converts to 62xxx format for API)
+function normalizeMsisdnFor62(input) {
   const raw = String(input || '').replace(/\s+/g, '');
   const digits = raw.replace(/\D/g, '');
   if (digits.startsWith('62')) return digits;
@@ -8,23 +11,21 @@ function normalizeMsisdn(input) {
   return digits;
 }
 
-function validateMsisdn(msisdn) {
+// Local wrapper for validation (checks 62xxx format)
+function validateMsisdn62(msisdn) {
   const s = String(msisdn || '');
   return /^62\d{9,13}$/.test(s);
 }
 
-function detectProvider(msisdn) {
-  const s = String(msisdn || '');
-  if (/^62(811|812|813|821|822|823|851|852|853)/.test(s)) return 'TELKOMSEL';
-  if (/^62(814|815|816|855|856|857|858)/.test(s)) return 'INDOSAT';
-  if (/^62(817|818|819|859|877|878)/.test(s)) return 'XL';
-  if (/^62(895|896|897|898|899)/.test(s)) return 'TRI';
-  return 'TELKOMSEL';
-}
-
-function formatRupiah(value) {
-  const n = Number(value || 0);
-  return n.toLocaleString('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 });
+// Use detectProvider from utils.js and convert result to uppercase for API
+function detectProviderForOrder(msisdn) {
+  // Convert 62xxx to 0xxx for detectProvider in utils.js
+  let normalized = String(msisdn || '');
+  if (normalized.startsWith('62')) {
+    normalized = '0' + normalized.slice(2);
+  }
+  const provider = detectProvider(normalized);
+  return provider ? normalizeProviderForApi(provider) : null;
 }
 
 function orderApp() {
@@ -40,21 +41,10 @@ function orderApp() {
     // Individual input
     individualItems: [{ id: '1', msisdn: '', packageId: '', provider: null }],
 
-    // Packages from database
-    packages: @json($packages ?? []).map(pkg => ({
-      id: pkg.id,
-      type: pkg.provider,
-      name: pkg.nama_paket,
-      price: parseInt(pkg.harga_modal) || 0,
-      sellPrice: parseInt(pkg.harga_eup) || 0,
-      days: parseInt(pkg.masa_aktif) || 0,
-      quota: pkg.total_kuota || 0,
-      subType: pkg.tipe_paket || 'INTERNET',
-      telp: pkg.telp || 0,
-      sms: pkg.sms || 0,
-      bonus: pkg.kuota_bonus || 0
-    })),
-    packagesLoading: false,
+    // Packages from API
+    packages: [],
+    allPackages: [], // All packages from API
+    packagesLoading: true,
 
     // Checkout
     activationTime: 'now',
@@ -200,9 +190,74 @@ function orderApp() {
     },
 
     // Lifecycle
-    init() {
+    async init() {
       // Load packages from API when component initializes
-      // this.loadPackages();
+      await this.loadAllPackages();
+    },
+
+    // Load all packages from API (same as store.blade.php)
+    async loadAllPackages() {
+      try {
+        this.packagesLoading = true;
+        // Selalu gunakan bulk_umroh untuk dapat harga bulk
+        const catalogRefCode = 'bulk_umroh';
+        const response = await fetch(`${API_BASE_URL}/api/proxy/umroh/package?ref_code=${catalogRefCode}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch packages');
+        }
+        
+        const data = await response.json();
+        console.log('📦 API Response:', data);
+        
+        // Response langsung array, tidak wrapped
+        if (Array.isArray(data)) {
+          this.allPackages = data.map(pkg => {
+            // Parse harga dengan fallback
+            const priceBulk = parseInt(pkg.price_bulk) || 0;
+            const priceCustomer = parseInt(pkg.price_customer) || priceBulk;
+            
+            return {
+              id: pkg.id,
+              package_id: pkg.id,
+              packageId: pkg.id,
+              name: pkg.name,
+              packageName: pkg.name,
+              type: pkg.type, // type = provider (TELKOMSEL, XL, etc)
+              provider: pkg.type,
+              days: parseInt(pkg.days) || 0,
+              masa_aktif: parseInt(pkg.days) || 0,
+              quota: pkg.quota || '',
+              total_kuota: pkg.quota || '',
+              kuota_utama: pkg.quota || '',
+              kuota_bonus: pkg.bonus || '',
+              bonus: pkg.bonus || '',
+              telp: pkg.telp || '',
+              sms: pkg.sms || '',
+              price: priceBulk,              // Harga modal (untuk agent)
+              harga: priceBulk,
+              sellPrice: priceCustomer,      // Harga jual ke customer
+              displayPrice: priceCustomer,
+              price_bulk: priceBulk,
+              price_customer: priceCustomer,
+              profit: priceCustomer - priceBulk,
+              subType: pkg.sub_type || '',
+              tipe_paket: pkg.sub_type || '',
+              is_active: pkg.is_active,
+              promo: pkg.promo || null,
+            };
+          });
+          // Set packages to allPackages for compatibility
+          this.packages = this.allPackages;
+          console.log('📦 Mapped packages:', this.packages.length);
+        }
+        this.packagesLoading = false;
+      } catch (error) {
+        console.error('Error loading packages:', error);
+        this.allPackages = [];
+        this.packages = [];
+        this.packagesLoading = false;
+        this.showToast('Error', 'Gagal memuat data paket');
+      }
     },
 
     // Methods
@@ -215,9 +270,9 @@ function orderApp() {
       
       const lines = this.bulkInput.split(/[\n,;]+/).map(l => l.trim()).filter(Boolean);
       this.parsedNumbers = lines.map(line => {
-        const normalized = normalizeMsisdn(line);
-        const isValid = validateMsisdn(normalized);
-        const provider = isValid ? detectProvider(normalized) : null;
+        const normalized = normalizeMsisdnFor62(line);
+        const isValid = validateMsisdn62(normalized);
+        const provider = isValid ? detectProviderForOrder(normalized) : null;
         return { msisdn: normalized, provider, isValid };
       });
 
@@ -241,12 +296,6 @@ function orderApp() {
       };
       reader.readAsText(file);
       event.target.value = '';
-    },
-
-    getPackagesForProvider(provider) {
-      if (!provider) return [];
-      const normalizedProvider = this.normalizeProviderForApi(provider);
-      return this.packages.filter(p => p.type === normalizedProvider);
     },
 
     generateDurationFilters(provider) {
@@ -276,13 +325,23 @@ function orderApp() {
     },
 
     normalizeProviderForApi(provider) {
-      const map = {
-        'TELKOMSEL': 'TELKOMSEL',
-        'XL': 'XL',
-        'INDOSAT': 'INDOSAT',
-        'TRI': 'TRI',
-      };
-      return map[provider?.toUpperCase()] || provider?.toUpperCase();
+      const p = (provider || '').toUpperCase();
+      // Normalize provider names to match API response
+      // API menggunakan: TELKOMSEL, INDOSAT, XL, TRI, AXIS, SMARTFREN, BYU
+      if (p === 'SIMPATI' || p === 'TSEL') return 'TELKOMSEL';
+      if (p === 'IM3' || p === 'ISAT') return 'INDOSAT';
+      if (p === '3' || p === 'THREE') return 'TRI';
+      if (p === 'SF') return 'SMARTFREN';
+      return p;
+    },
+
+    getPackagesForProvider(provider) {
+      if (!provider) return [];
+      const targetProvider = this.normalizeProviderForApi(provider);
+      return this.packages.filter(pkg => {
+        const pkgProvider = (pkg.type || pkg.provider || '').toUpperCase();
+        return pkgProvider === targetProvider;
+      });
     },
 
     openPackagePicker(provider) {
@@ -537,35 +596,70 @@ function orderApp() {
 
     getPackageName(packageId) {
       const pkg = this.packages.find(p => p.id === packageId);
-      return pkg ? pkg.name : 'Unknown';
+      return pkg ? (pkg.name || pkg.packageName || 'Unknown') : 'Unknown';
     },
 
     getPackageTitle(pkg) {
-      const subType = pkg.subType ? pkg.subType.toUpperCase() : '';
+      const subType = (pkg.subType || pkg.sub_type || '').toUpperCase();
+      const days = pkg.days || pkg.masa_aktif;
+      const daysSuffix = days ? ` - ${days} Hari` : '';
       
-      if (subType === 'INTERNET' || subType === 'INTERNET + TELP/SMS') {
-        const quota = typeof pkg.quota === 'number' ? pkg.quota : parseFloat(pkg.quota || 0);
-        let bonus = 0;
-        if (pkg.bonus) {
-          const bonusStr = pkg.bonus.toString();
-          const match = bonusStr.match(/(\d+(\.\d+)?)/);
-          if (match) {
-            bonus = parseFloat(match[0]);
-          }
+      // Untuk paket INTERNET atau INTERNET + TELP/SMS
+      if (subType.includes('INTERNET')) {
+        // Hitung total kuota (quota + bonus)
+        const quotaStr = String(pkg.quota || '');
+        const bonusStr = String(pkg.bonus || '');
+        
+        const quotaMatch = quotaStr.match(/(\d+(?:\.\d+)?)\s*GB/i);
+        const bonusMatch = bonusStr.match(/(\d+(?:\.\d+)?)\s*GB/i);
+        
+        let totalGB = 0;
+        if (quotaMatch) totalGB += parseFloat(quotaMatch[1]);
+        if (bonusMatch) totalGB += parseFloat(bonusMatch[1]);
+        
+        // Jika quota adalah angka langsung (bukan string GB)
+        if (totalGB === 0 && quotaStr) {
+          const numQuota = parseFloat(quotaStr);
+          if (!isNaN(numQuota)) totalGB = numQuota;
         }
-        return `Kuota ${Math.round((quota + bonus) * 100) / 100}GB`;
+        
+        if (totalGB > 0) {
+          return `Kuota ${totalGB}GB${daysSuffix}`;
+        }
+        return pkg.quota ? `Kuota ${pkg.quota}${daysSuffix}` : `Paket Internet${daysSuffix}`;
       }
-      return pkg.name;
+      
+      // Untuk paket TELP/SMS
+      if (subType.includes('TELP') || subType.includes('SMS')) {
+        const telpStr = pkg.telp ? `Telp ${pkg.telp}` : '';
+        const smsStr = pkg.sms ? `SMS ${pkg.sms}` : '';
+        
+        if (telpStr && smsStr) {
+          return `${telpStr} & ${smsStr}${daysSuffix}`;
+        } else if (telpStr) {
+          return `${telpStr}${daysSuffix}`;
+        } else if (smsStr) {
+          return `${smsStr}${daysSuffix}`;
+        }
+      }
+      
+      // Fallback ke nama asli
+      if (pkg.name) return pkg.name;
+      if (pkg.packageName) return pkg.packageName;
+      
+      const parts = [];
+      if (pkg.quota) parts.push(pkg.quota);
+      if (days) parts.push(`${days} Hari`);
+      return parts.join(' - ') || 'Paket';
     },
 
     isFieldBold(pkg, field) {
-      const subType = pkg.subType ? pkg.subType.toUpperCase() : '';
-      
-      if (subType === 'INTERNET' || subType === 'INTERNET + TELP/SMS') {
-        return ['kuota', 'bonus'].includes(field);
-      } else if (subType === 'TELP/SMS') {
-        return ['telp', 'sms'].includes(field);
-      }
+      const subtype = (pkg.subType || '').toUpperCase();
+      if (field === 'kuota') return subtype.includes('INTERNET') || !subtype;
+      if (field === 'telp') return subtype.includes('TELP') || subtype.includes('VOICE');
+      if (field === 'sms') return subtype.includes('SMS');
+      if (field === 'bonus') return true;
+      if (field === 'hari') return true;
       return false;
     },
 
@@ -601,9 +695,9 @@ function orderApp() {
 
     detectProviderForItem(item) {
       if (!item.msisdn) return null;
-      const normalized = normalizeMsisdn(item.msisdn);
-      if (!validateMsisdn(normalized)) return null;
-      return detectProvider(normalized);
+      const normalized = normalizeMsisdnFor62(item.msisdn);
+      if (!validateMsisdn62(normalized)) return null;
+      return detectProviderForOrder(normalized);
     },
 
     addIndividualItem() {
@@ -645,7 +739,18 @@ function orderApp() {
       this.validationError = false;
       this.isProcessing = true;
 
-      // Prepare order data
+      // Format schedule date if scheduled
+      let scheduleDate = null;
+      if (this.activationTime === 'scheduled' && this.scheduledDate) {
+        const date = new Date(this.scheduledDate);
+        if (this.scheduledTime) {
+          const [hours, minutes] = this.scheduledTime.split(':');
+          date.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+        }
+        scheduleDate = date.toISOString().slice(0, 16); // Format: yyyy-mm-ddThh:mm
+      }
+
+      // Prepare order items (sama dengan format store)
       const orderItems = [];
       
       if (this.mode === 'bulk') {
@@ -657,10 +762,17 @@ function orderApp() {
               assignment.numbers.forEach(msisdn => {
                 orderItems.push({
                   msisdn: msisdn,
-                  packageId: pkg.id,
-                  packageName: pkg.name,
                   provider: provider,
+                  package_id: pkg.id,
+                  packageId: pkg.id,
+                  packageName: pkg.name || pkg.packageName,
+                  nama_paket: pkg.name,
+                  tipe_paket: pkg.tipe_paket || pkg.subType,
+                  masa_aktif: pkg.masa_aktif || pkg.days,
+                  days: pkg.days || pkg.masa_aktif,
+                  total_kuota: pkg.total_kuota || pkg.quota,
                   price: pkg.price,
+                  harga: pkg.price,
                   sellPrice: pkg.sellPrice
                 });
               });
@@ -675,10 +787,17 @@ function orderApp() {
             if (pkg) {
               orderItems.push({
                 msisdn: item.msisdn,
-                packageId: pkg.id,
-                packageName: pkg.name,
                 provider: item.provider,
+                package_id: pkg.id,
+                packageId: pkg.id,
+                packageName: pkg.name || pkg.packageName,
+                nama_paket: pkg.name,
+                tipe_paket: pkg.tipe_paket || pkg.subType,
+                masa_aktif: pkg.masa_aktif || pkg.days,
+                days: pkg.days || pkg.masa_aktif,
+                total_kuota: pkg.total_kuota || pkg.quota,
                 price: pkg.price,
+                harga: pkg.price,
                 sellPrice: pkg.sellPrice
               });
             }
@@ -686,7 +805,7 @@ function orderApp() {
         });
       }
 
-      // Save to localStorage
+      // Save to localStorage (format sama dengan store)
       const orderData = {
         batchId: this.batchId,
         batchName: this.batchName,
@@ -694,10 +813,17 @@ function orderApp() {
         subtotal: this.subtotal,
         platformFee: this.platformFee,
         profit: this.profit,
+        total: this.totalWithFee,
         paymentMethod: this.paymentMethod,
         activationTime: this.activationTime,
+        scheduleDate: scheduleDate,
         scheduledDate: this.scheduledDate,
         scheduledTime: this.scheduledTime,
+        refCode: '{{ $agent->id ?? 1 }}',
+        linkReferal: '{{ $agent->link_referal ?? "kuotaumroh" }}',
+        mode: 'agent',
+        isBulk: true,
+        createdAt: new Date().toISOString(),
         timestamp: Date.now()
       };
 
