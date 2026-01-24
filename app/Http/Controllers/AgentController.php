@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 use App\Models\Agent;
 use App\Models\Affiliate;
@@ -316,68 +317,114 @@ class AgentController extends Controller
 
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'email' => 'required|email|unique:agents,email|unique:affiliates,email|unique:freelances,email',
-            'affiliate_id' => 'nullable|exists:affiliates,id',
-            'freelance_id' => 'nullable|exists:freelances,id',
-            'kategori_agent' => 'required|in:Referral,Host',
-            'nama_pic' => 'required|string',
-            'no_hp' => 'required|string|unique:agents,no_hp',
-            'nama_travel' => 'nullable|string',
-            'jenis_travel' => 'nullable|string',
-            'provinsi' => 'required|string',
-            'kabupaten_kota' => 'required|string',
-            'alamat_lengkap' => 'required|string',
-            'link_gmaps' => 'nullable|string',
-            'long' => 'nullable|numeric',
-            'lat' => 'nullable|numeric',
-            'link_referal' => 'nullable|string',
-            'rekening_agent' => 'nullable|string',
-            'date_approve' => 'nullable|date',
-            // Max 5 MB to match frontend hint
-            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:5120',
-            'surat_ppiu' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
-        ]);
+        try {
+            $validator = Validator::make($request->all(), [
+                'email' => 'required|email|unique:agents,email|unique:affiliates,email|unique:freelances,email',
+                'affiliate_id' => 'nullable|exists:affiliates,id',
+                'freelance_id' => 'nullable|exists:freelances,id',
+                'kategori_agent' => 'required|in:Referral,Host',
+                'nama_pic' => 'required|string|max:255',
+                'no_hp' => 'required|string|unique:agents,no_hp|unique:affiliates,no_wa|unique:freelances,no_wa|regex:/^62[0-9]{9,13}$/',
+                'nama_travel' => 'required|string|max:255',
+                'jenis_travel' => 'required|string|in:UMROH,LEISURE,UMROH LEISURE',
+                'total_traveller' => 'required|integer|min:1',
+                'provinsi' => 'required|string|max:255',
+                'kabupaten_kota' => 'required|string|max:255',
+                'alamat_lengkap' => 'required|string|max:1000',
+                'link_gmaps' => 'nullable|string',
+                'long' => 'nullable|numeric',
+                'lat' => 'nullable|numeric',
+                'link_referal' => 'nullable|string',
+                'rekening_agent' => 'nullable|string',
+                'date_approve' => 'nullable|date',
+                // Max 5 MB to match frontend hint
+                'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:5120',
+                'surat_ppiu' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            ], [
+                'email.required' => 'Email wajib diisi',
+                'email.email' => 'Format email tidak valid',
+                'email.unique' => 'Email sudah terdaftar dalam sistem',
+                'nama_pic.required' => 'Nama PIC wajib diisi',
+                'nama_pic.max' => 'Nama PIC maksimal 255 karakter',
+                'no_hp.required' => 'Nomor HP wajib diisi',
+                'no_hp.unique' => 'Nomor HP sudah terdaftar dalam sistem',
+                'no_hp.regex' => 'Format nomor HP harus dimulai dengan 62 dan diikuti 9-13 digit angka',
+                'nama_travel.required' => 'Nama Travel wajib diisi',
+                'nama_travel.max' => 'Nama Travel maksimal 255 karakter',
+                'jenis_travel.required' => 'Jenis Travel wajib dipilih',
+                'jenis_travel.in' => 'Jenis Travel harus salah satu dari: UMROH, LEISURE, atau UMROH LEISURE',
+                'total_traveller.required' => 'Total Traveller per Bulan wajib diisi',
+                'total_traveller.integer' => 'Total Traveller harus berupa angka',
+                'total_traveller.min' => 'Total Traveller minimal 1',
+                'provinsi.required' => 'Provinsi wajib dipilih',
+                'kabupaten_kota.required' => 'Kabupaten/Kota wajib dipilih',
+                'alamat_lengkap.required' => 'Alamat lengkap wajib diisi',
+                'alamat_lengkap.max' => 'Alamat lengkap maksimal 1000 karakter',
+                'logo.image' => 'Logo harus berupa gambar',
+                'logo.mimes' => 'Logo harus berformat: jpeg, png, jpg, gif, atau svg',
+                'logo.max' => 'Ukuran logo maksimal 5MB',
+                'surat_ppiu.required' => 'Surat PPIU wajib diupload',
+                'surat_ppiu.file' => 'Surat PPIU harus berupa file',
+                'surat_ppiu.mimes' => 'Surat PPIU harus berformat: pdf, jpg, jpeg, atau png',
+                'surat_ppiu.max' => 'Ukuran Surat PPIU maksimal 5MB',
+            ]);
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
+            if ($validator->fails()) {
+                return response()->json([
+                    'message' => 'Validasi gagal',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
 
-        // Validasi: hanya boleh salah satu dari affiliate_id atau freelance_id
-        if ($request->affiliate_id && $request->freelance_id) {
+            // Validasi: hanya boleh salah satu dari affiliate_id atau freelance_id
+            if ($request->affiliate_id && $request->freelance_id) {
+                return response()->json([
+                    'message' => 'Agent hanya bisa terhubung ke Affiliate ATAU Freelance, tidak keduanya'
+                ], 422);
+            }
+
+            if (!$request->affiliate_id && !$request->freelance_id) {
+                $request->merge(['affiliate_id' => 1]);
+            }
+
+            if ((int) $request->affiliate_id === 1 && !Affiliate::query()->whereKey(1)->exists()) {
+                return response()->json([
+                    'message' => 'Affiliate default tidak ditemukan (id=1)'
+                ], 422);
+            }
+
+            $data = $request->except(['logo', 'surat_ppiu']);
+
+            if ($request->hasFile('logo')) {
+                $logoPath = $request->file('logo')->store('agent_logos', 'public');
+                $data['logo'] = $logoPath;
+            }
+
+            if ($request->hasFile('surat_ppiu')) {
+                $suratPath = $request->file('surat_ppiu')->store('agent_documents', 'public');
+                $data['surat_ppiu'] = $suratPath;
+            }
+
+            $agent = Agent::create($data);
+
             return response()->json([
-                'message' => 'Agent hanya bisa terhubung ke Affiliate ATAU Freelance, tidak keduanya'
-            ], 422);
-        }
-
-        if (!$request->affiliate_id && !$request->freelance_id) {
-            $request->merge(['affiliate_id' => 1]);
-        }
-
-        if ((int) $request->affiliate_id === 1 && !Affiliate::query()->whereKey(1)->exists()) {
+                'message' => 'Agent successfully created',
+                'data' => $agent
+            ], 201);
+            
+        } catch (\Illuminate\Database\QueryException $e) {
+            \Log::error('Database error in agent store: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Affiliate default tidak ditemukan (id=1)'
-            ], 422);
+                'message' => 'Terjadi kesalahan database. Silakan coba lagi.',
+                'error' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
+        } catch (\Exception $e) {
+            \Log::error('Error in agent store: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat mendaftar. Silakan coba lagi.',
+                'error' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
         }
-
-        $data = $request->except(['logo', 'surat_ppiu']);
-
-        if ($request->hasFile('logo')) {
-            $logoPath = $request->file('logo')->store('agent_logos', 'public');
-            $data['logo'] = $logoPath;
-        }
-
-        if ($request->hasFile('surat_ppiu')) {
-            $suratPath = $request->file('surat_ppiu')->store('agent_documents', 'public');
-            $data['surat_ppiu'] = $suratPath;
-        }
-
-        $agent = Agent::create($data);
-
-        return response()->json([
-            'message' => 'Agent successfully created',
-            'data' => $agent
-        ], 201);
     }
 
     public function update(Request $request, $id)
@@ -473,11 +520,31 @@ class AgentController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'link_referal' => 'required|string',
+            'link_referal' => 'required|string|max:255',
+        ], [
+            'link_referal.required' => 'Link referral wajib diisi',
+            'link_referal.max' => 'Link referral maksimal 255 karakter',
         ]);
 
         if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
+            return response()->json([
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        // Cek manual apakah link_referal sudah digunakan agent lain
+        $existingAgent = Agent::where('link_referal', $request->link_referal)
+            ->where('id', '!=', $id)
+            ->first();
+
+        if ($existingAgent) {
+            return response()->json([
+                'message' => 'Validasi gagal',
+                'errors' => [
+                    'link_referal' => ['Link referral sudah digunakan, mohon gunakan yang lain']
+                ]
+            ], 422);
         }
 
         $agent->update([
