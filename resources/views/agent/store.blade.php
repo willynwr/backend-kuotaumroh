@@ -258,7 +258,7 @@
                                                         x-text="getPackageTitle(pkg)"></h3>
 
                                                     <div class="space-y-2 mb-4 pb-4 border-b border-gray-200">
-                                                        <template x-if="pkg.quota && (!pkg.subType || pkg.subType.toUpperCase().includes('INTERNET'))">
+                                                        <template x-if="pkg.quota && (!pkg.subType || (pkg.subType && String(pkg.subType).toUpperCase().includes('INTERNET')))">
                                                             <div class="flex items-center gap-2 text-sm text-gray-600" :class="isFieldBold(pkg, 'kuota') ? 'font-bold' : ''">
                                                                 <svg class="h-4 w-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
@@ -267,7 +267,7 @@
                                                             </div>
                                                         </template>
 
-                                                        <template x-if="pkg.telp && pkg.subType && !pkg.subType.toUpperCase().includes('INTERNET')">
+                                                        <template x-if="pkg.telp && pkg.subType && !String(pkg.subType).toUpperCase().includes('INTERNET')">
                                                             <div class="flex items-center gap-2 text-sm text-gray-600" :class="isFieldBold(pkg, 'telp') ? 'font-bold' : ''">
                                                                 <svg class="h-4 w-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
@@ -276,7 +276,7 @@
                                                             </div>
                                                         </template>
 
-                                                        <template x-if="pkg.sms && pkg.subType && !pkg.subType.toUpperCase().includes('INTERNET')">
+                                                        <template x-if="pkg.sms && pkg.subType && !String(pkg.subType).toUpperCase().includes('INTERNET')">
                                                             <div class="flex items-center gap-2 text-sm text-gray-600" :class="isFieldBold(pkg, 'sms') ? 'font-bold' : ''">
                                                                 <svg class="h-4 w-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
@@ -285,7 +285,7 @@
                                                             </div>
                                                         </template>
 
-                                                        <template x-if="pkg.quota && pkg.subType && !pkg.subType.toUpperCase().includes('INTERNET')">
+                                                        <template x-if="pkg.quota && pkg.subType && !String(pkg.subType).toUpperCase().includes('INTERNET')">
                                                             <div class="flex items-center gap-2 text-sm text-gray-600" :class="isFieldBold(pkg, 'kuota') ? 'font-bold' : ''">
                                                                 <svg class="h-4 w-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
@@ -303,7 +303,7 @@
                                                             </div>
                                                         </template>
 
-                                                        <template x-if="pkg.telp && (!pkg.subType || pkg.subType.toUpperCase().includes('INTERNET'))">
+                                                        <template x-if="pkg.telp && (!pkg.subType || (pkg.subType && String(pkg.subType).toUpperCase().includes('INTERNET')))">
                                                             <div class="flex items-center gap-2 text-sm text-gray-600" :class="isFieldBold(pkg, 'telp') ? 'font-bold' : ''">
                                                                 <svg class="h-4 w-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
@@ -312,7 +312,7 @@
                                                             </div>
                                                         </template>
 
-                                                        <template x-if="pkg.sms && (!pkg.subType || pkg.subType.toUpperCase().includes('INTERNET'))">
+                                                        <template x-if="pkg.sms && (!pkg.subType || (pkg.subType && String(pkg.subType).toUpperCase().includes('INTERNET')))">
                                                             <div class="flex items-center gap-2 text-sm text-gray-600" :class="isFieldBold(pkg, 'sms') ? 'font-bold' : ''">
                                                                 <svg class="h-4 w-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
@@ -601,7 +601,7 @@
                         this.packagesLoading = true;
                         // Selalu gunakan bulk_umroh untuk dapat harga bulk
                         const catalogRefCode = STORE_CONFIG.catalog_ref_code || 'bulk_umroh';
-                        const response = await fetch(`${API_BASE_URL}/api/umroh/package?ref_code=${catalogRefCode}`);
+                        const response = await fetch(`${API_BASE_URL}/api/proxy/umroh/package?ref_code=${catalogRefCode}`);
                         if (!response.ok) {
                             throw new Error('Failed to fetch packages');
                         }
@@ -790,8 +790,12 @@
                     // Untuk paket INTERNET atau INTERNET + TELP/SMS
                     if (subType.includes('INTERNET')) {
                         // Hitung total kuota (quota + bonus)
-                        const quotaMatch = (pkg.quota || '').match(/(\d+(?:\.\d+)?)\s*GB/i);
-                        const bonusMatch = (pkg.bonus || '').match(/(\d+(?:\.\d+)?)\s*GB/i);
+                        // Convert to string safely
+                        const quotaStr = String(pkg.quota || '');
+                        const bonusStr = String(pkg.bonus || '');
+                        
+                        const quotaMatch = quotaStr.match(/(\d+(?:\.\d+)?)\s*GB/i);
+                        const bonusMatch = bonusStr.match(/(\d+(?:\.\d+)?)\s*GB/i);
                         
                         let totalGB = 0;
                         if (quotaMatch) totalGB += parseFloat(quotaMatch[1]);
@@ -886,6 +890,7 @@
                         refCode: STORE_CONFIG.agent_id || '1',  // Agent ID untuk payment
                         linkReferal: STORE_CONFIG.link_referal || 'kuotaumroh',
                         mode: 'store',
+                        isBulk: true,  // Flag untuk BULK payment (Agent mode)
                         createdAt: new Date().toISOString(),
                     };
 
