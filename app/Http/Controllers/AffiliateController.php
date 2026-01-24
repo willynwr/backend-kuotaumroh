@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Affiliate;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
 
 class AffiliateController extends Controller
 {
@@ -33,16 +34,38 @@ class AffiliateController extends Controller
             'provinsi' => 'required|string',
             'kab_kota' => 'required|string',
             'alamat_lengkap' => 'required|string',
+            'logo' => 'nullable|file|mimes:png,jpg,jpeg,gif|max:2048',
+            'surat_ppiu' => 'nullable|file|mimes:pdf,png,jpg,jpeg|max:2048',
             'date_register' => 'nullable|date',
             'is_active' => 'nullable|boolean',
             'link_referral' => 'required|string|alpha_dash:ascii|unique:affiliates,link_referral',
+        ], [
+            'logo.max' => 'Ukuran file logo maksimal 2 MB',
+            'logo.mimes' => 'Format file logo harus PNG, JPG, JPEG, atau GIF',
+            'surat_ppiu.max' => 'Ukuran file Surat PPIU maksimal 2 MB',
+            'surat_ppiu.mimes' => 'Format file Surat PPIU harus PDF, PNG, JPG, atau JPEG',
         ]);
 
         if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
+            return response()->json([
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors()
+            ], 422);
         }
 
-        $data = $request->all();
+        $data = $request->except(['logo', 'surat_ppiu']);
+
+        // Handle logo upload
+        if ($request->hasFile('logo')) {
+            $logoPath = $request->file('logo')->store('affiliate_logos', 'public');
+            $data['logo'] = $logoPath;
+        }
+
+        // Handle surat PPIU upload
+        if ($request->hasFile('surat_ppiu')) {
+            $suratPath = $request->file('surat_ppiu')->store('affiliate_documents', 'public');
+            $data['surat_ppiu'] = $suratPath;
+        }
 
         // Set default values
         if (!isset($data['date_register'])) {
