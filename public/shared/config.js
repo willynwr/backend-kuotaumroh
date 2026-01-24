@@ -21,7 +21,7 @@
  * 2. Menyembunyikan endpoint external API dari user
  * 3. Memungkinkan auth middleware di Laravel
  */
-const API_BASE_URL = ''; // Always use same-origin (Laravel proxy)
+const API_BASE_URL = 'https://tokodigi.id'; // Sementara menggunakan tokodigi.id
 
 /**
  * Base URL untuk API endpoints
