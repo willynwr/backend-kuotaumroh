@@ -298,7 +298,7 @@
                                 <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
                                     <p class="text-sm text-yellow-800 font-medium mb-2">⚠️ Catatan Penting:</p>
                                     <p class="text-sm text-yellow-700">
-                                        Saat ini QR Code belum tersedia. Silakan hubungi customer service untuk menyelesaikan pembayaran dengan Payment ID di atas.
+                                        Harap membayar sesuai dengan nominal yang tertera.
                                     </p>
                                 </div>
                                 <ol class="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
@@ -644,45 +644,34 @@
                             // =============================
                             console.log('💳 Creating INDIVIDUAL payment transaction...');
                             
-                            // PENTING: API tokodigi.id endpoint /api/umroh/payment sering error
-                            // Jadi kita gunakan /api/umroh/bulkpayment untuk SEMUA transaksi
-                            // dengan format array untuk individual (1 item saja)
+                            // For individual, we process each item separately
+                            const item = this.orderData.items[0]; // Get first item
                             
-                            const batchId = 'STORE_' + Date.now();
-                            const batchName = 'STORE_' + new Date().toISOString().slice(0, 10).replace(/-/g, '');
-                            
-                            // Normalize msisdn numbers
-                            const msisdnList = this.orderData.items.map(item => {
-                                let msisdn = item.msisdn || item.phoneNumber;
-                                if (msisdn.startsWith('08')) {
-                                    msisdn = '62' + msisdn.substring(1);
-                                } else if (msisdn.startsWith('8')) {
-                                    msisdn = '62' + msisdn;
-                                }
-                                return msisdn;
-                            });
-
-                            const packageIdList = this.orderData.items.map(item => {
-                                return item.packageId || item.package_id;
-                            });
+                            // Format msisdn (convert 08xx to 62xx)
+                            let msisdn = item.msisdn || item.phoneNumber;
+                            if (msisdn.startsWith('08')) {
+                                msisdn = '62' + msisdn.substring(1);
+                            } else if (msisdn.startsWith('8')) {
+                                msisdn = '62' + msisdn;
+                            }
 
                             let detail = null;
                             if (this.orderData.scheduleDate) {
                                 detail = `{date: ${this.orderData.scheduleDate}}`;
                             }
 
+                            // INDIVIDU Payment: TANPA batch_id, batch_name
+                            // package_id dan msisdn bertipe STRING (bukan array)
                             const requestData = {
-                                batch_id: batchId,
-                                batch_name: batchName,
                                 payment_method: 'QRIS',
                                 detail: detail,
                                 ref_code: this.orderData.refCode || '0',
-                                msisdn: msisdnList,          // Array (untuk compatibility)
-                                package_id: packageIdList,   // Array (untuk compatibility)
+                                msisdn: msisdn,  // String (untuk validasi provider)
+                                package_id: String(item.packageId || item.package_id),  // String (bukan array)
                             };
 
-                            console.log('📤 Sending INDIVIDUAL payment via BULK endpoint:', requestData);
-                            response = await createBulkPayment(requestData);
+                            console.log('📤 Sending INDIVIDUAL payment request:', requestData);
+                            response = await createIndividualPayment(requestData);
                         }
                         
                         console.log('📥 Payment response:', response);
