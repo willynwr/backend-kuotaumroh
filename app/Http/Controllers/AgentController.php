@@ -334,8 +334,9 @@ class AgentController extends Controller
             'link_referal' => 'nullable|string',
             'rekening_agent' => 'nullable|string',
             'date_approve' => 'nullable|date',
-            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'surat_ppiu' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            // Max 5 MB to match frontend hint
+            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:5120',
+            'surat_ppiu' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ]);
 
         if ($validator->fails()) {
