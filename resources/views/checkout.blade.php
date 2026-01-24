@@ -457,8 +457,19 @@
                     
                     console.log('📦 Order mode:', this.orderData.isBulk ? 'BULK (Agent)' : 'INDIVIDUAL (Public)');
 
-                    // Create payment transaction via API
-                    await this.createPayment();
+                    // Check if payment already exists (user refreshed page)
+                    if (parsedData.paymentId) {
+                        console.log('♻️ Payment sudah ada, menggunakan payment yang sama:', parsedData.paymentId);
+                        this.paymentId = parsedData.paymentId;
+                        this.batchId = parsedData.batchId || null;
+                        
+                        // Fetch existing QRIS data
+                        await this.fetchQrisData();
+                    } else {
+                        // Create new payment transaction via API
+                        console.log('🆕 Membuat payment baru...');
+                        await this.createPayment();
+                    }
 
                     // Start countdown timer
                     this.startTimer();
@@ -633,16 +644,27 @@
                             // =============================
                             console.log('💳 Creating INDIVIDUAL payment transaction...');
                             
-                            // For individual, we process each item separately
-                            // or combine if API supports multiple items
-                            const item = this.orderData.items[0]; // Get first item
+                            // PENTING: API tokodigi.id endpoint /api/umroh/payment sering error
+                            // Jadi kita gunakan /api/umroh/bulkpayment untuk SEMUA transaksi
+                            // dengan format array untuk individual (1 item saja)
                             
-                            let msisdn = item.msisdn || item.phoneNumber;
-                            if (msisdn.startsWith('08')) {
-                                msisdn = '62' + msisdn.substring(1);
-                            } else if (msisdn.startsWith('8')) {
-                                msisdn = '62' + msisdn;
-                            }
+                            const batchId = 'STORE_' + Date.now();
+                            const batchName = 'STORE_' + new Date().toISOString().slice(0, 10).replace(/-/g, '');
+                            
+                            // Normalize msisdn numbers
+                            const msisdnList = this.orderData.items.map(item => {
+                                let msisdn = item.msisdn || item.phoneNumber;
+                                if (msisdn.startsWith('08')) {
+                                    msisdn = '62' + msisdn.substring(1);
+                                } else if (msisdn.startsWith('8')) {
+                                    msisdn = '62' + msisdn;
+                                }
+                                return msisdn;
+                            });
+
+                            const packageIdList = this.orderData.items.map(item => {
+                                return item.packageId || item.package_id;
+                            });
 
                             let detail = null;
                             if (this.orderData.scheduleDate) {
@@ -650,15 +672,17 @@
                             }
 
                             const requestData = {
+                                batch_id: batchId,
+                                batch_name: batchName,
                                 payment_method: 'QRIS',
                                 detail: detail,
-                                ref_code: this.orderData.refCode || '0',  // '0' untuk umum
-                                msisdn: msisdn,                            // String (bukan array)
-                                package_id: item.packageId || item.package_id,  // String (bukan array)
+                                ref_code: this.orderData.refCode || '0',
+                                msisdn: msisdnList,          // Array (untuk compatibility)
+                                package_id: packageIdList,   // Array (untuk compatibility)
                             };
 
-                            console.log('📤 Sending INDIVIDUAL payment request:', requestData);
-                            response = await createIndividualPayment(requestData);
+                            console.log('📤 Sending INDIVIDUAL payment via BULK endpoint:', requestData);
+                            response = await createBulkPayment(requestData);
                         }
                         
                         console.log('📥 Payment response:', response);
@@ -719,6 +743,16 @@
 
                             console.log('✅ Payment created:', this.paymentId);
                             
+                            // Save paymentId to localStorage agar tidak generate ulang saat refresh
+                            const savedOrder = localStorage.getItem('pendingOrder');
+                            if (savedOrder) {
+                                const orderData = JSON.parse(savedOrder);
+                                orderData.paymentId = this.paymentId;
+                                orderData.batchId = this.batchId;
+                                localStorage.setItem('pendingOrder', JSON.stringify(orderData));
+                                console.log('💾 PaymentId disimpan ke localStorage');
+                            }
+                            
                             // Fetch QRIS data after payment created
                             await this.fetchQrisData();
                         } else {
@@ -764,6 +798,7 @@
                                     this.paymentStatus = 'expired';
                                     clearInterval(this.paymentCheckInterval);
                                     clearInterval(this.timerInterval);
+                                    localStorage.removeItem('pendingOrder');
                                 }
                             }
                         } catch (error) {
