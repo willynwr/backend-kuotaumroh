@@ -1191,14 +1191,27 @@
               credentials: 'same-origin'
             });
 
-            let result = await response.json();
+            const contentType = response.headers.get('content-type') || '';
+            let result = null;
+            if (contentType.includes('application/json')) {
+              result = await response.json();
+            } else {
+              // Fallback to text for non-JSON responses (e.g., 413 from server)
+              const text = await response.text();
+              if (!response.ok) {
+                if (response.status === 413) {
+                  throw new Error('Ukuran unggahan melebihi batas server. Pastikan file <= 5MB.');
+                }
+                throw new Error(text || 'Server error');
+              }
+            }
 
             if (!response.ok) {
-              if (response.status === 422 && result.errors) {
+              if (response.status === 422 && result?.errors) {
                 const errorMessages = Object.values(result.errors).flat().join(', ');
                 throw new Error(errorMessages);
               }
-              throw new Error(result.message || 'Terjadi kesalahan saat mendaftar');
+              throw new Error(result?.message || 'Terjadi kesalahan saat mendaftar');
             }
 
             console.log('Success:', result);
