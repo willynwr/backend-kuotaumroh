@@ -1162,10 +1162,37 @@ class AdminController extends Controller
         try {
             $agent = Agent::findOrFail($id);
             
-            if ($request->filled('link_referral')) {
-                $agent->link_referal = $request->link_referral;
+            // Validasi link_referal wajib diisi
+            $linkReferal = $request->input('link_referal');
+            
+            if (empty($linkReferal)) {
+                if ($request->wantsJson()) {
+                    return response()->json([
+                        'success' => false, 
+                        'message' => 'Validasi gagal',
+                        'errors' => ['link_referal' => ['Link referral wajib diisi']]
+                    ], 422);
+                }
+                return redirect()->back()->with('error', 'Link referral wajib diisi');
+            }
+            
+            // Cek apakah link_referal sudah digunakan agent lain
+            $existingAgent = Agent::where('link_referal', $linkReferal)
+                ->where('id', '!=', $id)
+                ->first();
+
+            if ($existingAgent) {
+                if ($request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Validasi gagal',
+                        'errors' => ['link_referal' => ['Link referral sudah digunakan, mohon gunakan yang lain']]
+                    ], 422);
+                }
+                return redirect()->back()->with('error', 'Link referral sudah digunakan');
             }
 
+            $agent->link_referal = $linkReferal;
             $agent->status = 'approve';
             $agent->is_active = 1;
             if (!$agent->date_approve) {
