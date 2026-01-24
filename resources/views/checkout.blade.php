@@ -179,6 +179,7 @@
                 </div>
             </div>
 
+            
             <!-- Pending State (Payment Page) -->
             <div x-show="paymentStatus === 'pending'" x-cloak>
                 <!-- Page Header -->
@@ -198,7 +199,7 @@
                         <!-- QR Card -->
                         <div class="rounded-lg border bg-white shadow-sm">
                             <div class="p-6 border-b">
-                                <h3 class="text-lg font-semibold flex items-center gap-2">
+                                <h3 class="text-lg font-semibold flex items-center gap-2 mb-4">
                                     <svg class="h-5 w-5" fill="none" stroke="currentColor"
                                         viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -206,6 +207,24 @@
                                     </svg>
                                     Scan QR Code QRIS
                                 </h3>
+                                
+                                <!-- Payment ID Info -->
+                                <div class="bg-white-50 border border-black-200 rounded-lg p-3">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex-1">
+                                            <p class="text-xs text-black-600 font-medium mb-1">Payment ID</p>
+                                            <p class="text-sm font-mono text-black-900 font-semibold" x-text="paymentId"></p>
+                                        </div>
+                                        <button @click="navigator.clipboard.writeText(paymentId); showToast('Tersalin', 'Payment ID berhasil disalin')"
+                                            class="ml-2 h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-blue-100 transition-colors flex-shrink-0">
+                                            <svg class="h-4 w-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <p class="text-xs text-black-600 mt-2">Simpan ID ini untuk verifikasi pembayaran</p>
+                                </div>
                             </div>
                             <div class="p-6 space-y-4">
                                 <!-- QR Code Container -->
@@ -274,44 +293,32 @@
                                         x-text="paymentMethodLabel"></span>
                                 </div>
 
-                                <!-- Payment ID Info -->
-                                <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                                    <p class="text-xs text-blue-600 font-medium mb-1">Payment ID</p>
-                                    <p class="text-sm font-mono text-blue-900" x-text="paymentId"></p>
-                                    <p class="text-xs text-blue-600 mt-2">Simpan ID ini untuk verifikasi pembayaran</p>
-                                </div>
-
-                                <!-- Check Payment Button -->
-                                <button @click="handleCheckPayment()"
-                                    class="w-full inline-flex items-center justify-center rounded-md border bg-background h-10 px-4 py-2 hover:bg-muted transition-colors">
-                                    Cek Status Pembayaran
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Instructions Card -->
-                        <div class="rounded-lg border bg-white shadow-sm">
-                            <div class="p-6 border-b">
-                                <h3 class="text-base font-semibold">Cara Pembayaran</h3>
-                            </div>
-                            <div class="p-6">
-                                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                            <!-- Important Note & Instructions Combined -->
+                            <div class="space-y-4">
+                                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                                     <p class="text-sm text-yellow-800 font-medium mb-2">⚠️ Catatan Penting:</p>
                                     <p class="text-sm text-yellow-700">
                                         Harap membayar sesuai dengan nominal yang tertera.
                                     </p>
                                 </div>
-                                <ol class="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
-                                    <li>Salin Payment ID di atas</li>
-                                    <li>Hubungi Customer Service via WhatsApp</li>
-                                    <li>Berikan Payment ID untuk konfirmasi pembayaran</li>
-                                    <li>Lakukan pembayaran sesuai instruksi CS</li>
-                                    <li>Konfirmasi pembayaran</li>
-                                </ol>
-                            </div>
-                        </div>
-                    </div>
 
+                                <div>
+                                    <h4 class="text-sm font-semibold mb-3">Cara Pembayaran</h4>
+                                    <ol class="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
+                                        <li>Buka aplikasi e-wallet atau mobile banking Anda</li>
+                                        <li>Scan QR Code QRIS di atas</li>
+                                        <li>Pastikan nominal pembayaran sesuai</li>
+                                        <li>Konfirmasi pembayaran</li>
+                                        <li>Simpan bukti pembayaran</li>
+                                    </ol>
+                                </div>
+                            </div>
+
+                            <!-- Check Payment Button -->
+                            <button @click="handleCheckPayment()"
+                                class="w-full inline-flex items-center justify-center rounded-md border bg-background h-10 px-4 py-2 hover:bg-muted transition-colors">
+                                Cek Status Pembayaran
+                            </button>
                     <!-- Order Details -->
                     <div class="lg:col-span-2">
                         <div class="rounded-lg border bg-white shadow-sm">
