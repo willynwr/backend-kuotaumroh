@@ -32,12 +32,42 @@ class AdminController extends Controller
     }
     public function dashboard()
     {
+        // Calculate MTD and YTD revenue from QRIS payments with status 'berhasil'
+        $currentMonth = now()->month;
+        $currentYear = now()->year;
+        
+        // MTD (Month-To-Date) Revenue
+        $revenueMTD = \App\Models\Pembayaran::where('metode_pembayaran', 'qris')
+            ->where('status_pembayaran', 'berhasil')
+            ->whereMonth('created_at', $currentMonth)
+            ->whereYear('created_at', $currentYear)
+            ->sum('total_pembayaran');
+
+        // YTD (Year-To-Date) Revenue
+        $revenueYTD = \App\Models\Pembayaran::where('metode_pembayaran', 'qris')
+            ->where('status_pembayaran', 'berhasil')
+            ->whereYear('created_at', $currentYear)
+            ->sum('total_pembayaran');
+
+        // Count active agents (status = 'approve')
+        $activeAgents = Agent::where('status', 'approve')->count();
+        
+        // Count active affiliates (is_active = 1)
+        $activeAffiliates = Affiliate::where('is_active', 1)->count();
+        
+        // Count active freelancers (is_active = 1)
+        $activeFreelancers = \App\Models\Freelance::where('is_active', 1)->count();
+
         $stats = [
             'totalAgents' => Agent::count(),
+            'activeAgents' => $activeAgents,
             'totalAffiliates' => Affiliate::count(),
-            'totalOrders' => 0, // TODO: Implement when Order model is ready
-            'totalRevenue' => 0, // TODO: Implement when Transaction model is ready
-            'pendingWithdrawals' => 0, // TODO: Implement when Withdrawal model is ready
+            'activeAffiliates' => $activeAffiliates,
+            'totalFreelancers' => \App\Models\Freelance::count(),
+            'activeFreelancers' => $activeFreelancers,
+            'revenueMTD' => $revenueMTD ?? 0,
+            'revenueYTD' => $revenueYTD ?? 0,
+            'pendingWithdrawals' => \App\Models\Withdraw::where('status', 'tertunda')->count(),
             'pendingClaims' => 0, // TODO: Implement when RewardClaim model is ready
         ];
 
@@ -134,24 +164,421 @@ class AdminController extends Controller
     public function packages()
     {
         $packages = DB::table('produk')->get();
+        $margins = DB::table('margin')
+            ->leftJoin('agents', 'margin.agent_id', '=', 'agents.id')
+            ->leftJoin('affiliates', 'margin.affiliate_id', '=', 'affiliates.id')
+            ->leftJoin('freelances', 'margin.freelance_id', '=', 'freelances.id')
+            ->leftJoin('produk', 'margin.produk_id', '=', 'produk.id')
+            ->select(
+                'margin.*',
+                'agents.nama_pic as agent_name',
+                'affiliates.nama as affiliate_name',
+                'freelances.nama as freelance_name',
+                'produk.nama_paket as produk_name'
+            )
+            ->get();
         
-        return view('admin.packages', compact('packages'));
+        $agents = Agent::select('id', 'nama_pic as nama')->get();
+        $affiliates = Affiliate::select('id', 'nama')->get();
+        $freelances = Freelance::select('id', 'nama')->get();
+        $products = DB::table('produk')->select('id', 'nama_paket')->get();
+        
+        return view('admin.packages', compact('packages', 'margins', 'agents', 'affiliates', 'freelances', 'products'));
+    }
+
+    public function storeMargin(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'produk_id' => 'required|exists:produk,id',
+                'harga_eup' => 'required|numeric',
+                'persentase_margin_star' => 'required|numeric',
+                'margin_star' => 'required|numeric',
+                'margin_total' => 'required|numeric',
+                'fee_travel' => 'required|numeric',
+                'persentase_fee_travel' => 'required|numeric',
+                'persentase_fee_affiliate' => 'required|numeric',
+                'fee_affiliate' => 'required|numeric',
+                'persentase_fee_host' => 'required|numeric',
+                'fee_host' => 'required|numeric',
+                'harga_tp_travel' => 'required|numeric',
+                'harga_tp_host' => 'required|numeric',
+                'poin' => 'required|numeric',
+                'profit' => 'required|numeric',
+            ]);
+
+            $margin = DB::table('margin')->insertGetId([
+                'agent_id' => $request->agent_id,
+                'affiliate_id' => $request->affiliate_id,
+                'freelance_id' => $request->freelance_id,
+                'produk_id' => $validated['produk_id'],
+                'harga_eup' => $validated['harga_eup'],
+                'persentase_margin_star' => $validated['persentase_margin_star'],
+                'margin_star' => $validated['margin_star'],
+                'margin_total' => $validated['margin_total'],
+                'fee_travel' => $validated['fee_travel'],
+                'persentase_fee_travel' => $validated['persentase_fee_travel'],
+                'persentase_fee_affiliate' => $validated['persentase_fee_affiliate'],
+                'fee_affiliate' => $validated['fee_affiliate'],
+                'persentase_fee_host' => $validated['persentase_fee_host'],
+                'fee_host' => $validated['fee_host'],
+                'harga_tp_travel' => $validated['harga_tp_travel'],
+                'harga_tp_host' => $validated['harga_tp_host'],
+                'poin' => $validated['poin'],
+                'profit' => $validated['profit'],
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $newMargin = DB::table('margin')
+                ->leftJoin('agents', 'margin.agent_id', '=', 'agents.id')
+                ->leftJoin('affiliates', 'margin.affiliate_id', '=', 'affiliates.id')
+                ->leftJoin('freelances', 'margin.freelance_id', '=', 'freelances.id')
+                ->leftJoin('produk', 'margin.produk_id', '=', 'produk.id')
+                ->select(
+                    'margin.*',
+                    'agents.nama_pic as agent_name',
+                    'affiliates.nama as affiliate_name',
+                    'freelances.nama as freelance_name',
+                    'produk.nama_paket as produk_name'
+                )
+                ->where('margin.id', $margin)
+                ->first();
+
+            return response()->json($newMargin, 201);
+        } catch (\Exception $e) {
+            \Log::error('Error creating margin: ' . $e->getMessage());
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function updateMargin(Request $request, $id)
+    {
+        try {
+            $validated = $request->validate([
+                'produk_id' => 'required|exists:produk,id',
+                'harga_eup' => 'required|numeric',
+                'persentase_margin_star' => 'required|numeric',
+                'margin_star' => 'required|numeric',
+                'margin_total' => 'required|numeric',
+                'fee_travel' => 'required|numeric',
+                'persentase_fee_travel' => 'required|numeric',
+                'persentase_fee_affiliate' => 'required|numeric',
+                'fee_affiliate' => 'required|numeric',
+                'persentase_fee_host' => 'required|numeric',
+                'fee_host' => 'required|numeric',
+                'harga_tp_travel' => 'required|numeric',
+                'harga_tp_host' => 'required|numeric',
+                'poin' => 'required|numeric',
+                'profit' => 'required|numeric',
+            ]);
+
+            DB::table('margin')->where('id', $id)->update([
+                'agent_id' => $request->agent_id,
+                'affiliate_id' => $request->affiliate_id,
+                'freelance_id' => $request->freelance_id,
+                'produk_id' => $validated['produk_id'],
+                'harga_eup' => $validated['harga_eup'],
+                'persentase_margin_star' => $validated['persentase_margin_star'],
+                'margin_star' => $validated['margin_star'],
+                'margin_total' => $validated['margin_total'],
+                'fee_travel' => $validated['fee_travel'],
+                'persentase_fee_travel' => $validated['persentase_fee_travel'],
+                'persentase_fee_affiliate' => $validated['persentase_fee_affiliate'],
+                'fee_affiliate' => $validated['fee_affiliate'],
+                'persentase_fee_host' => $validated['persentase_fee_host'],
+                'fee_host' => $validated['fee_host'],
+                'harga_tp_travel' => $validated['harga_tp_travel'],
+                'harga_tp_host' => $validated['harga_tp_host'],
+                'poin' => $validated['poin'],
+                'profit' => $validated['profit'],
+                'updated_at' => now(),
+            ]);
+
+            return response()->json(['success' => true], 200);
+        } catch (\Exception $e) {
+            \Log::error('Error updating margin: ' . $e->getMessage());
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function deleteMargin($id)
+    {
+        try {
+            DB::table('margin')->where('id', $id)->delete();
+            return response()->json(['success' => true], 200);
+        } catch (\Exception $e) {
+            \Log::error('Error deleting margin: ' . $e->getMessage());
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function orders()
+    {
+        $packages = \App\Models\Produk::orderBy('provider', 'asc')
+            ->get()
+            ->map(function ($p) {
+                return [
+                    'id' => $p->id,
+                    'name' => $p->nama_paket,
+                    'provider' => $p->provider,
+                    'price' => (int) $p->harga_tp_travel,
+                    'sellPrice' => (int) $p->harga_tp_travel,
+                    'masa_aktif' => $p->masa_aktif,
+                ];
+            });
+
+        return view('admin.order', [
+            'packages' => $packages
+        ]);
     }
 
     public function transactions()
     {
-        // TODO: Implement when Transaction model is ready
-        $transactions = [];
+        // Ambil semua pembayaran dengan relasi - pastikan pesanan di-load berdasarkan batch_id
+        $pembayaranData = \App\Models\Pembayaran::with([
+                'agent.affiliate', 
+                'produk', 
+                'pesanan' => function($query) {
+                    // Tidak perlu kondisi tambahan, relasi sudah via batch_id
+                }
+            ])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Group by batch_id untuk menggabungkan batch yang sama
+        $transactions = $pembayaranData->groupBy('batch_id')->map(function($batchGroup) {
+            // Ambil pembayaran pertama sebagai representasi batch
+            $pembayaran = $batchGroup->first();
+            
+            // Gabungkan semua pesanan dari semua pembayaran dengan batch_id yang sama
+            $items = $batchGroup->flatMap(function($p) {
+                return $p->pesanan->map(function($pesanan) use ($p) {
+                    return [
+                        'msisdn' => $pesanan->msisdn,
+                        'provider' => $this->detectProvider($pesanan->msisdn),
+                        'packageName' => $pesanan->nama_paket ?? $p->produk->nama_paket ?? 'N/A',
+                        'status' => $pesanan->status_aktivasi ?? 'proses',
+                        'price' => $pesanan->harga_jual ?? 0,
+                        'margin' => $pesanan->profit ?? 0,
+                    ];
+                });
+            })->values()->toArray();
+
+            // Calculate total amount dan margin untuk batch yang di-merge
+            $totalAmount = $batchGroup->sum('total_pembayaran');
+            $totalMargin = $batchGroup->sum('profit');
+
+            // Calculate batch status
+            $batchStatus = $this->calculateBatchStatus($pembayaran, $items);
+
+            return [
+                'id' => $pembayaran->id,
+                'batchId' => $pembayaran->batch_id,
+                'batchName' => $pembayaran->nama_batch ?? 'Batch ' . $pembayaran->batch_id,
+                'status' => $batchStatus,
+                'items' => $items,
+                'createdAt' => $pembayaran->created_at->toISOString(),
+                'travelName' => $pembayaran->agent->nama_travel ?? $pembayaran->agent->nama_pic ?? 'N/A',
+                'territory' => ($pembayaran->agent->provinsi && $pembayaran->agent->kabupaten_kota) 
+                    ? $pembayaran->agent->kabupaten_kota . ', ' . $pembayaran->agent->provinsi
+                    : ($pembayaran->agent->kabupaten_kota ?? $pembayaran->agent->provinsi ?? null),
+                'agentName' => $pembayaran->agent->nama_pic ?? null,
+                'agentPhone' => $pembayaran->agent->no_hp ?? null,
+                'affiliateName' => $pembayaran->agent->affiliate->nama ?? null,
+                'affiliatePhone' => $pembayaran->agent->affiliate->no_wa ?? null,
+                'totalAmount' => $totalAmount,
+                'marginTotal' => $totalMargin,
+            ];
+        })->values();
         
         return view('admin.transactions', compact('transactions'));
     }
 
+    private function detectProvider($phoneNumber)
+    {
+        $firstDigits = substr($phoneNumber, 0, 4);
+        
+        // Telkomsel
+        if (in_array(substr($firstDigits, 0, 4), ['0811', '0812', '0813', '0821', '0822', '0823', '0851', '0852', '0853'])) {
+            return 'Telkomsel';
+        }
+        // Indosat
+        if (in_array(substr($firstDigits, 0, 4), ['0814', '0815', '0816', '0855', '0856', '0857', '0858'])) {
+            return 'Indosat';
+        }
+        // XL
+        if (in_array(substr($firstDigits, 0, 4), ['0817', '0818', '0819', '0859', '0877', '0878'])) {
+            return 'XL';
+        }
+        // Tri
+        if (in_array(substr($firstDigits, 0, 4), ['0895', '0896', '0897', '0898', '0899'])) {
+            return 'Tri';
+        }
+        // Smartfren
+        if (in_array(substr($firstDigits, 0, 4), ['0881', '0882', '0883', '0884', '0885', '0886', '0887', '0888', '0889'])) {
+            return 'Smartfren';
+        }
+        
+        return 'Unknown';
+    }
+
+    private function calculateBatchStatus($pembayaran, $items)
+    {
+        // Jika pembayaran WAITING atau belum dibayar
+        if (in_array(strtolower($pembayaran->status_pembayaran), ['waiting', 'menunggu'])) {
+            return 'pending';
+        }
+        
+        // Jika pembayaran SUCCESS/VERIFY/berhasil/paid, cek status items aktivasi
+        if (in_array(strtolower($pembayaran->status_pembayaran), ['success', 'verify', 'paid', 'berhasil', 'selesai'])) {
+            if (empty($items)) {
+                return 'processing';
+            }
+
+            $statuses = collect($items)->pluck('status');
+            $totalItems = $statuses->count();
+            
+            // Hitung jumlah setiap status
+            $berhasilCount = $statuses->filter(fn($s) => in_array(strtolower($s), ['berhasil', 'selesai', 'completed', 'success']))->count();
+            $prosesCount = $statuses->filter(fn($s) => in_array(strtolower($s), ['proses', 'processing', 'pending']))->count();
+            $gagalCount = $statuses->filter(fn($s) => in_array(strtolower($s), ['gagal', 'failed']))->count();
+            
+            // Jika semua berhasil
+            if ($berhasilCount === $totalItems) {
+                return 'completed';
+            }
+            
+            // Jika ada yang berhasil (mixed)
+            if ($berhasilCount > 0) {
+                return 'processing';
+            }
+            
+            // Jika semua gagal
+            if ($gagalCount === $totalItems) {
+                return 'failed';
+            }
+            
+            // Jika masih proses semua atau mixed
+            return 'processing';
+        }
+        
+        // Jika status pembayaran FAILED/EXPIRED/cancelled
+        if (in_array(strtolower($pembayaran->status_pembayaran), ['failed', 'expired', 'gagal', 'cancelled', 'batal'])) {
+            return 'failed';
+        }
+        
+        return 'pending';
+    }
+
     public function withdrawals()
     {
-        // TODO: Implement when Withdrawal model is ready
-        $withdrawals = [];
+        $withdrawals = \App\Models\Withdraw::with(['agent', 'rekening'])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function($withdraw) {
+                return [
+                    'id' => $withdraw->id,
+                    'user_name' => $withdraw->agent->nama_pic ?? 'N/A',
+                    'user_email' => $withdraw->agent->email ?? 'N/A',
+                    'amount' => $withdraw->jumlah,
+                    'bank_name' => $withdraw->rekening->bank ?? 'N/A',
+                    'account_number' => $withdraw->rekening->nomor_rekening ?? 'N/A',
+                    'account_name' => $withdraw->rekening->nama_rekening ?? 'N/A',
+                    'keterangan' => $withdraw->keterangan,
+                    'status' => $withdraw->status,
+                    'created_at' => $withdraw->created_at,
+                    'date_approve' => $withdraw->date_approve,
+                ];
+            });
         
         return view('admin.withdrawals', compact('withdrawals'));
+    }
+
+    public function approveWithdrawal($id)
+    {
+        try {
+            $withdraw = \App\Models\Withdraw::with('agent')->findOrFail($id);
+            
+            if ($withdraw->status !== 'pending') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Withdrawal ini sudah diproses sebelumnya'
+                ], 400);
+            }
+            
+            $agent = $withdraw->agent;
+            
+            if ($agent->saldo < $withdraw->jumlah) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Saldo agent tidak mencukupi'
+                ], 400);
+            }
+            
+            \DB::beginTransaction();
+            
+            $withdraw->update([
+                'status' => 'approve',
+                'date_approve' => now()->format('Y-m-d')
+            ]);
+            
+            $agent->decrement('saldo', $withdraw->jumlah);
+            
+            \DB::commit();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Withdrawal berhasil diapprove'
+            ]);
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal approve withdrawal: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function rejectWithdrawal(Request $request, $id)
+    {
+        try {
+            $request->validate([
+                'alasan_reject' => 'required|string|min:10'
+            ], [
+                'alasan_reject.required' => 'Alasan penolakan harus diisi',
+                'alasan_reject.min' => 'Alasan penolakan minimal 10 karakter'
+            ]);
+            
+            $withdraw = \App\Models\Withdraw::findOrFail($id);
+            
+            if ($withdraw->status !== 'pending') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Withdrawal ini sudah diproses sebelumnya'
+                ], 400);
+            }
+            
+            $withdraw->update([
+                'status' => 'reject',
+                'alasan_reject' => $request->alasan_reject
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Withdrawal berhasil direject'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->errors()['alasan_reject'][0] ?? 'Validasi gagal'
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal reject withdrawal: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function rewards()

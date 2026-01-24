@@ -7,6 +7,7 @@ use App\Http\Controllers\AffiliateController;
 use App\Http\Controllers\FreelanceController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\UmrohPaymentController;
+use App\Http\Controllers\Api\ProxyController;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,6 +28,29 @@ Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallbac
 Route::middleware('web')->group(function () {
     Route::post('/auth/session', [App\Http\Controllers\Api\AuthController::class, 'saveSession']);
     Route::post('/auth/logout', [App\Http\Controllers\Api\AuthController::class, 'destroySession']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Proxy API Routes (untuk menghindari CORS)
+|--------------------------------------------------------------------------
+|
+| Semua request dari frontend akan diteruskan ke external API
+| Contoh: /api/proxy/umroh/package → tokodigi.id/api/umroh/package
+|
+*/
+Route::prefix('proxy')->group(function () {
+    // Catch all GET requests
+    Route::get('/{path}', [ProxyController::class, 'proxyGet'])->where('path', '.*');
+    
+    // Catch all POST requests
+    Route::post('/{path}', [ProxyController::class, 'proxyPost'])->where('path', '.*');
+    
+    // Catch all PUT requests
+    Route::put('/{path}', [ProxyController::class, 'proxyPut'])->where('path', '.*');
+    
+    // Catch all DELETE requests
+    Route::delete('/{path}', [ProxyController::class, 'proxyDelete'])->where('path', '.*');
 });
 
 /*
@@ -64,4 +88,17 @@ Route::prefix('umroh')->group(function () {
     // Payment Callback (from QRIS provider)
     // POST /api/umroh/payment/callback
     Route::post('/payment/callback', [UmrohPaymentController::class, 'paymentCallback']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Agent Dashboard API Routes
+|--------------------------------------------------------------------------
+|
+| API endpoints untuk statistik dan data dashboard agent
+|
+*/
+Route::prefix('agent')->group(function () {
+    // GET /api/agent/stats?agent_id=1
+    Route::get('/stats', [App\Http\Controllers\Api\AgentStatsController::class, 'getStats']);
 });

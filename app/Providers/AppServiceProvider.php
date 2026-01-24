@@ -3,6 +3,10 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use App\Models\Withdraw;
+use App\Models\Pembayaran;
+use App\Observers\WithdrawObserver;
+use App\Observers\PembayaranObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +23,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Withdraw::observe(WithdrawObserver::class);
+        Pembayaran::observe(PembayaranObserver::class);
     }
 }

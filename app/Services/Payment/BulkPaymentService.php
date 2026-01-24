@@ -476,15 +476,27 @@ class BulkPaymentService
      */
     public function markPaymentSuccess(int $paymentId, string $qrisRrn = null): bool
     {
-        $pembayaran = Pembayaran::find($paymentId);
-
-        if (!$pembayaran) {
-            return false;
-        }
-
         DB::beginTransaction();
 
         try {
+            // Lock pembayaran untuk mencegah race condition
+            $pembayaran = Pembayaran::lockForUpdate()->find($paymentId);
+
+            if (!$pembayaran) {
+                DB::rollBack();
+                return false;
+            }
+
+            // Cek apakah sudah SUCCESS/berhasil sebelumnya (double callback dari payment gateway)
+            if (in_array(strtolower($pembayaran->status_pembayaran), ['success', 'berhasil'])) {
+                DB::rollBack();
+                Log::warning('Payment already marked as success', [
+                    'payment_id' => $paymentId,
+                    'batch_id' => $pembayaran->batch_id,
+                ]);
+                return true; // Return true karena payment memang sudah success
+            }
+
             // Update pembayaran
             $pembayaran->markAsSuccess($qrisRrn, now());
 

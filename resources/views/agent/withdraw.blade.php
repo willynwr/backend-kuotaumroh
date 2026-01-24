@@ -80,6 +80,12 @@
               </button>
             </div>
 
+            <div class="space-y-2">
+              <label for="keterangan" class="text-sm font-medium">Keterangan (Opsional)</label>
+              <textarea id="keterangan" x-model="keterangan" placeholder="Masukkan keterangan penarikan..." rows="3" class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground resize-none"></textarea>
+              <p class="text-xs text-muted-foreground">Keterangan akan membantu Anda mengingat tujuan penarikan ini.</p>
+            </div>
+
             <template x-if="selectedBank">
               <div class="rounded-lg bg-muted/50 border">
                 <div class="flex items-center gap-4 p-4">
@@ -155,10 +161,11 @@
       return {
         imageBase: @json(asset('images')),
         agentId: {{ isset($user) && $user ? $user->id : 'null' }},
-        walletBalance: 3250000,
+        walletBalance: {{ isset($walletBalance) && isset($walletBalance['balance']) ? $walletBalance['balance'] : 0 }},
         minWithdrawal: 100000,
         amount: '',
         selectedAccount: '',
+        keterangan: '',
         savedAccounts: @json($rekenings ?? []),
         bankList: ['BCA', 'Mandiri', 'BNI', 'BRI', 'CIMB Niaga', 'Permata', 'Danamon', 'Bank Syariah Indonesia (BSI)', 'BTN', 'Mega'],
         addAccountDialogOpen: false,
@@ -219,7 +226,7 @@
                 agent_id: this.agentId,
                 rekening_id: this.selectedAccount,
                 jumlah: this.numericAmount,
-                keterangan: 'Penarikan saldo'
+                keterangan: this.keterangan || 'Penarikan saldo'
               })
             });
             

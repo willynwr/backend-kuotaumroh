@@ -39,6 +39,9 @@
     <!-- Shared CSS -->
     <link rel="stylesheet" href="{{ asset('shared/styles.css') }}">
 
+    <!-- QR Code Generator Library (local copy) -->
+    <script src="{{ asset('shared/qrcode.min.js') }}"></script>
+
     <!-- ⚠️ PENTING: Load config.js PERTAMA sebelum script lain -->
     <script src="{{ asset('shared/config.js') }}?v={{ time() }}"></script>
 
@@ -201,31 +204,38 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
                                     </svg>
-                                    Scan QR Code
+                                    Scan QR Code QRIS
                                 </h3>
                             </div>
                             <div class="p-6 space-y-4">
-                                <!-- QR Code Placeholder -->
+                                <!-- QR Code Container -->
                                 <div class="flex justify-center">
                                     <div class="bg-white p-4 rounded-lg border-2 border-border">
-                                        <!-- Show real QR code if available -->
-                                        <template x-if="qrCodeUrl">
-                                            <img :src="qrCodeUrl" alt="QR Code"
-                                                class="w-48 h-48 object-contain">
-                                        </template>
-                                        <!-- Show placeholder if QR not loaded yet -->
-                                        <template x-if="!qrCodeUrl">
-                                            <div class="w-48 h-48 bg-muted flex items-center justify-center">
-                                                <svg class="h-32 w-32 text-muted-foreground" fill="none"
-                                                    stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        stroke-width="2"
-                                                        d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                                        <!-- Loading state when QR is not ready -->
+                                        <div x-show="!qrisString" class="w-48 h-48 flex items-center justify-center bg-gray-100 rounded">
+                                            <div class="text-center">
+                                                <svg class="animate-spin h-8 w-8 mx-auto text-primary mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                                 </svg>
+                                                <p class="text-sm text-muted-foreground">Memuat QR Code...</p>
                                             </div>
-                                        </template>
+                                        </div>
+                                        <!-- QR Code will be generated here by qrcodejs -->
+                                        <div x-show="qrisString" id="qrContainer" class="flex items-center justify-center"></div>
                                     </div>
                                 </div>
+                                
+                                <!-- Toggle Static QRIS (untuk bank BCA dll yang gagal) -->
+                                <template x-if="qrisStaticString">
+                                    <div class="flex items-center justify-center gap-2">
+                                        <label class="flex items-center gap-2 text-sm cursor-pointer">
+                                            <input type="checkbox" x-model="useStaticQris" @change="generateQRCode()"
+                                                class="rounded border-gray-300 text-primary focus:ring-primary">
+                                            <span class="text-muted-foreground">Pakai QRIS Statis (BCA/Bank lain gagal)</span>
+                                        </label>
+                                    </div>
+                                </template>
 
                                 <!-- Amount -->
                                 <div class="space-y-2">
@@ -264,6 +274,13 @@
                                         x-text="paymentMethodLabel"></span>
                                 </div>
 
+                                <!-- Payment ID Info -->
+                                <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                    <p class="text-xs text-blue-600 font-medium mb-1">Payment ID</p>
+                                    <p class="text-sm font-mono text-blue-900" x-text="paymentId"></p>
+                                    <p class="text-xs text-blue-600 mt-2">Simpan ID ini untuk verifikasi pembayaran</p>
+                                </div>
+
                                 <!-- Check Payment Button -->
                                 <button @click="handleCheckPayment()"
                                     class="w-full inline-flex items-center justify-center rounded-md border bg-background h-10 px-4 py-2 hover:bg-muted transition-colors">
@@ -278,11 +295,17 @@
                                 <h3 class="text-base font-semibold">Cara Pembayaran</h3>
                             </div>
                             <div class="p-6">
+                                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                                    <p class="text-sm text-yellow-800 font-medium mb-2">⚠️ Catatan Penting:</p>
+                                    <p class="text-sm text-yellow-700">
+                                        Saat ini QR Code belum tersedia. Silakan hubungi customer service untuk menyelesaikan pembayaran dengan Payment ID di atas.
+                                    </p>
+                                </div>
                                 <ol class="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
-                                    <li>Buka aplikasi mobile banking atau e-wallet Anda</li>
-                                    <li>Pilih menu Scan QR / QRIS</li>
-                                    <li>Arahkan kamera ke QR code di atas</li>
-                                    <li>Periksa nominal pembayaran</li>
+                                    <li>Salin Payment ID di atas</li>
+                                    <li>Hubungi Customer Service via WhatsApp</li>
+                                    <li>Berikan Payment ID untuk konfirmasi pembayaran</li>
+                                    <li>Lakukan pembayaran sesuai instruksi CS</li>
                                     <li>Konfirmasi pembayaran</li>
                                 </ol>
                             </div>
@@ -387,6 +410,10 @@
                 paymentId: null,
                 batchId: null,
                 qrCodeUrl: null,
+                qrisString: null,      // QRIS string for dynamic QR
+                qrisStaticString: null, // QRIS static string (untuk bank yg gagal)
+                useStaticQris: false,   // Toggle untuk pakai QRIS static
+                paymentAmount: 0,       // Total pembayaran dari API
 
                 // Toast
                 toastVisible: false,
@@ -399,6 +426,12 @@
 
                 // Lifecycle
                 async init() {
+                    // Watch for QRIS type toggle
+                    this.$watch('useStaticQris', (value) => {
+                        console.log('🔄 Switched to', value ? 'STATIC' : 'DYNAMIC', 'QRIS');
+                        this.generateQRCode();
+                    });
+                    
                     // Load order data from localStorage
                     const savedOrderData = localStorage.getItem('pendingOrder');
                     if (!savedOrderData) {
@@ -417,7 +450,12 @@
                         paymentMethod: parsedData.paymentMethod || 'qris',
                         refCode: parsedData.refCode || null,
                         scheduleDate: parsedData.scheduleDate || null,
+                        // Detect if this is bulk (agent) or individual (public) payment
+                        // Bulk: has refCode (agent_id), Individual: refCode = null or '0'
+                        isBulk: parsedData.isBulk !== undefined ? parsedData.isBulk : (parsedData.refCode && parsedData.refCode !== '0' && parsedData.refCode !== 'guest'),
                     };
+                    
+                    console.log('📦 Order mode:', this.orderData.isBulk ? 'BULK (Agent)' : 'INDIVIDUAL (Public)');
 
                     // Create payment transaction via API
                     await this.createPayment();
@@ -425,12 +463,15 @@
                     // Start countdown timer
                     this.startTimer();
 
-                    // Start periodic payment status check (every 5 seconds)
+                    // Start polling for payment status
                     this.startPaymentPolling();
                 },
 
-                // Computed: Total amount
+                // Computed: Total amount - prioritize API payment_amount
                 get totalAmount() {
+                    if (this.paymentAmount > 0) {
+                        return this.paymentAmount;
+                    }
                     return this.orderData.total + this.orderData.platformFee;
                 },
 
@@ -444,6 +485,87 @@
                 // Computed: Payment method label
                 get paymentMethodLabel() {
                     return this.orderData.paymentMethod === 'qris' ? 'QRIS' : this.orderData.paymentMethod.toUpperCase();
+                },
+
+                // Generate QR Code from QRIS string
+                qrCodeInstance: null,
+                
+                generateQRCode() {
+                    const qrisData = this.useStaticQris ? this.qrisStaticString : this.qrisString;
+                    if (!qrisData) {
+                        console.log('⚠️ No QRIS data available');
+                        return;
+                    }
+                    
+                    const container = document.getElementById('qrContainer');
+                    if (!container) {
+                        console.log('⚠️ QR Container not found');
+                        return;
+                    }
+                    
+                    console.log('🎨 Generating QR Code...', this.useStaticQris ? 'STATIC' : 'DYNAMIC');
+                    
+                    // Clear previous QR code
+                    container.innerHTML = '';
+                    
+                    try {
+                        // qrcodejs library uses constructor
+                        this.qrCodeInstance = new QRCode(container, {
+                            text: qrisData,
+                            width: 192,
+                            height: 192,
+                            colorDark: '#000000',
+                            colorLight: '#ffffff',
+                            correctLevel: QRCode.CorrectLevel.M
+                        });
+                        console.log('✅ QR Code generated successfully');
+                    } catch (error) {
+                        console.error('❌ QR Code generation error:', error);
+                    }
+                },
+
+                // Fetch QRIS data from payment endpoint
+                async fetchQrisData() {
+                    if (!this.paymentId) return;
+                    
+                    try {
+                        console.log('📥 Fetching QRIS data for payment:', this.paymentId);
+                        const response = await getPaymentStatus(this.paymentId);
+                        
+                        // Response is array, get first item
+                        const data = Array.isArray(response) ? response[0] : response;
+                        
+                        console.log('📦 Payment data:', data);
+                        
+                        if (data && data.qris) {
+                            this.qrisString = data.qris;
+                            this.qrisStaticString = data.qris_static || null;
+                            console.log('✅ QRIS data received');
+                            
+                            // Generate QR code
+                            this.$nextTick(() => {
+                                this.generateQRCode();
+                            });
+                        }
+                        
+                        // Update payment amount if available
+                        if (data && data.payment_amount) {
+                            this.paymentAmount = parseInt(data.payment_amount) || 0;
+                            this.orderData.paymentUnique = parseInt(data.payment_unique) || 0;
+                            console.log('💰 Payment amount:', this.paymentAmount);
+                        }
+                        
+                        // Update time remaining
+                        if (data && data.payment_expired) {
+                            const expiredDate = new Date(data.payment_expired);
+                            const now = new Date();
+                            const remainingMs = expiredDate - now;
+                            this.timeRemaining = Math.max(0, Math.floor(remainingMs / 1000));
+                            console.log('⏰ Time remaining:', this.timeRemaining, 'seconds');
+                        }
+                    } catch (error) {
+                        console.error('❌ Error fetching QRIS:', error);
+                    }
                 },
 
                 startTimer() {
@@ -461,83 +583,144 @@
 
                 async createPayment() {
                     try {
-                        console.log('💳 Creating bulk payment transaction...');
+                        let response;
                         
-                        // Prepare bulk payment data
-                        const batchId = 'BATCH_' + Date.now();
-                        const batchName = 'ORDER_' + new Date().toISOString().slice(0,10).replace(/-/g,'');
-                        
-                        // Extract msisdn and package_id arrays from items
-                        const msisdnList = this.orderData.items.map(item => {
-                            // Convert 08xxx to 628xxx
+                        if (this.orderData.isBulk) {
+                            // =============================
+                            // BULK PAYMENT (Agent / Travel)
+                            // =============================
+                            console.log('💳 Creating BULK payment transaction...');
+                            
+                            const batchId = 'BATCH_' + Date.now();
+                            const batchName = 'ORDER_' + new Date().toISOString().slice(0,10).replace(/-/g,'');
+                            
+                            // Extract msisdn and package_id arrays from items
+                            const msisdnList = this.orderData.items.map(item => {
+                                let msisdn = item.msisdn || item.phoneNumber;
+                                if (msisdn.startsWith('08')) {
+                                    msisdn = '62' + msisdn.substring(1);
+                                } else if (msisdn.startsWith('8')) {
+                                    msisdn = '62' + msisdn;
+                                }
+                                return msisdn;
+                            });
+                            
+                            const packageIdList = this.orderData.items.map(item => {
+                                return item.packageId || item.package_id;
+                            });
+
+                            let detail = null;
+                            if (this.orderData.scheduleDate) {
+                                detail = `{date: ${this.orderData.scheduleDate}}`;
+                            }
+
+                            const requestData = {
+                                batch_id: batchId,
+                                batch_name: batchName,
+                                payment_method: 'QRIS',
+                                detail: detail,
+                                ref_code: this.orderData.refCode || '1',
+                                msisdn: msisdnList,          // Array
+                                package_id: packageIdList,   // Array
+                            };
+
+                            console.log('📤 Sending BULK payment request:', requestData);
+                            response = await createBulkPayment(requestData);
+                            
+                        } else {
+                            // =============================
+                            // INDIVIDUAL PAYMENT (Homepage / Public)
+                            // =============================
+                            console.log('💳 Creating INDIVIDUAL payment transaction...');
+                            
+                            // For individual, we process each item separately
+                            // or combine if API supports multiple items
+                            const item = this.orderData.items[0]; // Get first item
+                            
                             let msisdn = item.msisdn || item.phoneNumber;
                             if (msisdn.startsWith('08')) {
                                 msisdn = '62' + msisdn.substring(1);
                             } else if (msisdn.startsWith('8')) {
                                 msisdn = '62' + msisdn;
                             }
-                            return msisdn;
-                        });
-                        
-                        const packageIdList = this.orderData.items.map(item => {
-                            return item.packageId || item.package_id || `R${item.days || 30}-TSEL-${String(item.id || 1).padStart(3, '0')}`;
-                        });
 
-                        // Prepare detail for scheduled activation
-                        let detail = null;
-                        if (this.orderData.scheduleDate) {
-                            detail = `{date: ${this.orderData.scheduleDate}}`;
+                            let detail = null;
+                            if (this.orderData.scheduleDate) {
+                                detail = `{date: ${this.orderData.scheduleDate}}`;
+                            }
+
+                            const requestData = {
+                                payment_method: 'QRIS',
+                                detail: detail,
+                                ref_code: this.orderData.refCode || '0',  // '0' untuk umum
+                                msisdn: msisdn,                            // String (bukan array)
+                                package_id: item.packageId || item.package_id,  // String (bukan array)
+                            };
+
+                            console.log('📤 Sending INDIVIDUAL payment request:', requestData);
+                            response = await createIndividualPayment(requestData);
                         }
+                        
+                        console.log('📥 Payment response:', response);
 
-                        const requestData = {
-                            batch_id: batchId,
-                            batch_name: batchName,
-                            payment_method: 'QRIS',
-                            detail: detail,
-                            ref_code: this.orderData.refCode || 'guest',
-                            msisdn: msisdnList,
-                            package_id: packageIdList,
-                        };
-
-                        console.log('📤 Sending bulk payment request:', requestData);
-
-                        const response = await createBulkPayment(requestData);
-                        console.log('📥 Bulk payment response:', response);
-
-                        if (response.success) {
-                            this.paymentId = response.data.payment_id;
-                            this.batchId = response.data.batch_id;
+                        // Handle both response formats:
+                        // Format 1: { success: true, data: {...} }
+                        // Format 2: Direct data { id: '...', qris: {...}, ... }
+                        const data = response.data || response;
+                        const isSuccess = response.success === true || (data && data.id);
+                        
+                        if (isSuccess && data) {
+                            this.paymentId = data.payment_id || data.id;
+                            this.batchId = data.batch_id || data.location_id;
                             
                             console.log('🔍 Checking QRIS data:', {
-                                has_qris: !!response.data.qris,
-                                qris: response.data.qris,
-                                qr_code_url: response.data.qris?.qr_code_url
+                                has_qris: !!data.qris,
+                                qris: data.qris,
+                                qr_code_url: data.qris?.qr_code_url
                             });
                             
                             // Set QR code URL - cek multiple possible locations
-                            if (response.data.qris && response.data.qris.qr_code_url) {
-                                this.qrCodeUrl = response.data.qris.qr_code_url;
+                            if (data.qris && data.qris.qr_code_url) {
+                                this.qrCodeUrl = data.qris.qr_code_url;
                                 console.log('✅ QR Code URL set:', this.qrCodeUrl);
-                            } else if (response.data.qr_code_url) {
-                                this.qrCodeUrl = response.data.qr_code_url;
+                            } else if (data.qr_code_url) {
+                                this.qrCodeUrl = data.qr_code_url;
                                 console.log('✅ QR Code URL set (fallback):', this.qrCodeUrl);
-                            } else {
-                                console.warn('⚠️ QR Code URL not found in response');
+                            } else if (data.payment_method === 'QRIS') {
+                                // Generate QR placeholder or show alternative payment method
+                                console.log('⚠️ QR Code URL not provided by API, using placeholder');
+                                // Keep qrCodeUrl as null, will show placeholder
                             }
                             
                             // Update time remaining from server
-                            if (response.data.remaining_time) {
-                                this.timeRemaining = response.data.remaining_time;
+                            if (data.remaining_time) {
+                                this.timeRemaining = data.remaining_time;
+                            } else if (data.payment_expired) {
+                                // Calculate remaining time from payment_expired
+                                const expiredDate = new Date(data.payment_expired);
+                                const now = new Date();
+                                const remainingMs = expiredDate - now;
+                                this.timeRemaining = Math.max(0, Math.floor(remainingMs / 1000));
+                                console.log('⏰ Calculated remaining time:', this.timeRemaining, 'seconds');
                             }
 
                             // Update total from server (includes payment_unique)
-                            if (response.data.total_pembayaran) {
-                                this.orderData.total = response.data.sub_total || this.orderData.total;
-                                this.orderData.platformFee = response.data.platform_fee || 0;
-                                this.orderData.paymentUnique = response.data.payment_unique || 0;
+                            if (data.total_pembayaran) {
+                                this.orderData.total = data.sub_total || this.orderData.total;
+                                this.orderData.platformFee = data.platform_fee || 0;
+                                this.orderData.paymentUnique = data.payment_unique || 0;
+                            } else if (data.payment_amount) {
+                                // Use payment_amount from tokodigi API
+                                const paymentAmount = parseInt(data.payment_amount) || 0;
+                                const paymentUnique = parseInt(data.payment_unique) || 0;
+                                this.orderData.paymentUnique = paymentUnique;
+                                console.log('💰 Payment amount:', paymentAmount, 'Unique:', paymentUnique);
                             }
 
                             console.log('✅ Payment created:', this.paymentId);
+                            
+                            // Fetch QRIS data after payment created
+                            await this.fetchQrisData();
                         } else {
                             throw new Error(response.message || 'Gagal membuat transaksi');
                         }
@@ -554,21 +737,30 @@
                     this.paymentCheckInterval = setInterval(async () => {
                         try {
                             const response = await getPaymentStatus(this.paymentId);
+                            
+                            // Response is array, get first item
+                            const rawData = Array.isArray(response) ? response[0] : (response.data || response);
+                            const data = rawData;
 
-                            if (response.success && response.data) {
-                                // Update QR code URL jika belum ada dan ada di response
-                                if (!this.qrCodeUrl && response.data.qris && response.data.qris.qr_code_url) {
-                                    this.qrCodeUrl = response.data.qris.qr_code_url;
-                                    console.log('✅ QR Code URL updated from polling:', this.qrCodeUrl);
+                            if (data && data.id) {
+                                // Update QRIS strings if available
+                                if (data.qris && !this.qrisString) {
+                                    this.qrisString = data.qris;
+                                    this.qrisStaticString = data.qris_static || null;
+                                    console.log('✅ QRIS data updated from polling');
+                                    this.$nextTick(() => this.generateQRCode());
                                 }
                                 
-                                if (response.data.status === 'success') {
+                                const status = data.status || data.payment_status;
+                                console.log('📊 Payment status:', status);
+                                
+                                if (status === 'success' || status === 'PAID') {
                                     this.paymentStatus = 'success';
                                     clearInterval(this.paymentCheckInterval);
                                     clearInterval(this.timerInterval);
                                     localStorage.removeItem('pendingOrder');
                                     this.showToast('Pembayaran Berhasil', 'Pembayaran telah dikonfirmasi');
-                                } else if (response.data.status === 'expired' || response.data.status === 'failed') {
+                                } else if (status === 'expired' || status === 'failed' || status === 'EXPIRED' || status === 'FAILED') {
                                     this.paymentStatus = 'expired';
                                     clearInterval(this.paymentCheckInterval);
                                     clearInterval(this.timerInterval);
@@ -603,9 +795,23 @@
                     // Check payment status via API
                     try {
                         const response = await getPaymentStatus(this.paymentId);
+                        
+                        // Response is array, get first item
+                        const rawData = Array.isArray(response) ? response[0] : (response.data || response);
+                        const data = rawData;
+                        const status = data.status || data.payment_status;
+                        
+                        console.log('🔍 Manual check - Status:', status, 'Data:', data);
 
-                        if (response.success && response.data) {
-                            if (response.data.status === 'success') {
+                        if (data && data.id) {
+                            // Update QRIS if available
+                            if (data.qris && !this.qrisString) {
+                                this.qrisString = data.qris;
+                                this.qrisStaticString = data.qris_static || null;
+                                this.$nextTick(() => this.generateQRCode());
+                            }
+                            
+                            if (status === 'success' || status === 'PAID') {
                                 this.paymentStatus = 'success';
                                 clearInterval(this.timerInterval);
                                 if (this.paymentCheckInterval) {
@@ -616,15 +822,15 @@
                                     'Pembayaran Berhasil',
                                     'Pembayaran Anda telah dikonfirmasi'
                                 );
-                            } else if (response.data.status === 'pending') {
+                            } else if (status === 'pending' || status === 'PENDING' || status === 'UNPAID' || status === 'VERIFY') {
                                 this.showToast(
-                                    'Pembayaran Pending',
-                                    'Pembayaran belum diterima, mohon selesaikan pembayaran'
+                                    'Menunggu Pembayaran',
+                                    'Pembayaran belum diterima. Silakan scan QR code dan selesaikan pembayaran.'
                                 );
                             } else {
                                 this.showToast(
-                                    'Pembayaran Gagal',
-                                    'Status: ' + response.data.status
+                                    'Status Pembayaran',
+                                    'Status: ' + status
                                 );
                             }
                         } else {
