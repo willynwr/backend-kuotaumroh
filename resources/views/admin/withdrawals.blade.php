@@ -61,69 +61,110 @@
       </button>
       <div>
         <h1 class="text-3xl font-bold tracking-tight">Withdrawals</h1>
-        <p class="text-muted-foreground mt-1">Kelola permintaan penarikan dana</p>
+        <p class="text-muted-foreground mt-1">Kelola permintaan penarikan dari agent</p>
       </div>
     </div>
 
-    <div class="rounded-lg border bg-white shadow-sm">
-      <div class="p-6">
-        <div class="flex items-center justify-between mb-6">
-          <h3 class="text-lg font-semibold">Daftar Withdrawal</h3>
-          <select x-model="statusFilter" class="h-10 rounded-md border border-input bg-background px-3 text-sm">
-            <option value="all">Semua Status</option>
-            <option value="pending">Pending</option>
-            <option value="approve">Approved</option>
-            <option value="reject">Rejected</option>
-          </select>
+    <div class="rounded-xl border bg-white shadow-sm">
+      <!-- Tabs Filter -->
+      <div class="border-b px-6 pt-6">
+        <div class="flex gap-2">
+          <button 
+            @click="statusFilter = 'pending'" 
+            :class="statusFilter === 'pending' ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+            class="px-4 py-2 rounded-lg font-medium text-sm transition-colors flex items-center gap-2"
+          >
+            Pending
+            <span class="px-2 py-0.5 rounded-full text-xs font-semibold" :class="statusFilter === 'pending' ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-700'" x-text="withdrawals.filter(w => w.status === 'pending').length"></span>
+          </button>
+          <button 
+            @click="statusFilter = 'approve'" 
+            :class="statusFilter === 'approve' ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+            class="px-4 py-2 rounded-lg font-medium text-sm transition-colors"
+          >
+            Approved
+          </button>
+          <button 
+            @click="statusFilter = 'reject'" 
+            :class="statusFilter === 'reject' ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+            class="px-4 py-2 rounded-lg font-medium text-sm transition-colors"
+          >
+            Rejected
+          </button>
+          <button 
+            @click="statusFilter = 'all'" 
+            :class="statusFilter === 'all' ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+            class="px-4 py-2 rounded-lg font-medium text-sm transition-colors"
+          >
+            Semua
+          </button>
         </div>
+      </div>
 
+      <!-- Table -->
+      <div class="p-6">
         <div class="overflow-x-auto">
           <table class="w-full">
             <thead>
-              <tr class="border-b">
-                <th class="h-12 px-4 text-center align-middle font-medium text-muted-foreground">Status</th>
-                <th class="h-12 px-4 text-center align-middle font-medium text-muted-foreground">Aksi</th>
-                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">User</th>
-                <th class="h-12 px-4 text-right align-middle font-medium text-muted-foreground">Amount</th>
-                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Bank</th>
-                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Keterangan</th>
-                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Tanggal</th>
+              <tr class="border-b border-gray-200">
+                <th class="h-12 px-4 text-left align-middle font-semibold text-gray-700 text-sm">Status</th>
+                <th class="h-12 px-4 text-left align-middle font-semibold text-gray-700 text-sm">Aksi</th>
+                <th class="h-12 px-4 text-left align-middle font-semibold text-gray-700 text-sm">Agent</th>
+                <th class="h-12 px-4 text-left align-middle font-semibold text-gray-700 text-sm">Jumlah</th>
+                <th class="h-12 px-4 text-left align-middle font-semibold text-gray-700 text-sm">Bank</th>
+                <th class="h-12 px-4 text-left align-middle font-semibold text-gray-700 text-sm">Keterangan</th>
+                <th class="h-12 px-4 text-left align-middle font-semibold text-gray-700 text-sm">Tanggal</th>
               </tr>
             </thead>
             <tbody>
               <template x-for="wd in filteredWithdrawals" :key="wd.id">
-                <tr class="border-b transition-colors hover:bg-muted/50">
-                  <td class="p-4 align-middle text-center">
-                    <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium" :class="{
-                      'bg-yellow-100 text-yellow-800': wd.status === 'pending',
-                      'bg-green-100 text-green-800': wd.status === 'approve',
-                      'bg-red-100 text-red-800': wd.status === 'reject'
-                    }" x-text="wd.status === 'approve' ? 'Approved' : (wd.status === 'reject' ? 'Rejected' : 'Pending')"></span>
+                <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                  <td class="p-4 align-middle">
+                    <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold" :class="{
+                      'bg-yellow-50 text-yellow-700 border border-yellow-200': wd.status === 'pending',
+                      'bg-green-50 text-green-700 border border-green-200': wd.status === 'approve',
+                      'bg-red-50 text-red-700 border border-red-200': wd.status === 'reject'
+                    }" x-text="wd.status === 'approve' ? 'approved' : wd.status === 'reject' ? 'rejected' : 'pending'"></span>
                   </td>
-                  <td class="p-4 align-middle text-center">
-                    <div class="flex items-center justify-center gap-2" x-show="wd.status === 'pending'">
-                      <button @click="openApproveDialog(wd)" class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md transition-colors">Approve</button>
-                      <button @click="openRejectDialog(wd)" class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors">Reject</button>
+                  <td class="p-4 align-middle">
+                    <div class="flex items-center gap-2" x-show="wd.status === 'pending'">
+                      <button @click="openApproveDialog(wd)" class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-white bg-green-500 hover:bg-green-600 rounded-lg transition-colors">
+                        Approve
+                      </button>
+                      <button @click="openRejectDialog(wd)" class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors">
+                        Reject
+                      </button>
                     </div>
-                    <span x-show="wd.status !== 'pending'" class="text-sm text-muted-foreground">-</span>
+                    <span x-show="wd.status !== 'pending'" class="text-sm text-gray-400">-</span>
                   </td>
                   <td class="p-4 align-middle">
-                    <div class="font-medium" x-text="wd.user_name"></div>
-                    <div class="text-xs text-muted-foreground" x-text="wd.user_email"></div>
-                  </td>
-                  <td class="p-4 align-middle text-right font-semibold" x-text="formatRupiah(wd.amount)"></td>
-                  <td class="p-4 align-middle">
-                    <div x-text="wd.bank_name"></div>
-                    <div class="text-xs text-muted-foreground" x-text="wd.account_number"></div>
+                    <div class="font-semibold text-gray-900 text-sm" x-text="wd.user_name"></div>
+                    <div class="text-xs text-gray-500" x-text="wd.user_email"></div>
                   </td>
                   <td class="p-4 align-middle">
-                    <span class="text-sm text-muted-foreground" x-text="wd.keterangan || '-'"></span>
+                    <span class="font-bold text-gray-900 text-sm" x-text="formatRupiah(wd.amount)"></span>
                   </td>
-                  <td class="p-4 align-middle" x-text="formatDate(wd.created_at)"></td>
+                  <td class="p-4 align-middle">
+                    <div class="font-medium text-gray-900 text-sm" x-text="wd.bank_name"></div>
+                    <div class="text-xs text-gray-500" x-text="wd.account_number"></div>
+                  </td>
+                  <td class="p-4 align-middle">
+                    <span class="text-sm text-gray-600" x-text="wd.keterangan || '-'"></span>
+                  </td>
+                  <td class="p-4 align-middle">
+                    <span class="text-sm text-gray-600" x-text="formatDate(wd.created_at)"></span>
+                  </td>
                 </tr>
               </template>
               <tr x-show="filteredWithdrawals.length === 0">
-                <td colspan="7" class="p-8 text-center text-muted-foreground">Tidak ada withdrawal</td>
+                <td colspan="7" class="p-12 text-center">
+                  <div class="flex flex-col items-center justify-center">
+                    <svg class="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                    </svg>
+                    <p class="text-gray-500 font-medium">Tidak ada withdrawal</p>
+                  </div>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -268,7 +309,7 @@
   function withdrawalsPage() {
     return {
       withdrawals: @json($withdrawals ?? []),
-      statusFilter: 'all',
+      statusFilter: 'pending',
       approveDialogOpen: false,
       rejectDialogOpen: false,
       selectedWithdrawal: null,
@@ -298,7 +339,7 @@
 
       formatDate(date) {
         return new Date(date).toLocaleDateString('id-ID', {
-          year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+          day: 'numeric', month: 'short', year: 'numeric'
         });
       },
 

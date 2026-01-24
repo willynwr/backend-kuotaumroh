@@ -32,18 +32,42 @@ class AdminController extends Controller
     }
     public function dashboard()
     {
-        // Calculate total revenue and orders from QRIS payments with status 'berhasil'
-        $qrisSuccessPayments = \App\Models\Pembayaran::where('metode_pembayaran', 'qris')
+        // Calculate MTD and YTD revenue from QRIS payments with status 'berhasil'
+        $currentMonth = now()->month;
+        $currentYear = now()->year;
+        
+        // MTD (Month-To-Date) Revenue
+        $revenueMTD = \App\Models\Pembayaran::where('metode_pembayaran', 'qris')
             ->where('status_pembayaran', 'berhasil')
-            ->selectRaw('COUNT(*) as total_orders, SUM(total_pembayaran) as total_revenue')
-            ->first();
+            ->whereMonth('created_at', $currentMonth)
+            ->whereYear('created_at', $currentYear)
+            ->sum('total_pembayaran');
+
+        // YTD (Year-To-Date) Revenue
+        $revenueYTD = \App\Models\Pembayaran::where('metode_pembayaran', 'qris')
+            ->where('status_pembayaran', 'berhasil')
+            ->whereYear('created_at', $currentYear)
+            ->sum('total_pembayaran');
+
+        // Count active agents (status = 'approve')
+        $activeAgents = Agent::where('status', 'approve')->count();
+        
+        // Count active affiliates (is_active = 1)
+        $activeAffiliates = Affiliate::where('is_active', 1)->count();
+        
+        // Count active freelancers (is_active = 1)
+        $activeFreelancers = \App\Models\Freelance::where('is_active', 1)->count();
 
         $stats = [
             'totalAgents' => Agent::count(),
+            'activeAgents' => $activeAgents,
             'totalAffiliates' => Affiliate::count(),
-            'totalOrders' => $qrisSuccessPayments->total_orders ?? 0,
-            'totalRevenue' => $qrisSuccessPayments->total_revenue ?? 0,
-            'pendingWithdrawals' => 0, // TODO: Implement when Withdrawal model is ready
+            'activeAffiliates' => $activeAffiliates,
+            'totalFreelancers' => \App\Models\Freelance::count(),
+            'activeFreelancers' => $activeFreelancers,
+            'revenueMTD' => $revenueMTD ?? 0,
+            'revenueYTD' => $revenueYTD ?? 0,
+            'pendingWithdrawals' => \App\Models\Withdraw::where('status', 'tertunda')->count(),
             'pendingClaims' => 0, // TODO: Implement when RewardClaim model is ready
         ];
 
@@ -289,50 +313,158 @@ class AdminController extends Controller
         }
     }
 
-    public function transactions()
+    public function orders()
     {
-        $transactions = \App\Models\Pembayaran::with(['agent', 'produk', 'pesanan'])
-            ->orderBy('created_at', 'desc')
+        $packages = \App\Models\Produk::orderBy('provider', 'asc')
             ->get()
-            ->map(function($pembayaran) {
+            ->map(function ($p) {
                 return [
-                    'id' => $pembayaran->batch_id,
-                    'user_name' => $pembayaran->agent->nama_pic ?? 'N/A',
-                    'user_email' => $pembayaran->agent->email ?? 'N/A',
-                    'package_name' => $pembayaran->produk->nama_paket ?? 'N/A',
-                    'total' => $pembayaran->total_pembayaran ?? 0,
-                    'status' => $this->mapStatusToPembayaran($pembayaran),
-                    'created_at' => $pembayaran->created_at,
+                    'id' => $p->id,
+                    'name' => $p->nama_paket,
+                    'provider' => $p->provider,
+                    'price' => (int) $p->harga_tp_travel,
+                    'sellPrice' => (int) $p->harga_tp_travel,
+                    'masa_aktif' => $p->masa_aktif,
                 ];
             });
+
+        return view('admin.order', [
+            'packages' => $packages
+        ]);
+    }
+
+    public function transactions()
+    {
+        // Ambil semua pembayaran dengan relasi - pastikan pesanan di-load berdasarkan batch_id
+        $pembayaranData = \App\Models\Pembayaran::with([
+                'agent.affiliate', 
+                'produk', 
+                'pesanan' => function($query) {
+                    // Tidak perlu kondisi tambahan, relasi sudah via batch_id
+                }
+            ])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Group by batch_id untuk menggabungkan batch yang sama
+        $transactions = $pembayaranData->groupBy('batch_id')->map(function($batchGroup) {
+            // Ambil pembayaran pertama sebagai representasi batch
+            $pembayaran = $batchGroup->first();
+            
+            // Gabungkan semua pesanan dari semua pembayaran dengan batch_id yang sama
+            $items = $batchGroup->flatMap(function($p) {
+                return $p->pesanan->map(function($pesanan) use ($p) {
+                    return [
+                        'msisdn' => $pesanan->msisdn,
+                        'provider' => $this->detectProvider($pesanan->msisdn),
+                        'packageName' => $pesanan->nama_paket ?? $p->produk->nama_paket ?? 'N/A',
+                        'status' => $pesanan->status_aktivasi ?? 'proses',
+                        'price' => $pesanan->harga_jual ?? 0,
+                        'margin' => $pesanan->profit ?? 0,
+                    ];
+                });
+            })->values()->toArray();
+
+            // Calculate total amount dan margin untuk batch yang di-merge
+            $totalAmount = $batchGroup->sum('total_pembayaran');
+            $totalMargin = $batchGroup->sum('profit');
+
+            // Calculate batch status
+            $batchStatus = $this->calculateBatchStatus($pembayaran, $items);
+
+            return [
+                'id' => $pembayaran->id,
+                'batchId' => $pembayaran->batch_id,
+                'batchName' => $pembayaran->nama_batch ?? 'Batch ' . $pembayaran->batch_id,
+                'status' => $batchStatus,
+                'items' => $items,
+                'createdAt' => $pembayaran->created_at->toISOString(),
+                'travelName' => $pembayaran->agent->nama_travel ?? $pembayaran->agent->nama_pic ?? 'N/A',
+                'territory' => ($pembayaran->agent->provinsi && $pembayaran->agent->kabupaten_kota) 
+                    ? $pembayaran->agent->kabupaten_kota . ', ' . $pembayaran->agent->provinsi
+                    : ($pembayaran->agent->kabupaten_kota ?? $pembayaran->agent->provinsi ?? null),
+                'agentName' => $pembayaran->agent->nama_pic ?? null,
+                'agentPhone' => $pembayaran->agent->no_hp ?? null,
+                'affiliateName' => $pembayaran->agent->affiliate->nama ?? null,
+                'affiliatePhone' => $pembayaran->agent->affiliate->no_wa ?? null,
+                'totalAmount' => $totalAmount,
+                'marginTotal' => $totalMargin,
+            ];
+        })->values();
         
         return view('admin.transactions', compact('transactions'));
     }
 
-    private function mapStatusToPembayaran($pembayaran)
+    private function detectProvider($phoneNumber)
     {
-        // Jika pembayaran waiting
-        if ($pembayaran->status_pembayaran === 'waiting') {
+        $firstDigits = substr($phoneNumber, 0, 4);
+        
+        // Telkomsel
+        if (in_array(substr($firstDigits, 0, 4), ['0811', '0812', '0813', '0821', '0822', '0823', '0851', '0852', '0853'])) {
+            return 'Telkomsel';
+        }
+        // Indosat
+        if (in_array(substr($firstDigits, 0, 4), ['0814', '0815', '0816', '0855', '0856', '0857', '0858'])) {
+            return 'Indosat';
+        }
+        // XL
+        if (in_array(substr($firstDigits, 0, 4), ['0817', '0818', '0819', '0859', '0877', '0878'])) {
+            return 'XL';
+        }
+        // Tri
+        if (in_array(substr($firstDigits, 0, 4), ['0895', '0896', '0897', '0898', '0899'])) {
+            return 'Tri';
+        }
+        // Smartfren
+        if (in_array(substr($firstDigits, 0, 4), ['0881', '0882', '0883', '0884', '0885', '0886', '0887', '0888', '0889'])) {
+            return 'Smartfren';
+        }
+        
+        return 'Unknown';
+    }
+
+    private function calculateBatchStatus($pembayaran, $items)
+    {
+        // Jika pembayaran WAITING atau belum dibayar
+        if (in_array(strtolower($pembayaran->status_pembayaran), ['waiting', 'menunggu'])) {
             return 'pending';
         }
         
-        // Jika pembayaran sudah paid
-        if ($pembayaran->status_pembayaran === 'paid') {
-            // Cek apakah ada pesanan yang sudah berhasil aktivasi
-            $hasSuccessActivation = $pembayaran->pesanan()->where('status_aktivasi', 'berhasil')->exists();
-            $hasFailedActivation = $pembayaran->pesanan()->where('status_aktivasi', 'gagal')->exists();
-            
-            if ($hasSuccessActivation) {
-                return 'success';
-            } elseif ($hasFailedActivation) {
-                return 'failed';
-            } else {
-                return 'pending'; // masih proses aktivasi
+        // Jika pembayaran SUCCESS/VERIFY/berhasil/paid, cek status items aktivasi
+        if (in_array(strtolower($pembayaran->status_pembayaran), ['success', 'verify', 'paid', 'berhasil', 'selesai'])) {
+            if (empty($items)) {
+                return 'processing';
             }
+
+            $statuses = collect($items)->pluck('status');
+            $totalItems = $statuses->count();
+            
+            // Hitung jumlah setiap status
+            $berhasilCount = $statuses->filter(fn($s) => in_array(strtolower($s), ['berhasil', 'selesai', 'completed', 'success']))->count();
+            $prosesCount = $statuses->filter(fn($s) => in_array(strtolower($s), ['proses', 'processing', 'pending']))->count();
+            $gagalCount = $statuses->filter(fn($s) => in_array(strtolower($s), ['gagal', 'failed']))->count();
+            
+            // Jika semua berhasil
+            if ($berhasilCount === $totalItems) {
+                return 'completed';
+            }
+            
+            // Jika ada yang berhasil (mixed)
+            if ($berhasilCount > 0) {
+                return 'processing';
+            }
+            
+            // Jika semua gagal
+            if ($gagalCount === $totalItems) {
+                return 'failed';
+            }
+            
+            // Jika masih proses semua atau mixed
+            return 'processing';
         }
         
-        // Status pembayaran failed/cancelled/expired
-        if (in_array($pembayaran->status_pembayaran, ['failed', 'cancelled', 'expired'])) {
+        // Jika status pembayaran FAILED/EXPIRED/cancelled
+        if (in_array(strtolower($pembayaran->status_pembayaran), ['failed', 'expired', 'gagal', 'cancelled', 'batal'])) {
             return 'failed';
         }
         
