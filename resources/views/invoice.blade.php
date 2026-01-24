@@ -34,8 +34,10 @@
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
-    <!-- Shared CSS -->
-    <link rel="stylesheet" href="{{ asset('shared/styles.css') }}">
+    <!-- Shared Scripts -->
+    <script src="{{ asset('shared/config.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('shared/utils.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('shared/api.js') }}?v={{ time() }}"></script>
 
     <script>
         tailwind.config = {
@@ -134,7 +136,7 @@
 </head>
 
 <body class="min-h-screen bg-gray-100">
-    <div x-data="invoiceApp()">
+    <div x-data="invoiceApp()" x-init="init()">
 
         <!-- Header (No Print) -->
         <header class="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur no-print">
@@ -166,8 +168,27 @@
         <!-- Main Content -->
         <main class="container mx-auto py-8 px-4">
             <div class="max-w-4xl mx-auto">
+
+                <!-- Loading State -->
+                <div x-show="loading" class="bg-white rounded-xl shadow-lg p-12 text-center">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p class="text-gray-600">Memuat data invoice...</p>
+                </div>
+
+                <!-- Error State -->
+                <div x-show="error && !loading" class="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+                    <svg class="w-12 h-12 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <h3 class="text-lg font-semibold text-red-900 mb-2">Gagal Memuat Invoice</h3>
+                    <p class="text-red-700 mb-4" x-text="error"></p>
+                    <button @click="fetchInvoiceData()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                        Coba Lagi
+                    </button>
+                </div>
+
                 <!-- Invoice Card -->
-                <div class="bg-white rounded-xl shadow-lg print-shadow overflow-hidden">
+                <div x-show="!loading && !error" class="bg-white rounded-xl shadow-lg print-shadow overflow-hidden">
                     
                     <!-- Invoice Header -->
                     <div class="bg-gradient-to-r from-primary to-emerald-600 px-8 py-6 text-white">
@@ -211,8 +232,8 @@
                         </div>
                     </div>
 
-                    <!-- Batch Info -->
-                    <div class="px-8 py-4 bg-blue-50 border-b">
+                    <!-- Batch Info (Only for bulk payments) -->
+                    <div x-show="invoice.batchId" class="px-8 py-4 bg-blue-50 border-b">
                         <div class="flex flex-wrap items-center justify-between gap-4">
                             <div class="flex items-center gap-3">
                                 <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
@@ -492,147 +513,257 @@
     <script>
         function invoiceApp() {
             return {
-                // State untuk show more
+                // State
                 showAllItems: false,
+                loading: true,
+                error: null,
+                paymentId: '{{ $invoiceId ?? "" }}',  // From route parameter
                 
-                // Dummy Invoice Data
+                // Invoice Data
                 invoice: {
-                    date: '24 Januari 2026',
-                    dueDate: '24 Januari 2026, 23:59',
-                    status: 'paid', // 'paid', 'pending', 'expired'
+                    date: '',
+                    dueDate: '',
+                    status: 'pending',
                     paymentMethod: 'QRIS',
-                    paymentId: 'PAY-KU-1706123456789',
-                    paidAt: '24 Januari 2026, 14:35',
-                    
-                    // Batch Info
-                    batchId: 'BATCH-20260124-001',
-                    batchName: 'Rombongan Umroh Januari 2026',
-                    
-                    // Agent Info
+                    paymentId: '',
+                    paidAt: '',
+                    batchId: '',
+                    batchName: '',
                     agent: {
-                        name: 'Travel Berkah Umroh',
-                        pic: 'Budi Santoso',
-                        phone: '+62 821-9876-5432',
-                        email: 'travel.berkah@email.com'
+                        name: '',
+                        pic: '',
+                        phone: '',
+                        email: ''
                     },
-                    
-                    // Affiliate/Freelance yang melakukan pesanan
                     orderedBy: {
-                        name: 'Ahmad Fauzi',
-                        type: 'affiliate', // 'affiliate' atau 'freelance'
-                        phone: '+62 812-3456-7890',
-                        email: 'ahmad.fauzi@email.com'
+                        name: '',
+                        type: '',
+                        phone: '',
+                        email: ''
                     },
-                    
-                    items: [
-                        {
-                            msisdn: '081234567890',
-                            packageName: 'Paket Umroh 15GB',
-                            packageType: 'UMROH',
-                            quota: '15 GB',
-                            validity: '30 Hari',
-                            scheduledAt: '25 Jan 2026, 08:00',
-                            status: 'berhasil',
-                            price: 150000
-                        },
-                        {
-                            msisdn: '081234567891',
-                            packageName: 'Paket Umroh 25GB',
-                            packageType: 'UMROH',
-                            quota: '25 GB',
-                            validity: '30 Hari',
-                            scheduledAt: '25 Jan 2026, 08:00',
-                            status: 'berhasil',
-                            price: 225000
-                        },
-                        {
-                            msisdn: '081234567892',
-                            packageName: 'Paket Umroh 10GB',
-                            packageType: 'UMROH',
-                            quota: '10 GB',
-                            validity: '15 Hari',
-                            scheduledAt: '25 Jan 2026, 08:00',
-                            status: 'berhasil',
-                            price: 100000
-                        },
-                        {
-                            msisdn: '081234567893',
-                            packageName: 'Paket Umroh 20GB',
-                            packageType: 'UMROH',
-                            quota: '20 GB',
-                            validity: '30 Hari',
-                            scheduledAt: '25 Jan 2026, 08:00',
-                            status: 'proses',
-                            price: 185000
-                        },
-                        {
-                            msisdn: '081234567894',
-                            packageName: 'Paket Umroh 15GB',
-                            packageType: 'UMROH',
-                            quota: '15 GB',
-                            validity: '30 Hari',
-                            scheduledAt: '25 Jan 2026, 08:00',
-                            status: 'berhasil',
-                            price: 150000
-                        },
-                        {
-                            msisdn: '081234567895',
-                            packageName: 'Paket Umroh 30GB',
-                            packageType: 'UMROH',
-                            quota: '30 GB',
-                            validity: '45 Hari',
-                            scheduledAt: '25 Jan 2026, 08:00',
-                            status: 'proses',
-                            price: 275000
-                        },
-                        {
-                            msisdn: '081234567896',
-                            packageName: 'Paket Umroh 10GB',
-                            packageType: 'UMROH',
-                            quota: '10 GB',
-                            validity: '15 Hari',
-                            scheduledAt: '25 Jan 2026, 08:00',
-                            status: 'berhasil',
-                            price: 100000
-                        },
-                        {
-                            msisdn: '081234567897',
-                            packageName: 'Paket Umroh 25GB',
-                            packageType: 'UMROH',
-                            quota: '25 GB',
-                            validity: '30 Hari',
-                            scheduledAt: '25 Jan 2026, 08:00',
-                            status: 'gagal',
-                            price: 225000
-                        },
-                        {
-                            msisdn: '081234567898',
-                            packageName: 'Paket Umroh 15GB',
-                            packageType: 'UMROH',
-                            quota: '15 GB',
-                            validity: '30 Hari',
-                            scheduledAt: '25 Jan 2026, 08:00',
-                            status: 'berhasil',
-                            price: 150000
-                        },
-                        {
-                            msisdn: '081234567899',
-                            packageName: 'Paket Umroh 20GB',
-                            packageType: 'UMROH',
-                            quota: '20 GB',
-                            validity: '30 Hari',
-                            scheduledAt: '25 Jan 2026, 08:00',
-                            status: 'proses',
-                            price: 185000
+                    items: [],
+                    subtotal: 0,
+                    platformFee: 0,
+                    discount: 0,
+                    total: 0,
+                    notes: ''
+                },
+
+                // Init
+                async init() {
+                    if (!this.paymentId) {
+                        this.error = 'Payment ID tidak ditemukan';
+                        this.loading = false;
+                        return;
+                    }
+
+                    await this.fetchInvoiceData();
+                },
+
+                // Fetch Invoice Data
+                async fetchInvoiceData() {
+                    try {
+                        this.loading = true;
+                        this.error = null;
+
+                        // Get agent_id from URL or localStorage
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const agentId = urlParams.get('agent_id') || this.getAgentIdFromStorage();
+
+                        console.log('📄 Fetching invoice for payment:', this.paymentId, 'agent:', agentId);
+
+                        const response = await getInvoiceDetail(this.paymentId, agentId);
+
+                        if (!response.success) {
+                            throw new Error(response.message || 'Failed to fetch invoice');
                         }
-                    ],
+
+                        console.log('✅ Invoice data received:', response);
+
+                        // Parse data berdasarkan type (bulk atau individual)
+                        if (response.type === 'bulk') {
+                            this.parseBulkInvoiceData(response.data);
+                        } else {
+                            this.parseIndividualInvoiceData(response.data);
+                        }
+
+                        this.loading = false;
+                    } catch (error) {
+                        console.error('❌ Error fetching invoice:', error);
+                        this.error = error.message || 'Gagal memuat data invoice';
+                        this.loading = false;
+                    }
+                },
+
+                // Parse Bulk Invoice Data
+                parseBulkInvoiceData(data) {
+                    // data is array of items
+                    const items = Array.isArray(data) ? data : [data];
                     
-                    subtotal: 1745000,
-                    platformFee: 10000,
-                    discount: 50000,
-                    total: 1705000,
+                    if (items.length === 0) return;
+
+                    const firstItem = items[0];
                     
-                    notes: 'Terima kasih telah menggunakan layanan Kuotaumroh.id. Paket kuota akan aktif sesuai jadwal aktivasi yang telah ditentukan.'
+                    // Set invoice metadata
+                    this.invoice.paymentId = firstItem.payment_id || firstItem.id || this.paymentId;
+                    this.invoice.batchId = firstItem.batch_id || firstItem.location_id || '';
+                    this.invoice.batchName = firstItem.batch_name || '';
+                    this.invoice.date = firstItem.created_at ? this.formatDate(firstItem.created_at) : '';
+                    this.invoice.status = this.mapStatus(firstItem.status);
+                    this.invoice.paidAt = firstItem.payment_date ? this.formatDate(firstItem.payment_date) : '';
+                    this.invoice.paymentMethod = firstItem.payment_method || 'QRIS';
+
+                    // Parse items
+                    this.invoice.items = items.map(item => ({
+                        msisdn: item.msisdn || '',
+                        packageName: item.package_name || item.name || '',
+                        packageType: item.package_type || 'UMROH',
+                        quota: item.quota || '',
+                        validity: item.days ? `${item.days} Hari` : '',
+                        scheduledAt: item.schedule_date ? this.formatDate(item.schedule_date) : '',
+                        status: item.status || 'pending',
+                        price: parseInt(item.price || item.payment_amount || 0)
+                    }));
+
+                    // Calculate totals
+                    this.invoice.subtotal = this.invoice.items.reduce((sum, item) => sum + item.price, 0);
+                    this.invoice.platformFee = parseInt(firstItem.platform_fee || 0);
+                    this.invoice.total = parseInt(firstItem.total_payment || firstItem.payment_amount || this.invoice.subtotal);
+                    
+                    // Agent info
+                    this.invoice.agent.name = firstItem.agent_name || '';
+                    this.invoice.notes = 'Terima kasih telah menggunakan layanan Kuotaumroh.id';
+                },
+
+                // Parse Individual Invoice Data
+                parseIndividualInvoiceData(data) {
+                    // data is single object or array with one item
+                    const item = Array.isArray(data) ? data[0] : data;
+                    
+                    if (!item) {
+                        this.error = 'Data invoice tidak ditemukan';
+                        return;
+                    }
+
+                    console.log('📝 Parsing individual invoice:', item);
+
+                    // Set invoice metadata
+                    this.invoice.paymentId = item.payment_id || item.id || this.paymentId;
+                    this.invoice.date = item.created_at ? this.formatDate(item.created_at) : new Date().toISOString();
+                    this.invoice.status = this.mapStatus(item.status);
+                    this.invoice.paidAt = item.payment_date ? this.formatDate(item.payment_date) : '';
+                    this.invoice.paymentMethod = item.payment_method || 'QRIS';
+                    
+                    // Ordered by info (untuk individual biasanya nama di item atau dari localStorage)
+                    this.invoice.orderedBy.name = item.customer_name || item.name || 'Customer';
+                    this.invoice.orderedBy.type = 'Individual';
+                    this.invoice.orderedBy.phone = item.msisdn || '';
+
+                    // Single item
+                    this.invoice.items = [{
+                        msisdn: item.msisdn || '',
+                        packageName: item.package_name || item.name || '',
+                        packageType: item.package_type || 'UMROH',
+                        quota: item.quota || '',
+                        validity: item.days ? `${item.days} Hari` : '',
+                        scheduledAt: item.schedule_date ? this.formatDate(item.schedule_date) : '',
+                        status: this.mapStatus(item.status),
+                        price: parseInt(item.price || item.payment_amount || 0)
+                    }];
+
+                    // Totals
+                    this.invoice.total = parseInt(item.payment_amount || item.total_payment || 0);
+                    this.invoice.subtotal = this.invoice.total;
+                    this.invoice.platformFee = 0;
+                    this.invoice.notes = 'Terima kasih telah menggunakan layanan Kuotaumroh.id';
+                    
+                    console.log('✅ Invoice parsed:', this.invoice);
+                },
+
+                // Get Agent ID from Storage
+                getAgentIdFromStorage() {
+                    try {
+                        // Check URL params first
+                        const urlParams = new URLSearchParams(window.location.search);
+                        if (urlParams.has('agent_id')) {
+                            return urlParams.get('agent_id');
+                        }
+                        
+                        // Then check localStorage
+                        const orderData = localStorage.getItem('pendingOrder');
+                        if (orderData) {
+                            const parsed = JSON.parse(orderData);
+                            return parsed.refCode || parsed.linkReferal || null;
+                        }
+                        
+                        // Check if logged in user
+                        const user = JSON.parse(localStorage.getItem('user') || '{}');
+                        if (user && user.agent_id) {
+                            return user.agent_id;
+                        }
+                    } catch (e) {
+                        console.error('Error parsing storage data:', e);
+                    }
+                    return null;
+                },
+
+                // Map Status
+                mapStatus(status) {
+                    const statusMap = {
+                        'PAID': 'paid',
+                        'UNPAID': 'pending',
+                        'PENDING': 'pending',
+                        'VERIFY': 'pending',
+                        'EXPIRED': 'expired',
+                        'FAILED': 'expired',
+                        'success': 'paid',
+                        'pending': 'pending',
+                        'expired': 'expired'
+                    };
+                    return statusMap[status] || 'pending';
+                },
+
+                // Format Date
+                formatDate(dateString) {
+                    if (!dateString) return '';
+                    const date = new Date(dateString);
+                    return new Intl.DateTimeFormat('id-ID', {
+                        day: '2-digit',
+                        month: 'long',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }).format(date);
+                },
+
+                // Get Agent ID from Storage
+                getAgentIdFromStorage() {
+                    try {
+                        const orderData = localStorage.getItem('pendingOrder');
+                        if (orderData) {
+                            const parsed = JSON.parse(orderData);
+                            return parsed.refCode || null;
+                        }
+                    } catch (e) {
+                        console.error('Error parsing order data:', e);
+                    }
+                    return null;
+                },
+
+                // Map Status from API to UI
+                mapStatus(status) {
+                    const statusMap = {
+                        'PAID': 'paid',
+                        'UNPAID': 'pending',
+                        'PENDING': 'pending',
+                        'VERIFY': 'pending',
+                        'EXPIRED': 'expired',
+                        'FAILED': 'expired',
+                        'success': 'paid',
+                        'pending': 'pending',
+                        'expired': 'expired'
+                    };
+                    return statusMap[status] || 'pending';
                 },
 
                 // Format Rupiah
@@ -647,22 +778,28 @@
 
                 // Get Status Badge Class
                 getStatusClass(status) {
-                    switch(status) {
-                        case 'berhasil': return 'bg-green-100 text-green-700';
-                        case 'proses': return 'bg-yellow-100 text-yellow-700';
-                        case 'gagal': return 'bg-red-100 text-red-700';
-                        default: return 'bg-gray-100 text-gray-700';
+                    const lowerStatus = (status || '').toLowerCase();
+                    if (lowerStatus.includes('berhasil') || lowerStatus.includes('success') || lowerStatus.includes('paid')) {
+                        return 'bg-green-100 text-green-700';
+                    } else if (lowerStatus.includes('proses') || lowerStatus.includes('pending') || lowerStatus.includes('verify')) {
+                        return 'bg-yellow-100 text-yellow-700';
+                    } else if (lowerStatus.includes('gagal') || lowerStatus.includes('failed') || lowerStatus.includes('expired')) {
+                        return 'bg-red-100 text-red-700';
                     }
+                    return 'bg-gray-100 text-gray-700';
                 },
                 
                 // Get Status Label
                 getStatusLabel(status) {
-                    switch(status) {
-                        case 'berhasil': return 'Berhasil';
-                        case 'proses': return 'Proses';
-                        case 'gagal': return 'Gagal';
-                        default: return status;
+                    const lowerStatus = (status || '').toLowerCase();
+                    if (lowerStatus.includes('berhasil') || lowerStatus.includes('success') || lowerStatus.includes('paid')) {
+                        return 'Berhasil';
+                    } else if (lowerStatus.includes('proses') || lowerStatus.includes('pending') || lowerStatus.includes('verify')) {
+                        return 'Proses';
+                    } else if (lowerStatus.includes('gagal') || lowerStatus.includes('failed') || lowerStatus.includes('expired')) {
+                        return 'Gagal';
                     }
+                    return status || 'Unknown';
                 },
 
                 // Print Invoice

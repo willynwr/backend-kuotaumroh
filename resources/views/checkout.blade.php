@@ -314,11 +314,30 @@
                                 </div>
                             </div>
 
-                            <!-- Check Payment Button -->
-                            <button @click="handleCheckPayment()"
-                                class="w-full inline-flex items-center justify-center rounded-md border bg-background h-10 px-4 py-2 hover:bg-muted transition-colors">
-                                Cek Status Pembayaran
-                            </button>
+                            <!-- Action Buttons -->
+                            <div class="space-y-2">
+                                <!-- Check Payment Button -->
+                                <button @click="handleCheckPayment()"
+                                    class="w-full inline-flex items-center justify-center gap-2 rounded-md border bg-background h-10 px-4 py-2 hover:bg-muted transition-colors">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    Cek Status Pembayaran
+                                </button>
+
+                                <!-- View Invoice Button -->
+                                <button @click="handleViewInvoice()"
+                                    class="w-full inline-flex items-center justify-center gap-2 rounded-md bg-primary text-primary-foreground h-10 px-4 py-2 hover:bg-primary/90 transition-colors">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    Lihat Invoice
+                                </button>
+                            </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Order Details -->
                     <div class="lg:col-span-2">
                         <div class="rounded-lg border bg-white shadow-sm">
@@ -871,6 +890,17 @@
                         console.error('Failed to check payment:', error);
                         this.showToast('Error', 'Gagal memeriksa status pembayaran');
                     }
+                },
+
+                handleViewInvoice() {
+                    if (!this.paymentId) {
+                        this.showToast('Error', 'Payment ID tidak ditemukan');
+                        return;
+                    }
+
+                    // Buka invoice di tab baru dengan payment ID
+                    const invoiceUrl = `/invoice/${this.paymentId}`;
+                    window.open(invoiceUrl, '_blank');
                 },
 
                 showToast(title, message) {
