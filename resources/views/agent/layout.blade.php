@@ -29,6 +29,9 @@
     <!-- Config MUST be loaded first -->
     <script src="{{ asset('shared/config.js') }}"></script>
     <script src="{{ asset('shared/utils.js') }}"></script>
+    <script src="{{ asset('shared/api.js') }}"></script>
+    <!-- QR Code Generator Library -->
+    <script src="{{ asset('shared/qrcode.min.js') }}"></script>
 
     <!-- Tailwind Config (Matching Affiliate Theme) -->
     <script>
