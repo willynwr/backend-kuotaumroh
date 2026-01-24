@@ -9,7 +9,7 @@
 
 // Import konfigurasi dari config.js
 // Pastikan config.js sudah di-load sebelum file ini
-const API_BASE = typeof API_URL !== 'undefined' ? API_URL : 'https://kuotaumroh.id/api';
+const API_BASE = typeof API_URL !== 'undefined' ? API_URL : '/api';
 
 // Mock mode for development (set to false when API is ready)
 // Jangan deklarasi ulang jika sudah ada di config.js
@@ -162,7 +162,7 @@ async function logout() {
 async function fetchPackages(provider = null) {
   try {
     // Fetch from real API
-    const response = await fetch('https://kuotaumroh.id/api/umroh/package?ref_code=bulk_umroh');
+    const response = await fetch(`${API_BASE}/proxy/umroh/package?ref_code=bulk_umroh`);
     if (!response.ok) {
       throw new Error('Failed to fetch packages');
     }
@@ -473,7 +473,7 @@ async function submitOrderBatch(backendPayload) {
  */
 async function getUmrohPackages(refCode = 'bulk_umroh') {
   try {
-    const response = await fetch(`${API_BASE}/umroh/package?ref_code=${refCode}`);
+    const response = await fetch(`${API_BASE}/proxy/umroh/package?ref_code=${refCode}`);
     return await response.json();
   } catch (error) {
     console.error('Error fetching umroh packages:', error);
@@ -500,7 +500,7 @@ async function getUmrohPackages(refCode = 'bulk_umroh') {
  */
 async function createBulkPayment(orderData) {
   try {
-    const response = await fetch(`${API_BASE}/umroh/bulkpayment`, {
+    const response = await fetch(`${API_BASE}/proxy/umroh/bulkpayment`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -524,7 +524,7 @@ async function createBulkPayment(orderData) {
  */
 async function getBulkPaymentHistory(agentId) {
   try {
-    const response = await fetch(`${API_BASE}/umroh/bulkpayment?agent_id=${agentId}`);
+    const response = await fetch(`${API_BASE}/proxy/umroh/bulkpayment?agent_id=${agentId}`);
     return await response.json();
   } catch (error) {
     console.error('Error fetching payment history:', error);
@@ -542,7 +542,7 @@ async function getBulkPaymentHistory(agentId) {
  */
 async function getBulkPaymentDetail(paymentId, agentId) {
   try {
-    const response = await fetch(`${API_BASE}/umroh/bulkpayment/detail?id=${paymentId}&agent_id=${agentId}`);
+    const response = await fetch(`${API_BASE}/proxy/umroh/bulkpayment/detail?id=${paymentId}&agent_id=${agentId}`);
     return await response.json();
   } catch (error) {
     console.error('Error fetching payment detail:', error);
@@ -555,14 +555,51 @@ async function getBulkPaymentDetail(paymentId, agentId) {
  * @param {number} paymentId - Payment ID
  * @returns {Promise<Object>} Payment status with QRIS
  * 
- * Endpoint: GET /api/umroh/payment/status?id=123
+ * Endpoint: GET /api/umroh/payment?id=123
  */
 async function getPaymentStatus(paymentId) {
   try {
-    const response = await fetch(`${API_BASE}/umroh/payment/status?id=${paymentId}`);
+    const response = await fetch(`${API_BASE}/proxy/umroh/payment?id=${paymentId}`);
     return await response.json();
   } catch (error) {
     console.error('Error fetching payment status:', error);
+    throw error;
+  }
+}
+
+/**
+ * Create INDIVIDUAL payment (untuk homepage / public user)
+ * @param {Object} orderData - Order data
+ * @returns {Promise<Object>} Payment response with QR code
+ * 
+ * Endpoint: POST /api/umroh/payment
+ * Request body format:
+ * {
+ *   payment_method: "QRIS",
+ *   detail: "{date: 2026-01-16T13:00}" | null,
+ *   ref_code: "0" (untuk umum) atau agent_id (untuk referral),
+ *   package_id: "R1-TSEL-012" (STRING, bukan array),
+ *   msisdn: "6281234567890" (STRING, bukan array)
+ * }
+ * 
+ * Perbedaan dengan bulkpayment:
+ * - TANPA batch_id, batch_name
+ * - package_id dan msisdn bertipe STRING (bukan array)
+ * - location_id akan NULL di response
+ */
+async function createIndividualPayment(orderData) {
+  try {
+    const response = await fetch(`${API_BASE}/proxy/umroh/payment`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify(orderData),
+    });
+    return await response.json();
+  } catch (error) {
+    console.error('Error creating individual payment:', error);
     throw error;
   }
 }
@@ -576,7 +613,7 @@ async function getPaymentStatus(paymentId) {
  */
 async function verifyPayment(paymentId) {
   try {
-    const response = await fetch(`${API_BASE}/umroh/payment/verify`, {
+    const response = await fetch(`${API_BASE}/proxy/umroh/payment/verify`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
