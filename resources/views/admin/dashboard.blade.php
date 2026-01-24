@@ -20,7 +20,7 @@
           <!-- Header -->
           <div class="relative z-10 flex flex-row items-center justify-between p-6 pb-4">
             <h3 class="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              Total Revenue
+              Revenue Performance
             </h3>
             <div class="rounded-lg p-2 bg-primary/10 text-primary">
               <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -31,13 +31,16 @@
 
           <!-- Content -->
           <div class="relative z-10 p-6 pt-0">
-            <div class="text-4xl font-extrabold text-primary tracking-tight" x-text="formatRupiah(stats.totalRevenue)"></div>
+            <div class="mb-2">
+              <p class="text-xs font-bold uppercase text-slate-400 mb-1" x-text="`Revenue ${getCurrentMonth()} ${getCurrentYear()}`"></p>
+              <div class="text-3xl font-extrabold text-primary tracking-tight" x-text="formatRupiah(stats.revenueMTD)"></div>
+            </div>
 
             <!-- Summary Bar -->
             <div class="mt-6 flex items-center justify-between border-t border-slate-100 pt-4">
               <div>
-                <p class="text-xs font-bold uppercase text-slate-400">Total Orders</p>
-                <p class="text-xl font-extrabold text-primary" x-text="stats.totalOrders.toLocaleString('id-ID')"></p>
+                <p class="text-xs font-bold uppercase text-slate-400" x-text="`Revenue Sepanjang ${getCurrentYear()}`"></p>
+                <p class="text-xl font-extrabold text-primary" x-text="formatRupiah(stats.revenueYTD)"></p>
               </div>
               <!-- Mini Chart -->
               <div class="flex items-end gap-1 opacity-70">
@@ -57,40 +60,70 @@
         <div class="rounded-2xl border-slate-200 bg-white shadow-sm h-full">
           <!-- Header -->
           <div class="flex flex-row items-center justify-between p-6 pb-4">
-            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Total Pengguna
             </h3>
           </div>
 
           <!-- Content -->
           <div class="p-6 pt-0">
-            <div class="flex items-center gap-6">
-              <div class="text-center">
-                <div class="text-3xl font-bold text-slate-900" x-text="stats.totalAgents"></div>
-                <p class="text-xs text-slate-500 mt-1">Agen</p>
+            <!-- Three Column Grid -->
+            <div class="grid grid-cols-3 gap-0 border-b border-slate-100 pb-6 mb-6 relative">
+              <!-- Dividers -->
+              <div class="absolute top-0 bottom-6 left-1/3 w-px bg-slate-200"></div>
+              <div class="absolute top-0 bottom-6 right-1/3 w-px bg-slate-200"></div>
+              
+              <!-- Agen Column -->
+              <div class="px-2 text-center md:text-left md:pl-4">
+                <div class="text-3xl font-bold text-slate-900 tracking-tight mb-1" x-text="stats.totalAgents"></div>
+                <div class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Agen</div>
+                <div class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                  <span x-text="stats.activeAgents"></span> Active
+                </div>
               </div>
-              <div class="h-10 w-px bg-slate-200"></div>
-              <div class="text-center">
-                <div class="text-3xl font-bold text-slate-900" x-text="stats.totalAffiliates"></div>
-                <p class="text-xs text-slate-500 mt-1">Freelance</p>
+
+              <!-- Affiliate Column -->
+              <div class="px-2 text-center md:text-left md:pl-8">
+                <div class="text-3xl font-bold text-slate-900 tracking-tight mb-1" x-text="stats.totalAffiliates"></div>
+                <div class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Affiliate</div>
+                <div class="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-600/20">
+                  <span class="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                  <span x-text="stats.activeAffiliates"></span> Active
+                </div>
+              </div>
+
+              <!-- Freelance Column -->
+              <div class="px-2 text-center md:text-left md:pl-8">
+                <div class="text-3xl font-bold text-slate-900 tracking-tight mb-1" x-text="stats.totalFreelancers"></div>
+                <div class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Freelance</div>
+                <div class="inline-flex items-center gap-1.5 rounded-full bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-700 ring-1 ring-inset ring-purple-600/20">
+                  <span class="w-1.5 h-1.5 rounded-full bg-purple-600"></span>
+                  <span x-text="stats.activeFreelancers"></span> Active
+                </div>
               </div>
             </div>
 
-            <div class="mt-4 flex gap-4 text-sm text-slate-500">
-              <div class="flex items-center gap-2">
-                <span class="h-2 w-2 rounded-full bg-amber-500"></span>
-                <span>Pending WD: <strong class="text-slate-900" x-text="stats.pendingWithdrawals"></strong></span>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="h-2 w-2 rounded-full bg-purple-500"></span>
-                <span>Pending Claims: <strong class="text-slate-900" x-text="stats.pendingClaims"></strong></span>
-              </div>
+            <!-- Pending Requests -->
+            <div class="space-y-3 mt-4">
+              <a href="{{ route('admin.withdrawals') }}" class="flex items-center gap-3 group text-slate-700 hover:text-red-600 transition-colors">
+                <div class="h-2 w-2 rounded-full bg-red-500"></div>
+                <div class="flex items-baseline gap-2">
+                  <span class="text-xl font-bold font-mono" x-text="stats.pendingWithdrawals"></span>
+                  <span class="text-sm font-medium">Request penarikan dana tertunda</span>
+                </div>
+              </a>
+
+              <a href="{{ route('admin.reward-claims') }}" class="flex items-center gap-3 group text-slate-700 hover:text-red-600 transition-colors">
+                <div class="h-2 w-2 rounded-full bg-red-500"></div>
+                <div class="flex items-baseline gap-2">
+                  <span class="text-xl font-bold font-mono" x-text="stats.pendingClaims"></span>
+                  <span class="text-sm font-medium">Request klaim hadiah tertunda</span>
+                </div>
+              </a>
             </div>
 
-            <!-- Action Button -->
-            <a href="{{ route('admin.users') }}" class="mt-6 inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 w-full h-11 text-base font-medium transition-colors">
-              Kelola Pengguna
-            </a>
+            <!-- Action Button removed -->
           </div>
         </div>
       </div>
@@ -143,13 +176,26 @@
     return {
       stats: {
         totalAgents: {{ $stats['totalAgents'] ?? 0 }},
+        activeAgents: {{ $stats['activeAgents'] ?? 0 }},
         totalAffiliates: {{ $stats['totalAffiliates'] ?? 0 }},
-        totalOrders: {{ $stats['totalOrders'] ?? 0 }},
-        totalRevenue: {{ $stats['totalRevenue'] ?? 0 }},
+        activeAffiliates: {{ $stats['activeAffiliates'] ?? 0 }},
+        totalFreelancers: {{ $stats['totalFreelancers'] ?? 0 }},
+        activeFreelancers: {{ $stats['activeFreelancers'] ?? 0 }},
+        revenueMTD: {{ $stats['revenueMTD'] ?? 0 }},
+        revenueYTD: {{ $stats['revenueYTD'] ?? 0 }},
         pendingWithdrawals: {{ $stats['pendingWithdrawals'] ?? 0 }},
         pendingClaims: {{ $stats['pendingClaims'] ?? 0 }}
       },
       menuItems: [],
+
+      getCurrentMonth() {
+        const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+        return months[new Date().getMonth()];
+      },
+
+      getCurrentYear() {
+        return new Date().getFullYear();
+      },
 
       formatRupiah(amount) {
         return `Rp ${amount.toLocaleString('id-ID')}`;
@@ -160,7 +206,7 @@
         this.menuItems = [
           {
             id: 'users',
-            title: 'Users',
+            title: 'Kelola Pengguna',
             href: '{{ route("admin.users") }}',
             variant: 'primary',
             badge: 0,
@@ -168,15 +214,23 @@
           },
           {
             id: 'transactions',
-            title: 'Transaksi',
+            title: 'Cek Transaksi',
             href: '{{ route("admin.transactions") }}',
             variant: 'default',
             badge: 0,
             icon: 'transaction'
           },
           {
+            id: 'orders',
+            title: 'Pesanan Baru',
+            href: '{{ route("admin.orders") }}',
+            variant: 'default',
+            badge: 0,
+            icon: 'order'
+          },
+          {
             id: 'analytics',
-            title: 'Analytics',
+            title: 'Analitik Operasional',
             href: '{{ route("admin.analytics") }}',
             variant: 'default',
             badge: 0,
@@ -184,7 +238,7 @@
           },
           {
             id: 'withdrawals',
-            title: 'Withdrawals',
+            title: 'Penarikan Dana',
             href: '{{ route("admin.withdrawals") }}',
             variant: 'default',
             badge: this.stats.pendingWithdrawals,
@@ -192,7 +246,7 @@
           },
           {
             id: 'claims',
-            title: 'Reward Claims',
+            title: 'Klaim Hadiah',
             href: '{{ route("admin.reward-claims") }}',
             variant: 'default',
             badge: this.stats.pendingClaims,
@@ -200,7 +254,7 @@
           },
           {
             id: 'rewards',
-            title: 'Rewards',
+            title: 'Daftar Hadiah',
             href: '{{ route("admin.rewards") }}',
             variant: 'default',
             badge: 0,
@@ -208,11 +262,11 @@
           },
           {
             id: 'packages',
-            title: 'Paket',
+            title: 'Kelola Paket',
             href: '{{ route("admin.packages") }}',
             variant: 'default',
             badge: 0,
-            icon: 'package'
+            icon: 'catalog'
           }
         ];
       }

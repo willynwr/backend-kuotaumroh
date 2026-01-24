@@ -601,7 +601,7 @@ class DashboardController extends Controller
             // Ambil history profit per bulan dari pesanan
             $monthlyHistory = \App\Models\Pesanan::where('agent_id', $user->id)
                 ->whereHas('pembayaran', function($query) {
-                    $query->where('status_pembayaran', 'selesai');
+                    $query->whereIn('status_pembayaran', ['selesai', 'berhasil']);
                 })
                 ->selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month, SUM(profit) as total_profit, COUNT(*) as total_transactions')
                 ->groupBy('month')
@@ -614,7 +614,7 @@ class DashboardController extends Controller
             foreach ($monthlyHistory as $monthData) {
                 $details = \App\Models\Pesanan::where('agent_id', $user->id)
                     ->whereHas('pembayaran', function($query) {
-                        $query->where('status_pembayaran', 'selesai');
+                        $query->whereIn('status_pembayaran', ['selesai', 'berhasil']);
                     })
                     ->with('produk:id,nama_paket')
                     ->whereRaw('DATE_FORMAT(created_at, "%Y-%m") = ?', [$monthData->month])
@@ -642,7 +642,7 @@ class DashboardController extends Controller
             // Ambil history profit per tahun dari pesanan
             $profitData['yearly_history'] = \App\Models\Pesanan::where('agent_id', $user->id)
                 ->whereHas('pembayaran', function($query) {
-                    $query->where('status_pembayaran', 'selesai');
+                    $query->whereIn('status_pembayaran', ['selesai', 'berhasil']);
                 })
                 ->selectRaw('YEAR(created_at) as year, SUM(profit) as total_profit, COUNT(*) as total_transactions')
                 ->groupBy('year')
@@ -675,7 +675,7 @@ class DashboardController extends Controller
         if ($user instanceof \App\Models\Agent) {
             $details = \App\Models\Pesanan::where('agent_id', $user->id)
                 ->whereHas('pembayaran', function($query) {
-                    $query->where('status_pembayaran', 'selesai');
+                    $query->whereIn('status_pembayaran', ['selesai', 'berhasil']);
                 })
                 ->with('produk:id,nama_paket')
                 ->whereRaw('DATE_FORMAT(created_at, "%Y-%m") = ?', [$month])

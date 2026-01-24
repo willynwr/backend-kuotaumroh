@@ -14,146 +14,78 @@ class SamplePesananSeeder extends Seeder
      */
     public function run(): void
     {
-        $agentId = 1;
+        $agentId = 3; // Fixed agent_id
+        $produkId = 1; // Fixed produk_id
         
-        // Hapus data lama untuk agent ini
-        \App\Models\Pesanan::where('agent_id', $agentId)->delete();
-        \App\Models\Pembayaran::where('agent_id', $agentId)->delete();
-        
-        $this->command->info('Data lama agent ' . $agentId . ' telah dihapus.');
-        
-        // Ambil produk untuk referensi data
-        $produk = \App\Models\Produk::first();
+        // Ambil data produk dari database
+        $produk = \App\Models\Produk::find($produkId);
         
         if (!$produk) {
-            $this->command->error('Tidak ada produk di database! Jalankan seeder produk terlebih dahulu.');
+            $this->command->error('Produk dengan ID ' . $produkId . ' tidak ditemukan!');
             return;
         }
         
-        // Buat 5 transaksi berhasil bulan ini
+        // Hapus data lama
+        \App\Models\Pesanan::where('agent_id', $agentId)->delete();
+        \App\Models\Pembayaran::where('agent_id', $agentId)->delete();
+        
+        $this->command->info('Data lama untuk agent ' . $agentId . ' telah dihapus.');
+        
+        // Buat 5 data pembayaran dan pesanan
         for ($i = 1; $i <= 5; $i++) {
             $batchId = 'BATCH' . now()->format('YmdHis') . $i;
             
-            // Hitung total untuk 3 pesanan
-            $jumlahPesanan = 3;
-            $hargaPerPesanan = $produk->harga_b2c_star ?? 200000;
-            $profitPerPesanan = 50000; // Dummy profit
-            
-            $subTotal = $hargaPerPesanan * $jumlahPesanan;
-            $biayaPlatform = $subTotal * 0.01; // 1% biaya platform
-            $totalPembayaran = $subTotal + $biayaPlatform;
-            $totalProfit = $profitPerPesanan * $jumlahPesanan;
+            $hargaJual = 200000;
+            $profit = 50000;
+            $biayaPlatform = $hargaJual * 0.01; // 1% biaya platform
+            $totalPembayaran = $hargaJual + $biayaPlatform;
             
             // Buat pembayaran
             $pembayaran = Pembayaran::create([
                 'batch_id' => $batchId,
                 'agent_id' => $agentId,
-                'produk_id' => $produk->id,
-                'nama_batch' => 'Test Batch ' . $i,
-                'sub_total' => $subTotal,
+                'produk_id' => $produkId,
+                'nama_batch' => 'Sample Batch ' . $i,
+                'sub_total' => $hargaJual,
                 'biaya_platform' => $biayaPlatform,
                 'total_pembayaran' => $totalPembayaran,
-                'profit' => $totalProfit,
+                'profit' => $profit,
                 'metode_pembayaran' => 'QRIS',
                 'status_pembayaran' => 'berhasil',
-                'created_at' => now()->subDays(rand(1, 20)),
+                'created_at' => now()->subDays(rand(1, 15)),
             ]);
             
-            // Buat 3 pesanan per batch
-            for ($j = 1; $j <= 3; $j++) {
-                Pesanan::create([
-                    'batch_id' => $batchId,
-                    'agent_id' => $agentId,
-                    'produk_id' => $produk->id,
-                    'nama_batch' => 'Test Batch ' . $i,
-                    'msisdn' => '08123456' . str_pad($i . $j, 3, '0', STR_PAD_LEFT),
-                    'nama_paket' => $produk->nama_paket ?? 'Paket Umroh Premium',
-                    'tipe_paket' => $produk->kategori ?? 'umroh',
-                    'masa_aktif' => $produk->masa_aktif ?? 30,
-                    'total_kuota' => $produk->total_kuota ?? 10000000000,
-                    'kuota_utama' => $produk->kuota_reguler ?? 8000000000,
-                    'kuota_bonus' => $produk->kuota_bonus ?? 2000000000,
-                    'telp' => $produk->unlimited_call ?? true,
-                    'sms' => $produk->unlimited_sms ?? true,
-                    'harga_modal' => $produk->harga_dasar ?? 150000,
-                    'harga_jual' => $hargaPerPesanan,
-                    'profit' => $profitPerPesanan, // Dummy profit untuk testing
-                    'jadwal_aktivasi' => now()->addDays(5),
-                    'status_aktivasi' => 'berhasil',
-                    'created_at' => $pembayaran->created_at,
-                ]);
-            }
-        }
-        
-        // Buat 2 transaksi dengan status proses (belum berhasil pembayaran)
-        for ($i = 6; $i <= 7; $i++) {
-            $batchId = 'BATCH' . now()->format('YmdHis') . $i;
-            
-            $hargaPerPesanan = $produk->harga_b2c_star ?? 130000;
-            $profitPerPesanan = 30000; // Dummy profit
-            
-            $subTotal = $hargaPerPesanan;
-            $biayaPlatform = $subTotal * 0.01;
-            $totalPembayaran = $subTotal + $biayaPlatform;
-            
-            Pembayaran::create([
-                'batch_id' => $batchId,
-                'agent_id' => $agentId,
-                'produk_id' => $produk->id,
-                'nama_batch' => 'Test Batch Proses ' . $i,
-                'sub_total' => $subTotal,
-                'biaya_platform' => $biayaPlatform,
-                'total_pembayaran' => $totalPembayaran,
-                'profit' => $profitPerPesanan,
-                'metode_pembayaran' => 'QRIS',
-                'status_pembayaran' => 'proses',
-                'created_at' => now()->subDays(1),
-            ]);
-            
+            // Buat 1 pesanan per pembayaran dengan data dari produk
             Pesanan::create([
                 'batch_id' => $batchId,
                 'agent_id' => $agentId,
-                'produk_id' => $produk->id,
-                'nama_batch' => 'Test Batch Proses ' . $i,
+                'produk_id' => $produkId,
+                'nama_batch' => 'Sample Batch ' . $i,
                 'msisdn' => '08123456' . str_pad($i, 3, '0', STR_PAD_LEFT),
-                'nama_paket' => $produk->nama_paket ?? 'Paket Umroh Standard',
-                'tipe_paket' => $produk->kategori ?? 'umroh',
-                'masa_aktif' => $produk->masa_aktif ?? 30,
-                'total_kuota' => $produk->total_kuota ?? 5000000000,
-                'kuota_utama' => $produk->kuota_reguler ?? 4000000000,
-                'kuota_bonus' => $produk->kuota_bonus ?? 1000000000,
-                'telp' => $produk->unlimited_call ?? true,
-                'sms' => $produk->unlimited_sms ?? true,
-                'harga_modal' => $produk->harga_dasar ?? 100000,
-                'harga_jual' => $hargaPerPesanan,
-                'profit' => $profitPerPesanan, // Dummy profit untuk testing
-                'jadwal_aktivasi' => now()->addDays(3),
-                'status_aktivasi' => 'proses',
-                'created_at' => now()->subDays(1),
+                'nama_paket' => $produk->nama_paket,
+                'tipe_paket' => $produk->tipe_paket,
+                'masa_aktif' => $produk->masa_aktif,
+                'total_kuota' => $produk->total_kuota,
+                'kuota_utama' => $produk->kuota_utama,
+                'kuota_bonus' => $produk->kuota_bonus,
+                'telp' => $produk->telp,
+                'sms' => $produk->sms,
+                'harga_modal' => $produk->harga_modal,
+                'harga_jual' => $hargaJual,
+                'profit' => $profit,
+                'jadwal_aktivasi' => now()->addDays(5),
+                'status_aktivasi' => 'berhasil',
+                'created_at' => $pembayaran->created_at,
             ]);
         }
         
-        // Update saldo agent dengan total profit bulan ini
-        $agent = \App\Models\Agent::find($agentId);
-        if ($agent) {
-            // 5 batch x 3 pesanan x 50000 profit = 750000
-            $totalProfitBulanIni = 5 * 3 * 50000;
-            $agent->saldo = $totalProfitBulanIni;        // Saldo permanent (tidak reset)
-            $agent->saldo_bulan = $totalProfitBulanIni;  // Saldo bulan ini (reset tiap bulan)
-            $agent->saldo_tahun = $totalProfitBulanIni;  // Saldo tahun ini (reset tiap tahun)
-            $agent->save();
-            
-            $this->command->info('✅ Saldo agent updated:');
-            $this->command->info('   - saldo (permanent): Rp ' . number_format($totalProfitBulanIni, 0, ',', '.'));
-            $this->command->info('   - saldo_bulan: Rp ' . number_format($totalProfitBulanIni, 0, ',', '.'));
-            $this->command->info('   - saldo_tahun: Rp ' . number_format($totalProfitBulanIni, 0, ',', '.'));
-        }
+        // Saldo agent akan otomatis bertambah via PembayaranObserver
+        // karena pembayaran dibuat dengan status 'berhasil'
         
-        $this->command->info('Sample data created successfully!');
-        $this->command->info('Agent ID: ' . $agentId);
-        $this->command->info('Produk ID: ' . $produk->id . ' - ' . $produk->nama_paket);
-        $this->command->info('Total Pembayaran berhasil: 5 (15 pesanan)');
-        $this->command->info('Total Pembayaran Proses: 2 (2 pesanan)');
-        $this->command->info('Expected Monthly Profit: Rp 750,000 (5 batch x 3 pesanan x Rp 50,000)');
+        $this->command->info('✅ Sample data created successfully!');
+        $this->command->info('Total Pembayaran: 5');
+        $this->command->info('Total Pesanan: 5');
+        $this->command->info('Agent ID: 3');
+        $this->command->info('Produk: ' . $produk->nama_paket . ' (ID: ' . $produk->id . ')');
     }
 }
