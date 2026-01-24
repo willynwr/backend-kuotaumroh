@@ -189,7 +189,7 @@
         </div>
 
         <!-- Benefits Section -->
-        <h2 class="text-xl md:text-2xl font-bold text-center mb-6 md:mb-8 mt-12 md:mt-16">Kenapa harus membeli Kuota Umroh Haji di Kuotaumroh.id?</h2>
+        <h2 class="text-xl md:text-2xl font-bold text-center mb-6 md:mb-8 mt-12 md:mt-16">Kenapa harus membeli Kuota Umroh & Haji di Kuotaumroh.id?</h2>
         <div class="mt-8 md:mt-16 grid gap-4 md:gap-6 md:grid-cols-3">
             <div class="text-center">
                 <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-4">
