@@ -226,7 +226,19 @@
                 this.agentData.referralLink = phpLink || `${window.location.origin}/u/demo-code`;
             }
 
-            this.generateDemoReferralData(); // Dummy data remains for now
+            // Load data from controller
+            const totalCommission = {{ $totalCommission ?? 0 }};
+            const pendingCommission = {{ $pendingCommission ?? 0 }};
+            const referralOrders = @json($referralOrders ?? []);
+            
+            this.agentData.totalCommission = totalCommission;
+            this.agentData.pendingCommission = pendingCommission;
+            
+            // Map referral orders to referredAgents with proper date conversion
+            this.referredAgents = referralOrders.map(order => ({
+                ...order,
+                orderDate: new Date(order.orderDate)
+            }));
             
             this.$nextTick(() => {
                 flatpickr('#dateRangePicker', {
@@ -253,40 +265,6 @@
             });
         },
 
-        generateDemoReferralData() {
-          const demoMSISDNs = [
-            { msisdn: '081234567890', provider: 'TELKOMSEL', status: 'sukses' },
-            { msisdn: '085234567891', provider: 'INDOSAT', status: 'sukses' },
-            { msisdn: '087834567892', provider: 'XL', status: 'proses' },
-            { msisdn: '082234567893', provider: 'TELKOMSEL', status: 'sukses' },
-            { msisdn: '081299990001', provider: 'INDOSAT', status: 'batal' },
-          ];
-          this.referredAgents = demoMSISDNs.map((demo, idx) => {
-            const pkg = this.packages.find(p => p.provider === demo.provider) || this.packages[0];
-            const daysAgo = idx * 5 + Math.floor(Math.random() * 5);
-            const orderDate = new Date();
-            orderDate.setDate(orderDate.getDate() - daysAgo);
-            return { 
-                id: String(idx + 1), 
-                msisdn: demo.msisdn, 
-                provider: pkg.provider, 
-                packageName: pkg.name, 
-                orderDate, 
-                sellPrice: pkg.price,
-                commission: pkg.feeAffiliate || 0,
-                status: demo.status
-            };
-          });
-          
-          // Calculate stats
-          this.agentData.totalCommission = this.referredAgents
-            .filter(r => r.status === 'sukses')
-            .reduce((sum, r) => sum + r.commission, 0);
-            
-          this.agentData.pendingCommission = this.referredAgents
-            .filter(r => r.status === 'proses')
-            .reduce((sum, r) => sum + r.commission, 0);
-        },
         get filteredAgents() {
           return this.referredAgents.filter(agent => {
             if (this.dateFrom && this.dateTo) {
