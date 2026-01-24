@@ -687,6 +687,11 @@ function orderApp() {
       }
 
       // Save to localStorage
+      // PENTING: Jangan hapus paymentId yang sudah ada agar payment persistence tetap bekerja
+      const existingOrder = localStorage.getItem('pendingOrder');
+      const existingPaymentId = existingOrder ? JSON.parse(existingOrder).paymentId : null;
+      const existingBatchId = existingOrder ? JSON.parse(existingOrder).batchId : null;
+      
       const orderData = {
         batchId: this.batchId,
         batchName: this.batchName,
@@ -698,7 +703,10 @@ function orderApp() {
         activationTime: this.activationTime,
         scheduledDate: this.scheduledDate,
         scheduledTime: this.scheduledTime,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        // Pertahankan paymentId & batchId jika ada (untuk payment persistence)
+        ...(existingPaymentId && { paymentId: existingPaymentId }),
+        ...(existingBatchId && { batchId: existingBatchId })
       };
 
       localStorage.setItem('pendingOrder', JSON.stringify(orderData));
