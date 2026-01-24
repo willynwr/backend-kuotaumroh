@@ -49,10 +49,11 @@
     <!-- Store Config -->
     <script>
         const STORE_CONFIG = {
-            agent_id: '{{ $agent->id ?? 1 }}',           // Agent ID untuk payment ref_code
-            catalog_ref_code: 'bulk_umroh',              // Selalu bulk_umroh untuk dapat harga bulk
+            agent_id: '{{ $agent->id ?? 1 }}',           // Agent ID untuk tracking
+            catalog_ref_code: '0',                       // ref_code=0 untuk harga individu (price_customer)
             link_referal: '{{ $agent->link_referal ?? "kuotaumroh" }}',
             nama_travel: '{{ $agent->nama_travel ?? "Kuotaumroh.id" }}',
+            is_individual: true,                         // Flag untuk mode individu (tanpa login)
         };
     </script>
     <script>
@@ -599,8 +600,8 @@
                 async loadAllPackages() {
                     try {
                         this.packagesLoading = true;
-                        // Selalu gunakan bulk_umroh untuk dapat harga bulk
-                        const catalogRefCode = STORE_CONFIG.catalog_ref_code || 'bulk_umroh';
+                        // Gunakan ref_code dari config (0 untuk individu, bulk_umroh untuk bulk)
+                        const catalogRefCode = STORE_CONFIG.catalog_ref_code || '0';
                         const response = await fetch(`${API_BASE_URL}/api/proxy/umroh/package?ref_code=${catalogRefCode}`);
                         if (!response.ok) {
                             throw new Error('Failed to fetch packages');
@@ -612,9 +613,12 @@
                         // Response langsung array, tidak wrapped
                         if (Array.isArray(data)) {
                             this.allPackages = data.map(pkg => {
-                                // Parse harga dengan fallback
-                                const priceBulk = parseInt(pkg.price_bulk) || 0;
-                                const priceCustomer = parseInt(pkg.price_customer) || priceBulk;
+                                // Parse harga - untuk individu (ref_code=0), gunakan price_customer
+                                const priceCustomer = parseInt(pkg.price_customer) || 0;
+                                const priceBulk = parseInt(pkg.price_bulk) || priceCustomer;
+                                
+                                // Untuk store (individu), tampilkan price_customer
+                                const displayPrice = priceCustomer;
                                 
                                 return {
                                     id: pkg.id,
@@ -632,13 +636,13 @@
                                     bonus: pkg.bonus || '',
                                     telp: pkg.telp || '',
                                     sms: pkg.sms || '',
-                                    price: priceCustomer,        // Harga jual ke customer
-                                    harga: priceCustomer,
-                                    sellPrice: priceCustomer,
-                                    displayPrice: priceCustomer,
-                                    price_bulk: priceBulk,       // Harga modal
+                                    price: displayPrice,         // Harga yang digunakan untuk payment
+                                    harga: displayPrice,
+                                    sellPrice: displayPrice,
+                                    displayPrice: displayPrice,  // Harga yang ditampilkan
+                                    price_bulk: priceBulk,       // Simpan untuk referensi
                                     price_customer: priceCustomer,
-                                    profit: priceCustomer - priceBulk,
+                                    profit: 0, // Tidak ada profit untuk individu
                                     subType: pkg.sub_type || '',
                                     tipe_paket: pkg.sub_type || '',
                                     is_active: pkg.is_active,
@@ -865,6 +869,7 @@
                     }
 
                     // Prepare order data dengan format yang sesuai untuk API
+                    // Store = INDIVIDU mode (tanpa login), menggunakan ref_code=0
                     const orderData = {
                         items: [{
                             msisdn: this.msisdn,
@@ -887,10 +892,10 @@
                         activationTime: this.activationTime,
                         scheduleDate: scheduleDate,
                         scheduledTime: this.scheduledTime,
-                        refCode: STORE_CONFIG.agent_id || '1',  // Agent ID untuk payment
+                        refCode: '0',  // ref_code=0 untuk INDIVIDU payment
                         linkReferal: STORE_CONFIG.link_referal || 'kuotaumroh',
                         mode: 'store',
-                        isBulk: true,  // Flag untuk BULK payment (Agent mode)
+                        isBulk: false,  // Flag untuk INDIVIDUAL payment (Store mode tanpa login)
                         createdAt: new Date().toISOString(),
                     };
 
