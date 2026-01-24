@@ -93,6 +93,15 @@ Route::get('/checkout', function () {
     return view('checkout');
 })->name('checkout');
 
+// Halaman Invoice
+Route::get('/invoice', function () {
+    return view('invoice');
+})->name('invoice');
+
+Route::get('/invoice/{id}', function ($id) {
+    return view('invoice', ['invoiceId' => $id]);
+})->name('invoice.show');
+
 // Halaman Payment Umroh - /umroh/payment?id=xxx
 Route::get('/umroh/payment', function () {
     return view('payment');
