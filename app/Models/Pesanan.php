@@ -2,20 +2,41 @@
 
 namespace App\Models;
 
+use App\Traits\HasCustomId;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Pesanan extends Model
 {
-    use HasFactory;
+    use HasFactory, HasCustomId;
 
     protected $table = 'pesanan';
 
+    public $incrementing = false;
+
+    protected $keyType = 'string';
+
+    /**
+     * Get the custom ID prefix for this model (ORD0000001)
+     */
+    public static function getIdPrefix(): string
+    {
+        return 'ORD';
+    }
+
+    /**
+     * Get the number of digits for the ID
+     */
+    public static function getIdDigits(): int
+    {
+        return 7;
+    }
+
     protected $fillable = [
         'batch_id',
-        'agent_id',
+        'kategori_channel',
+        'channel_id',
         'produk_id',
-        'package_id',
         'nama_batch',
         'msisdn',
         'ref_code',
@@ -70,11 +91,27 @@ class Pesanan extends Model
     }
 
     /**
-     * Relasi ke Agent
+     * Relasi ke Agent (when kategori_channel = 'agent')
      */
     public function agent()
     {
-        return $this->belongsTo(Agent::class);
+        return $this->belongsTo(Agent::class, 'channel_id');
+    }
+
+    /**
+     * Relasi ke Affiliate (when kategori_channel = 'affiliate')
+     */
+    public function affiliate()
+    {
+        return $this->belongsTo(Affiliate::class, 'channel_id');
+    }
+
+    /**
+     * Relasi ke Freelance (when kategori_channel = 'freelance')
+     */
+    public function freelance()
+    {
+        return $this->belongsTo(Freelance::class, 'channel_id');
     }
 
     /**
@@ -110,10 +147,34 @@ class Pesanan extends Model
     }
 
     /**
-     * Scope: Filter by agent_id
+     * Scope: Filter by agent (channel_id with kategori_channel = 'agent')
      */
     public function scopeByAgent($query, $agentId)
     {
-        return $query->where('agent_id', $agentId);
+        return $query->where('kategori_channel', 'agent')->where('channel_id', $agentId);
+    }
+
+    /**
+     * Scope: Filter by affiliate
+     */
+    public function scopeByAffiliate($query, $affiliateId)
+    {
+        return $query->where('kategori_channel', 'affiliate')->where('channel_id', $affiliateId);
+    }
+
+    /**
+     * Scope: Filter by freelance
+     */
+    public function scopeByFreelance($query, $freelanceId)
+    {
+        return $query->where('kategori_channel', 'freelance')->where('channel_id', $freelanceId);
+    }
+
+    /**
+     * Scope: Filter by channel
+     */
+    public function scopeByChannel($query, $kategori, $channelId)
+    {
+        return $query->where('kategori_channel', $kategori)->where('channel_id', $channelId);
     }
 }

@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Models\Affiliate;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class AffiliateSeeder extends Seeder
@@ -26,12 +26,12 @@ class AffiliateSeeder extends Seeder
                 'is_active' => true,
                 'link_referral' => 'kuotaumroh-official',
                 'ref_code' => 'KUOTAUMROH',
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now(),
             ],
       
         ];
 
-        DB::table('affiliate')->insert($affiliates);
+        foreach ($affiliates as $data) {
+            Affiliate::create($data);
+        }
     }
 }

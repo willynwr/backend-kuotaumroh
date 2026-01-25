@@ -14,8 +14,8 @@ class WithdrawController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'agent_id' => 'required|exists:agents,id',
-            'rekening_id' => 'required|exists:rekenings,id',
+            'agent_id' => 'required|string|exists:agent,id',
+            'rekening_id' => 'required|string|exists:rekening,id',
             'jumlah' => 'required|integer|min:100000',
             'keterangan' => 'nullable|string',
         ]);

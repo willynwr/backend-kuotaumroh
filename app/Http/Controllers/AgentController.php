@@ -225,7 +225,8 @@ class AgentController extends Controller
             $profitData['yearly_profit'] = $user->saldo_tahun ?? 0;
             
             // Ambil history profit per bulan dari pesanan
-            $monthlyHistory = \App\Models\Pesanan::where('agent_id', $user->id)
+            $monthlyHistory = \App\Models\Pesanan::where('kategori_channel', 'agent')
+                ->where('channel_id', $user->id)
                 ->whereHas('pembayaran', function($query) {
                     $query->whereIn('status_pembayaran', ['selesai', 'berhasil']);
                 })
@@ -238,7 +239,8 @@ class AgentController extends Controller
             // Untuk setiap bulan, ambil detail transaksinya dan restructure ke array
             $monthlyHistoryArray = [];
             foreach ($monthlyHistory as $monthData) {
-                $details = \App\Models\Pesanan::where('agent_id', $user->id)
+                $details = \App\Models\Pesanan::where('kategori_channel', 'agent')
+                    ->where('channel_id', $user->id)
                     ->whereHas('pembayaran', function($query) {
                         $query->whereIn('status_pembayaran', ['selesai', 'berhasil']);
                     })
@@ -266,7 +268,8 @@ class AgentController extends Controller
             $profitData['monthly_history'] = $monthlyHistoryArray;
             
             // Ambil history profit per tahun dari pesanan
-            $profitData['yearly_history'] = \App\Models\Pesanan::where('agent_id', $user->id)
+            $profitData['yearly_history'] = \App\Models\Pesanan::where('kategori_channel', 'agent')
+                ->where('channel_id', $user->id)
                 ->whereHas('pembayaran', function($query) {
                     $query->whereIn('status_pembayaran', ['selesai', 'berhasil']);
                 })
@@ -320,8 +323,8 @@ class AgentController extends Controller
         try {
             $validator = Validator::make($request->all(), [
                 'email' => 'required|email|unique:agent,email|unique:affiliate,email|unique:freelance,email',
-                'affiliate_id' => 'nullable|exists:affiliate,id',
-                'freelance_id' => 'nullable|exists:freelance,id',
+                'affiliate_id' => 'nullable|string|exists:affiliate,id',
+                'freelance_id' => 'nullable|string|exists:freelance,id',
                 'kategori_agent' => 'required|in:Referral,Host',
                 'nama_pic' => 'required|string|max:255',
                 'no_hp' => 'required|string|unique:agent,no_hp|unique:affiliate,no_wa|unique:freelance,no_wa|regex:/^62[0-9]{9,13}$/',
@@ -384,12 +387,16 @@ class AgentController extends Controller
             }
 
             if (!$request->affiliate_id && !$request->freelance_id) {
-                $request->merge(['affiliate_id' => 1]);
+                // Get first/default affiliate
+                $defaultAffiliate = Affiliate::first();
+                if ($defaultAffiliate) {
+                    $request->merge(['affiliate_id' => $defaultAffiliate->id]);
+                }
             }
 
-            if ((int) $request->affiliate_id === 1 && !Affiliate::query()->whereKey(1)->exists()) {
+            if ($request->affiliate_id && !Affiliate::query()->whereKey($request->affiliate_id)->exists()) {
                 return response()->json([
-                    'message' => 'Affiliate default tidak ditemukan (id=1)'
+                    'message' => 'Affiliate tidak ditemukan'
                 ], 422);
             }
 
@@ -437,8 +444,8 @@ class AgentController extends Controller
 
         $validator = Validator::make($request->all(), [
             'email' => 'email|unique:agent,email,' . $id . '|unique:affiliate,email|unique:freelance,email',
-            'affiliate_id' => 'nullable|exists:affiliate,id',
-            'freelance_id' => 'nullable|exists:freelance,id',
+            'affiliate_id' => 'nullable|string|exists:affiliate,id',
+            'freelance_id' => 'nullable|string|exists:freelance,id',
             'kategori_agent' => 'in:Referral,Host',
             'nama_pic' => 'string',
             'no_hp' => 'string|unique:agent,no_hp,' . $id,

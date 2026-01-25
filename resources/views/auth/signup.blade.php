@@ -785,14 +785,16 @@
           await this.loadProvinces();
 
           if (affiliateId) {
-            const id = parseInt(affiliateId, 10);
-            if (Number.isFinite(id)) {
+            // Support both integer (legacy) and string format (AFT00001, etc.)
+            const id = affiliateId.trim();
+            if (id) {
               setReferral({ source_type: 'affiliate', id });
               setReferralContext({ source_type: 'affiliate', id, url: window.location.href });
             }
           } else if (freelanceId) {
-            const id = parseInt(freelanceId, 10);
-            if (Number.isFinite(id)) {
+            // Support both integer (legacy) and string format (FRL00012, etc.)
+            const id = freelanceId.trim();
+            if (id) {
               setReferral({ source_type: 'freelance', id });
               setReferralContext({ source_type: 'freelance', id, url: window.location.href });
             }
@@ -1382,13 +1384,14 @@
             formDataToSend.append('email', this.formData.email);
 
             const ref = this.referralContext;
-            if (ref && (ref.source_type === 'affiliate' || ref.source_type === 'freelance') && Number.isFinite(ref.id)) {
+            // Support both integer (legacy) and string format (AFT00001, FRL00012, etc.)
+            if (ref && (ref.source_type === 'affiliate' || ref.source_type === 'freelance') && ref.id) {
               formDataToSend.append('kategori_agent', 'Referral');
               if (ref.source_type === 'affiliate') formDataToSend.append('affiliate_id', String(ref.id));
               if (ref.source_type === 'freelance') formDataToSend.append('freelance_id', String(ref.id));
             } else {
               formDataToSend.append('kategori_agent', 'Referral');
-              formDataToSend.append('affiliate_id', '1');
+              // Don't set affiliate_id here - let backend use the default
             }
 
             formDataToSend.append('nama_pic', this.formData.full_name);
