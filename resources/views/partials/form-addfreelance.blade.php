@@ -38,7 +38,7 @@
       </div>
     @endif
 
-    <form x-ref="addFreelanceForm" method="POST" action="{{ route('admin.freelances.store') }}" @submit.prevent="openConfirmAddFreelanceModal()" class="p-6 space-y-6">
+    <form x-ref="addFreelanceForm" method="POST" action="{{ route('admin.freelance.store') }}" @submit.prevent="openConfirmAddFreelanceModal()" class="p-6 space-y-6">
       @csrf
       <input type="hidden" name="_form" value="freelance">
       <input type="hidden" name="redirect_to" value="/admin/users?tab=freelance">
