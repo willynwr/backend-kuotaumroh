@@ -11,6 +11,10 @@ class Withdraw extends Model
 
     protected $table = 'withdraw';
 
+    public $incrementing = false;
+
+    protected $keyType = 'string';
+
     protected $fillable = [
         'agent_id',
         'rekening_id',

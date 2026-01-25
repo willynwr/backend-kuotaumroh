@@ -12,7 +12,7 @@ class CatalogUmrohTselSeeder extends Seeder
      */
     public function run(): void
     {
-        DB::table('CATALOG_UMROH_TSEL')->insert([
+        DB::table('catalog_umroh_tsel')->insert([
             ['id' => 'R1-TSEL-001', 'type' => 'TELKOMSEL', 'sub_type' => 'INTERNET', 'name' => 'Internet 1 Hari', 'days' => 1, 'quota' => '1 GB', 'telp' => null, 'sms' => null, 'bonus' => null, 'price_modal' => 46750, 'price_app' => 55000, 'price_customer' => 55000, 'price_bulk' => 55000, 'price_self' => 55000, 'fee_affiliate' => 0, 'is_active' => 1, 'product_id' => '00110011', 'menu_id' => 'ML4_DN_3_220024', 'source_digipos' => 0, 'source_name' => 'TSEL', 'promo' => null],
             ['id' => 'R1-TSEL-002', 'type' => 'TELKOMSEL', 'sub_type' => 'TELP/SMS', 'name' => 'Telp 1 Hari', 'days' => 1, 'quota' => null, 'telp' => '15', 'sms' => null, 'bonus' => null, 'price_modal' => 42500, 'price_app' => 50000, 'price_customer' => 50000, 'price_bulk' => 50000, 'price_self' => 50000, 'fee_affiliate' => 0, 'is_active' => 1, 'product_id' => '00110007', 'menu_id' => 'ML4_DN_3_220020', 'source_digipos' => 0, 'source_name' => 'TSEL', 'promo' => null],
             ['id' => 'R1-TSEL-003', 'type' => 'TELKOMSEL', 'sub_type' => 'INTERNET', 'name' => 'Internet 3 Hari', 'days' => 3, 'quota' => '2 GB', 'telp' => null, 'sms' => null, 'bonus' => '1 GB Transit', 'price_modal' => 89250, 'price_app' => 105000, 'price_customer' => 105000, 'price_bulk' => 105000, 'price_self' => 105000, 'fee_affiliate' => 0, 'is_active' => 1, 'product_id' => '00110012', 'menu_id' => 'ML4_DN_3_220025', 'source_digipos' => 0, 'source_name' => 'TSEL', 'promo' => null],

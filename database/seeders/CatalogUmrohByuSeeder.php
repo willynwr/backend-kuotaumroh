@@ -12,7 +12,7 @@ class CatalogUmrohByuSeeder extends Seeder
      */
     public function run(): void
     {
-        DB::table('CATALOG_UMROH_BYU')->insert([
+        DB::table('catalog_umroh_byu')->insert([
             ['id' => 'R2-BYU-001', 'type' => 'BYU', 'sub_type' => 'INTERNET', 'name' => 'Internet 12 Hari', 'days' => 12, 'quota' => '5 GB', 'telp' => null, 'sms' => null, 'bonus' => null, 'price_modal' => 272250, 'price_app' => 275000, 'price_customer' => 330000, 'price_bulk' => 297000, 'price_self' => 320100, 'fee_affiliate' => 9900, 'is_active' => 1, 'product_id' => '51533', 'menu_id' => '51533', 'source_digipos' => 0, 'source_name' => 'TSEL', 'promo' => null],
             ['id' => 'R2-BYU-002', 'type' => 'BYU', 'sub_type' => 'INTERNET', 'name' => 'Internet 17 Hari', 'days' => 17, 'quota' => '10 GB', 'telp' => null, 'sms' => null, 'bonus' => null, 'price_modal' => 371250, 'price_app' => 375000, 'price_customer' => 450000, 'price_bulk' => 410000, 'price_self' => 438375, 'fee_affiliate' => 11625, 'is_active' => 1, 'product_id' => '51534', 'menu_id' => '51534', 'source_digipos' => 0, 'source_name' => 'TSEL', 'promo' => null],
             ['id' => 'R2-BYU-003', 'type' => 'BYU', 'sub_type' => 'INTERNET', 'name' => 'Internet 20 Hari', 'days' => 20, 'quota' => '15 GB', 'telp' => null, 'sms' => null, 'bonus' => null, 'price_modal' => 495000, 'price_app' => 500000, 'price_customer' => 600000, 'price_bulk' => 552000, 'price_self' => 585750, 'fee_affiliate' => 14250, 'is_active' => 1, 'product_id' => '52312', 'menu_id' => '52312', 'source_digipos' => 0, 'source_name' => 'TSEL', 'promo' => null],
