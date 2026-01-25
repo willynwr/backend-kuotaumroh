@@ -84,13 +84,13 @@
     </header>
 
     <!-- Hero Background Image -->
-    <div class="relative w-full min-h-[600px] overflow-hidden bg-gradient-to-br from-teal-50 via-blue-50 to-cyan-50">
+    <div class="relative w-full min-h-[400px] lg:min-h-[600px] overflow-hidden bg-gradient-to-br from-teal-50 via-blue-50 to-cyan-50">
         <div class="absolute inset-0 bg-cover bg-center opacity-30" style="background-image: url('{{ asset('images/image.png') }}');"></div>
         <!-- Gradient Overlay - fades to transparent at bottom -->
         <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background"></div>
         
         <!-- Hero Content -->
-        <div class="relative z-10 container mx-auto px-4 py-16 flex flex-col items-start justify-center min-h-[600px]">
+        <div class="relative z-10 container mx-auto px-4 py-8 lg:py-16 flex flex-col items-start justify-center min-h-[400px] lg:min-h-[600px]">
             <div class="max-w-2xl">
                 <h1 class="text-5xl md:text-6xl font-bold tracking-tight mb-6 text-gray-900">
                     Paket Internet<br>Umroh & Haji
@@ -111,7 +111,7 @@
     </div>
 
     <!-- Main Content -->
-    <main class="container mx-auto py-16 px-4 max-w-7xl">
+    <main class="container mx-auto py-8 lg:py-16 px-4 max-w-7xl">
 
         <!-- Provider Selection Section -->
         <div id="pilih-provider" class="mb-16 md:mb-20 scroll-mt-24">
@@ -189,7 +189,7 @@
         </div>
 
         <!-- Benefits Section -->
-        <h2 class="text-xl md:text-2xl font-bold text-center mb-6 md:mb-8 mt-12 md:mt-16">Kenapa harus membeli Kuota Umroh Haji di Kuotaumroh.id?</h2>
+        <h2 class="text-xl md:text-2xl font-bold text-center mb-6 md:mb-8 mt-12 md:mt-16">Kenapa harus membeli Kuota Umroh & Haji di Kuotaumroh.id?</h2>
         <div class="mt-8 md:mt-16 grid gap-4 md:gap-6 md:grid-cols-3">
             <div class="text-center">
                 <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-4">
@@ -365,21 +365,23 @@
 
                 <!-- Right Column -->
                 <div class="md:text-right space-y-4">
-                    <div>
-                        <h3 class="font-bold text-lg mb-2">Customer Service</h3>
-                        <div class="space-y-1">
-                            <p>Email: support@kuotaumroh.id</p>
-                            <p>WhatsApp: +62 811-2994-499</p>
+                        <div>
+                            <h3 class="font-bold text-lg mb-2">Customer Service</h3>
+                            <div class="space-y-1">
+                                <p>Email: info@digilabsmitrasolusi.com</p>
+                                <p>Wa: +62 811-3995-599</p>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-lg mb-2">Alamat</h3>
+                            <p class="text-primary-foreground/90 leading-relaxed">
+                                Griya Candramas 3 Blok is nomor 31, <br>
+                                Desa/Kelurahan Pepe, Kec. Sedati,<br>
+                                Kab. Sidoarjo, Provinsi Jawa Timur,<br>
+                                Kode Pos: 61253
+                            </p>
                         </div>
                     </div>
-                    <div>
-                        <h3 class="font-bold text-lg mb-2">Alamat</h3>
-                        <p class="text-primary-foreground/90 leading-relaxed">
-                            Jl. Harmoni No. 123, Jakarta<br>
-                            Indonesia
-                        </p>
-                    </div>
-                </div>
             </div>
             
             <div class="border-t border-primary-foreground/20 pt-8 text-center text-sm text-primary-foreground/80">

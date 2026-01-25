@@ -49,12 +49,14 @@
     <!-- Store Config -->
     <script>
         const STORE_CONFIG = {
-            agent_id: '{{ $agent->id ?? 1 }}',           // Agent ID untuk payment ref_code
-            catalog_ref_code: 'bulk_umroh',              // Selalu bulk_umroh untuk dapat harga bulk
+            agent_id: '{{ $agent->id ?? 1 }}',           // Agent ID untuk tracking
+            catalog_ref_code: '{{ $agent->link_referal ?? "kuotaumroh" }}',  // ref_code=link_referal untuk agent/referral
             link_referal: '{{ $agent->link_referal ?? "kuotaumroh" }}',
             nama_travel: '{{ $agent->nama_travel ?? "Kuotaumroh.id" }}',
+            is_individual: true,                         // Flag untuk mode individu (tanpa login)
         };
     </script>
+    
     <script>
         tailwind.config = {
             theme: {
@@ -332,7 +334,17 @@
                                                     </div>
 
                                                     <div class="mb-3">
+                                                        <!-- Original Price (Strikethrough) if price_app exists and different from price_customer -->
+                                                        <template x-if="pkg.price_app && pkg.price_app > pkg.price_customer">
+                                                            <p class="text-2l text-gray-500 line-through mb-1" x-text="formatRupiah(pkg.price_app)"></p>
+                                                        </template>
+                                                        <!-- Discounted Price (price_customer) -->
                                                         <p class="text-2xl font-bold text-primary" x-text="formatRupiah(pkg.sellPrice || pkg.price)"></p>
+                                                        <!-- Discount Badge -->
+                                                        <template x-if="pkg.price_app && pkg.price_app > pkg.price_customer">
+                                                            <span class="inline-block mt-1 bg-red-100 text-red-600 text-xs font-semibold px-2 py-0.5 rounded"
+                                                                x-text="'Hemat ' + formatRupiah(pkg.price_app - pkg.price_customer)"></span>
+                                                        </template>
                                                     </div>
 
                                                     <div x-show="selectedPackage?.id === pkg.id" class="flex items-center gap-2 text-primary text-sm font-medium">
@@ -529,15 +541,17 @@
                         <div>
                             <h3 class="font-bold text-lg mb-2">Customer Service</h3>
                             <div class="space-y-1">
-                                <p>Email: support@kuotaumroh.id</p>
-                                <p>WhatsApp: +62 811-2994-499</p>
+                                <p>Email: info@digilabsmitrasolusi.com</p>
+                                <p>Wa: +62 811-3995-599</p>
                             </div>
                         </div>
                         <div>
                             <h3 class="font-bold text-lg mb-2">Alamat</h3>
                             <p class="text-primary-foreground/90 leading-relaxed">
-                                Jl. Harmoni No. 123, Jakarta<br>
-                                Indonesia
+                                Griya Candramas 3 Blok is nomor 31, <br>
+                                Desa/Kelurahan Pepe, Kec. Sedati,<br>
+                                Kab. Sidoarjo, Provinsi Jawa Timur,<br>
+                                Kode Pos: 61253
                             </p>
                         </div>
                     </div>
@@ -599,8 +613,8 @@
                 async loadAllPackages() {
                     try {
                         this.packagesLoading = true;
-                        // Selalu gunakan bulk_umroh untuk dapat harga bulk
-                        const catalogRefCode = STORE_CONFIG.catalog_ref_code || 'bulk_umroh';
+                        // Gunakan ref_code dari config (0 untuk individu, bulk_umroh untuk bulk)
+                        const catalogRefCode = STORE_CONFIG.catalog_ref_code || '0';
                         const response = await fetch(`${API_BASE_URL}/api/proxy/umroh/package?ref_code=${catalogRefCode}`);
                         if (!response.ok) {
                             throw new Error('Failed to fetch packages');
@@ -612,9 +626,13 @@
                         // Response langsung array, tidak wrapped
                         if (Array.isArray(data)) {
                             this.allPackages = data.map(pkg => {
-                                // Parse harga dengan fallback
-                                const priceBulk = parseInt(pkg.price_bulk) || 0;
-                                const priceCustomer = parseInt(pkg.price_customer) || priceBulk;
+                                // Parse harga - untuk individu, gunakan price_app dan price_customer
+                                const priceApp = parseInt(pkg.price_app) || 0;         // Harga asli (sebelum diskon)
+                                const priceCustomer = parseInt(pkg.price_customer) || 0; // Harga diskon
+                                const priceBulk = parseInt(pkg.price_bulk) || priceCustomer;
+                                
+                                // Untuk store (individu), tampilkan price_customer sebagai harga final
+                                const displayPrice = priceCustomer;
                                 
                                 return {
                                     id: pkg.id,
@@ -632,13 +650,14 @@
                                     bonus: pkg.bonus || '',
                                     telp: pkg.telp || '',
                                     sms: pkg.sms || '',
-                                    price: priceCustomer,        // Harga jual ke customer
-                                    harga: priceCustomer,
-                                    sellPrice: priceCustomer,
-                                    displayPrice: priceCustomer,
-                                    price_bulk: priceBulk,       // Harga modal
-                                    price_customer: priceCustomer,
-                                    profit: priceCustomer - priceBulk,
+                                    price: displayPrice,         // Harga yang digunakan untuk payment (price_customer)
+                                    harga: displayPrice,
+                                    sellPrice: displayPrice,
+                                    displayPrice: displayPrice,  // Harga diskon yang ditampilkan
+                                    price_app: priceApp,         // Harga asli (untuk strikethrough)
+                                    price_customer: priceCustomer, // Harga diskon
+                                    price_bulk: priceBulk,       // Simpan untuk referensi
+                                    profit: 0, // Tidak ada profit untuk individu
                                     subType: pkg.sub_type || '',
                                     tipe_paket: pkg.sub_type || '',
                                     is_active: pkg.is_active,
@@ -764,8 +783,8 @@
                 selectPackage(pkg) {
                     this.selectedPackage = {
                         ...pkg,
-                        // Use harga from API (price_bulk)
-                        displayPrice: pkg.price || pkg.harga
+                        // Use price_customer (harga diskon) sebagai harga yang dibayar
+                        displayPrice: pkg.price_customer || pkg.price || pkg.harga
                     };
                     
                     // Scroll ke checkout summary di mobile
@@ -865,6 +884,7 @@
                     }
 
                     // Prepare order data dengan format yang sesuai untuk API
+                    // Store = Agent/Referral mode, menggunakan ref_code=link_referal
                     const orderData = {
                         items: [{
                             msisdn: this.msisdn,
@@ -877,20 +897,20 @@
                             masa_aktif: this.selectedPackage.masa_aktif || this.selectedPackage.days,
                             days: this.selectedPackage.days || this.selectedPackage.masa_aktif,
                             total_kuota: this.selectedPackage.total_kuota || this.selectedPackage.quota,
-                            price: this.selectedPackage.price || this.selectedPackage.harga || this.selectedPackage.displayPrice,
-                            harga: this.selectedPackage.harga || this.selectedPackage.price,
+                            price: this.selectedPackage.price_customer || this.selectedPackage.price || this.selectedPackage.displayPrice,
+                            harga: this.selectedPackage.price_customer || this.selectedPackage.harga || this.selectedPackage.price,
                         }],
-                        subtotal: this.selectedPackage.price || this.selectedPackage.harga || this.selectedPackage.displayPrice,
+                        subtotal: this.selectedPackage.price_customer || this.selectedPackage.price || this.selectedPackage.displayPrice,
                         platformFee: 0,
-                        total: this.selectedPackage.price || this.selectedPackage.harga || this.selectedPackage.displayPrice,
+                        total: this.selectedPackage.price_customer || this.selectedPackage.price || this.selectedPackage.displayPrice,
                         paymentMethod: 'qris',
                         activationTime: this.activationTime,
                         scheduleDate: scheduleDate,
                         scheduledTime: this.scheduledTime,
-                        refCode: STORE_CONFIG.agent_id || '1',  // Agent ID untuk payment
+                        refCode: STORE_CONFIG.link_referal,  // ref_code=link_referal untuk Agent/Referral
                         linkReferal: STORE_CONFIG.link_referal || 'kuotaumroh',
                         mode: 'store',
-                        isBulk: true,  // Flag untuk BULK payment (Agent mode)
+                        isBulk: false,  // Flag untuk INDIVIDUAL payment (Store mode tanpa login)
                         createdAt: new Date().toISOString(),
                     };
 
