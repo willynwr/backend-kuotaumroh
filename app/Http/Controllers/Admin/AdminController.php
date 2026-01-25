@@ -165,15 +165,15 @@ class AdminController extends Controller
     {
         $packages = DB::table('produk')->get();
         $margins = DB::table('margin')
-            ->leftJoin('agents', 'margin.agent_id', '=', 'agents.id')
-            ->leftJoin('affiliates', 'margin.affiliate_id', '=', 'affiliates.id')
-            ->leftJoin('freelances', 'margin.freelance_id', '=', 'freelances.id')
+            ->leftJoin('agent', 'margin.agent_id', '=', 'agent.id')
+            ->leftJoin('affiliate', 'margin.affiliate_id', '=', 'affiliate.id')
+            ->leftJoin('freelance', 'margin.freelance_id', '=', 'freelance.id')
             ->leftJoin('produk', 'margin.produk_id', '=', 'produk.id')
             ->select(
                 'margin.*',
-                'agents.nama_pic as agent_name',
-                'affiliates.nama as affiliate_name',
-                'freelances.nama as freelance_name',
+                'agent.nama_pic as agent_name',
+                'affiliate.nama as affiliate_name',
+                'freelance.nama as freelance_name',
                 'produk.nama_paket as produk_name'
             )
             ->get();
@@ -231,15 +231,15 @@ class AdminController extends Controller
             ]);
 
             $newMargin = DB::table('margin')
-                ->leftJoin('agents', 'margin.agent_id', '=', 'agents.id')
-                ->leftJoin('affiliates', 'margin.affiliate_id', '=', 'affiliates.id')
-                ->leftJoin('freelances', 'margin.freelance_id', '=', 'freelances.id')
+                ->leftJoin('agent', 'margin.agent_id', '=', 'agent.id')
+                ->leftJoin('affiliate', 'margin.affiliate_id', '=', 'affiliate.id')
+                ->leftJoin('freelance', 'margin.freelance_id', '=', 'freelance.id')
                 ->leftJoin('produk', 'margin.produk_id', '=', 'produk.id')
                 ->select(
                     'margin.*',
-                    'agents.nama_pic as agent_name',
-                    'affiliates.nama as affiliate_name',
-                    'freelances.nama as freelance_name',
+                    'agent.nama_pic as agent_name',
+                    'affiliate.nama as affiliate_name',
+                    'freelance.nama as freelance_name',
                     'produk.nama_paket as produk_name'
                 )
                 ->where('margin.id', $margin)
@@ -691,12 +691,12 @@ class AdminController extends Controller
 
         $validator = Validator::make($request->all(), [
             'nama' => 'required|string|max:255',
-            'email' => 'required|email|unique:affiliates,email',
-            'no_wa' => 'required|string|unique:affiliates,no_wa',
+            'email' => 'required|email|unique:affiliate,email',
+            'no_wa' => 'required|string|unique:affiliate,no_wa',
             'provinsi' => 'required|string',
             'kab_kota' => 'required|string',
             'alamat_lengkap' => 'required|string',
-            'link_referral' => 'required|string|alpha_dash:ascii|unique:affiliates,link_referral',
+            'link_referral' => 'required|string|alpha_dash:ascii|unique:affiliate,link_referral',
         ]);
 
         if ($validator->fails()) {
@@ -749,12 +749,12 @@ class AdminController extends Controller
 
         $validator = Validator::make($request->all(), [
             'nama' => 'required|string|max:255',
-            'email' => 'required|email|unique:affiliates,email,' . $id,
-            'no_wa' => 'required|string|unique:affiliates,no_wa,' . $id,
+            'email' => 'required|email|unique:affiliate,email,' . $id,
+            'no_wa' => 'required|string|unique:affiliate,no_wa,' . $id,
             'provinsi' => 'required|string',
             'kab_kota' => 'required|string',
             'alamat_lengkap' => 'required|string',
-            'link_referral' => 'required|string|alpha_dash:ascii|unique:affiliates,link_referral,' . $id,
+            'link_referral' => 'required|string|alpha_dash:ascii|unique:affiliate,link_referral,' . $id,
             'is_active' => 'boolean',
         ]);
 
@@ -854,12 +854,12 @@ class AdminController extends Controller
 
         $validator = Validator::make($request->all(), [
             'nama' => 'required|string|max:255',
-            'email' => 'required|email|unique:freelances,email',
-            'no_wa' => 'required|string|unique:freelances,no_wa',
+            'email' => 'required|email|unique:freelance,email',
+            'no_wa' => 'required|string|unique:freelance,no_wa',
             'provinsi' => 'required|string',
             'kab_kota' => 'required|string',
             'alamat_lengkap' => 'required|string',
-            'link_referral' => 'required|string|alpha_dash:ascii|unique:freelances,link_referral',
+            'link_referral' => 'required|string|alpha_dash:ascii|unique:freelance,link_referral',
         ]);
 
         if ($validator->fails()) {
@@ -912,12 +912,12 @@ class AdminController extends Controller
 
         $validator = Validator::make($request->all(), [
             'nama' => 'required|string|max:255',
-            'email' => 'required|email|unique:freelances,email,' . $id,
-            'no_wa' => 'required|string|unique:freelances,no_wa,' . $id,
+            'email' => 'required|email|unique:freelance,email,' . $id,
+            'no_wa' => 'required|string|unique:freelance,no_wa,' . $id,
             'provinsi' => 'required|string',
             'kab_kota' => 'required|string',
             'alamat_lengkap' => 'required|string',
-            'link_referral' => 'required|string|alpha_dash:ascii|unique:freelances,link_referral,' . $id,
+            'link_referral' => 'required|string|alpha_dash:ascii|unique:freelance,link_referral,' . $id,
             'is_active' => 'boolean',
         ]);
 
@@ -1016,9 +1016,9 @@ class AdminController extends Controller
         ]);
 
         $validator = Validator::make($request->all(), [
-            'email' => 'required|email|unique:agents,email',
+            'email' => 'required|email|unique:agent,email',
             'nama_pic' => 'required|string|max:255',
-            'no_hp' => 'required|string|unique:agents,no_hp',
+            'no_hp' => 'required|string|unique:agent,no_hp',
             'nama_travel' => 'required|string|max:255',
             'jenis_travel' => 'required|string|max:100',
             'total_traveller' => 'required|integer|min:0',
@@ -1026,8 +1026,8 @@ class AdminController extends Controller
             'provinsi' => 'required|string|max:100',
             'kabupaten_kota' => 'required|string|max:100',
             'alamat_lengkap' => 'required|string',
-            'affiliate_id' => 'nullable|integer|exists:affiliates,id',
-            'freelance_id' => 'nullable|integer|exists:freelances,id',
+            'affiliate_id' => 'nullable|integer|exists:affiliate,id',
+            'freelance_id' => 'nullable|integer|exists:freelance,id',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
@@ -1101,9 +1101,9 @@ class AdminController extends Controller
         $agent = Agent::findOrFail($id);
 
         $validator = Validator::make($request->all(), [
-            'email' => 'required|email|unique:agents,email,' . $id,
+            'email' => 'required|email|unique:agent,email,' . $id,
             'nama_pic' => 'required|string|max:255',
-            'no_hp' => 'required|string|unique:agents,no_hp,' . $id,
+            'no_hp' => 'required|string|unique:agent,no_hp,' . $id,
             'nama_travel' => 'required|string|max:255',
             'jenis_travel' => 'required|string|max:100',
             'total_traveller' => 'required|integer|min:0',

@@ -436,12 +436,12 @@ class AgentController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'email' => 'email|unique:agents,email,' . $id . '|unique:affiliates,email|unique:freelances,email',
-            'affiliate_id' => 'nullable|exists:affiliates,id',
-            'freelance_id' => 'nullable|exists:freelances,id',
+            'email' => 'email|unique:agent,email,' . $id . '|unique:affiliate,email|unique:freelance,email',
+            'affiliate_id' => 'nullable|exists:affiliate,id',
+            'freelance_id' => 'nullable|exists:freelance,id',
             'kategori_agent' => 'in:Referral,Host',
             'nama_pic' => 'string',
-            'no_hp' => 'string|unique:agents,no_hp,' . $id,
+            'no_hp' => 'string|unique:agent,no_hp,' . $id,
             'nama_travel' => 'nullable|string',
             'jenis_travel' => 'nullable|string',
             'provinsi' => 'string',

@@ -114,14 +114,14 @@ class AffiliateController extends Controller
 
         $validator = Validator::make($request->all(), [
             'nama' => 'string|max:255',
-            'email' => 'email|unique:affiliates,email,' . $id . '|unique:agents,email|unique:freelances,email',
-            'no_wa' => 'string|unique:affiliates,no_wa,' . $id,
+            'email' => 'email|unique:affiliate,email,' . $id . '|unique:agent,email|unique:freelance,email',
+            'no_wa' => 'string|unique:affiliate,no_wa,' . $id,
             'provinsi' => 'string',
             'kab_kota' => 'string',
             'alamat_lengkap' => 'string',
             'date_register' => 'date',
             'is_active' => 'boolean',
-            'link_referral' => 'string|alpha_dash:ascii|unique:affiliates,link_referral,' . $id,
+            'link_referral' => 'string|alpha_dash:ascii|unique:affiliate,link_referral,' . $id,
         ]);
 
         if ($validator->fails()) {

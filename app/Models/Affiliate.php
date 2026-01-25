@@ -10,6 +10,8 @@ class Affiliate extends Model
 {
     use HasFactory, HasApiTokens;
 
+    protected $table = 'affiliate';
+
     protected $fillable = [
         'nama',
         'email',

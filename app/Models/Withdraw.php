@@ -9,6 +9,8 @@ class Withdraw extends Model
 {
     use HasFactory;
 
+    protected $table = 'withdraw';
+
     protected $fillable = [
         'agent_id',
         'rekening_id',
