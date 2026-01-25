@@ -670,15 +670,19 @@ async function createIndividualPayment(orderData) {
 }
 
 /**
- * Verify payment manually
+ * Verify payment manually and update local status
  * @param {number} paymentId - Payment ID
  * @returns {Promise<Object>} Verification result
  * 
  * Endpoint: POST /api/umroh/payment/verify
+ * This calls the internal API which will:
+ * 1. Check payment status from tokodigi.id
+ * 2. Update local database status if payment is successful
  */
 async function verifyPayment(paymentId) {
   try {
-    const response = await fetch(`${API_BASE}/proxy/umroh/payment/verify`, {
+    // Use internal API endpoint (not proxy) to update local status
+    const response = await fetch(`${API_BASE}/umroh/payment/verify`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
