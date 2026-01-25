@@ -105,7 +105,7 @@
     </script>
 </head>
 
-<body class="min-h-screen bg-background">
+<body class="min-h-screen bg-background overflow-x-hidden">
     <div x-data="checkoutApp()">
 
         <!-- Header -->
@@ -117,8 +117,23 @@
                     <span class="text-xl font-semibold">Kuotaumroh.id</span>
                 </a>
 
-                <!-- Simple Text (no dropdown for public users) -->
-                <span class="text-sm text-muted-foreground">Checkout</span>
+                <!-- Status Pembayaran Badge - Hidden on mobile, shown on desktop -->
+                <div class="hidden sm:flex items-center gap-2">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold"
+                        :class="{
+                            'bg-yellow-100 text-yellow-700': paymentStatus === 'pending',
+                            'bg-green-100 text-green-700': paymentStatus === 'success',
+                            'bg-red-100 text-red-700': paymentStatus === 'expired'
+                        }">
+                        <span class="w-2 h-2 rounded-full"
+                            :class="{
+                                'bg-yellow-500': paymentStatus === 'pending',
+                                'bg-green-500': paymentStatus === 'success',
+                                'bg-red-500': paymentStatus === 'expired'
+                            }"></span>
+                        <span x-text="paymentStatus === 'pending' ? 'Menunggu Pembayaran' : (paymentStatus === 'success' ? 'Pembayaran Berhasil' : 'Pembayaran Kedaluwarsa')"></span>
+                    </span>
+                </div>
             </div>
         </header>
 
@@ -181,16 +196,16 @@
 
             
             <!-- Pending State (Payment Page) -->
-            <div x-show="paymentStatus === 'pending'" x-cloak>
+            <div x-show="paymentStatus === 'pending'" x-cloak class="overflow-hidden">
                 <!-- Page Header -->
                 <div class="mb-6">
-                    <div class="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                    <div class="flex items-center gap-2 text-sm text-muted-foreground mb-2 flex-wrap">
                         <a href="{{ route('welcome') }}" class="hover:text-foreground">Beranda</a>
                         <span>/</span>
                         <span class="text-foreground">Pembayaran</span>
                     </div>
-                    <h1 class="text-3xl font-bold tracking-tight">Pembayaran</h1>
-                    <p class="text-muted-foreground mt-2">Selesaikan pembayaran Anda</p>
+                    <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">Pembayaran</h1>
+                    <p class="text-muted-foreground mt-2 text-sm sm:text-base">Selesaikan pembayaran Anda</p>
                 </div>
 
                 <div class="grid gap-6 lg:grid-cols-3">
@@ -211,9 +226,9 @@
                                 <!-- Payment ID Info -->
                                 <div class="bg-white-50 border border-black-200 rounded-lg p-3">
                                     <div class="flex items-center justify-between">
-                                        <div class="flex-1">
+                                        <div class="flex-1 min-w-0">
                                             <p class="text-xs text-black-600 font-medium mb-1">Payment ID</p>
-                                            <p class="text-sm font-mono text-black-900 font-semibold" x-text="paymentId"></p>
+                                            <p class="text-sm font-mono text-black-900 font-semibold truncate" x-text="paymentId"></p>
                                         </div>
                                         <button @click="navigator.clipboard.writeText(paymentId); showToast('Tersalin', 'Payment ID berhasil disalin')"
                                             class="ml-2 h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-blue-100 transition-colors flex-shrink-0">
@@ -224,6 +239,26 @@
                                         </button>
                                     </div>
                                     <p class="text-xs text-black-600 mt-2">Simpan ID ini untuk verifikasi pembayaran</p>
+                                </div>
+                                
+                                <!-- Status Pembayaran Badge - Mobile Only (shown below Payment ID) -->
+                                <div class="sm:hidden mt-3">
+                                    <div class="flex items-center justify-center">
+                                        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold"
+                                            :class="{
+                                                'bg-yellow-100 text-yellow-700': paymentStatus === 'pending',
+                                                'bg-green-100 text-green-700': paymentStatus === 'success',
+                                                'bg-red-100 text-red-700': paymentStatus === 'expired'
+                                            }">
+                                            <span class="w-2 h-2 rounded-full"
+                                                :class="{
+                                                    'bg-yellow-500': paymentStatus === 'pending',
+                                                    'bg-green-500': paymentStatus === 'success',
+                                                    'bg-red-500': paymentStatus === 'expired'
+                                                }"></span>
+                                            <span x-text="paymentStatus === 'pending' ? 'Menunggu Pembayaran' : (paymentStatus === 'success' ? 'Pembayaran Berhasil' : 'Pembayaran Kedaluwarsa')"></span>
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                             <div class="p-6 space-y-4">
@@ -314,26 +349,6 @@
                                 </div>
                             </div>
 
-                            <!-- Action Buttons -->
-                            <div class="space-y-2">
-                                <!-- Check Payment Button -->
-                                <button @click="handleCheckPayment()"
-                                    class="w-full inline-flex items-center justify-center gap-2 rounded-md border bg-background h-10 px-4 py-2 hover:bg-muted transition-colors">
-                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    Cek Status Pembayaran
-                                </button>
-
-                                <!-- View Invoice Button -->
-                                <button @click="handleViewInvoice()"
-                                    class="w-full inline-flex items-center justify-center gap-2 rounded-md bg-primary text-primary-foreground h-10 px-4 py-2 hover:bg-primary/90 transition-colors">
-                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                    Lihat Invoice
-                                </button>
-                            </div>
                             </div>
                         </div>
                     </div>
@@ -341,11 +356,42 @@
                     <!-- Order Details -->
                     <div class="lg:col-span-2">
                         <div class="rounded-lg border bg-white shadow-sm">
-                            <div class="p-6 border-b">
+                            <div class="p-4 sm:p-6 border-b">
                                 <h3 class="text-lg font-semibold">Detail Pesanan</h3>
                             </div>
-                            <div class="p-6">
-                                <div class="relative overflow-x-auto">
+                            <div class="p-4 sm:p-6">
+                                <!-- Mobile Card View -->
+                                <div class="sm:hidden space-y-3">
+                                    <template x-for="(item, index) in orderData.items" :key="index">
+                                        <div class="border rounded-lg p-3 bg-muted/30">
+                                            <div class="flex justify-between items-start mb-2">
+                                                <span class="text-xs text-muted-foreground">Item <span x-text="index + 1"></span></span>
+                                                <span class="font-semibold text-primary" x-text="formatRupiah(item.price)"></span>
+                                            </div>
+                                            <p class="font-mono text-sm mb-1" x-text="item.msisdn"></p>
+                                            <p class="text-sm text-muted-foreground" x-text="item.packageName"></p>
+                                        </div>
+                                    </template>
+                                    
+                                    <!-- Summary Mobile -->
+                                    <div class="border-t pt-3 mt-3 space-y-2">
+                                        <div class="flex justify-between text-sm">
+                                            <span>Subtotal</span>
+                                            <span class="font-medium" x-text="formatRupiah(orderData.total)"></span>
+                                        </div>
+                                        <div class="flex justify-between text-sm text-muted-foreground">
+                                            <span>Biaya Platform</span>
+                                            <span x-text="formatRupiah(orderData.platformFee)"></span>
+                                        </div>
+                                        <div class="flex justify-between pt-2 border-t">
+                                            <span class="font-bold">Total Pembayaran</span>
+                                            <span class="font-bold text-primary" x-text="formatRupiah(totalAmount)"></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Desktop Table View -->
+                                <div class="hidden sm:block overflow-x-auto">
                                     <table class="w-full text-sm text-left">
                                         <thead class="text-xs uppercase bg-muted/50">
                                             <tr>
@@ -392,6 +438,37 @@
                                             </tr>
                                         </tbody>
                                     </table>
+                                </div>
+
+                                <!-- Action Buttons (Di bawah Detail Pesanan) -->
+                                <div class="mt-6 pt-6 border-t space-y-3">
+                                    <!-- Check Payment Button -->
+                                    <button @click="handleCheckPayment()"
+                                        class="w-full inline-flex items-center justify-center gap-2 rounded-md border bg-background h-10 px-4 py-2 hover:bg-muted transition-colors">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        Cek Status Pembayaran
+                                    </button>
+
+                                    <!-- View Invoice Button - Only enabled if payment is successful -->
+                                    <button @click="handleViewInvoice()"
+                                        :disabled="!canAccessInvoice"
+                                        :class="canAccessInvoice ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'bg-gray-300 text-gray-500 cursor-not-allowed'"
+                                        class="w-full inline-flex items-center justify-center gap-2 rounded-md h-10 px-4 py-2 transition-colors">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        <span x-text="canAccessInvoice ? 'Lihat Invoice' : 'Invoice (Selesaikan Pembayaran)'"></span>
+                                    </button>
+                                    
+                                    <!-- Info message for pending payment -->
+                                    <p x-show="!canAccessInvoice" class="text-center text-sm text-muted-foreground">
+                                        <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                        Invoice hanya dapat diakses setelah pembayaran berhasil
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -522,6 +599,11 @@
                 // Computed: Payment method label
                 get paymentMethodLabel() {
                     return this.orderData.paymentMethod === 'qris' ? 'QRIS' : this.orderData.paymentMethod.toUpperCase();
+                },
+
+                // Computed: Can access invoice (only when payment is successful)
+                get canAccessInvoice() {
+                    return this.paymentStatus === 'success';
                 },
 
                 // Generate QR Code from QRIS string
@@ -892,10 +974,23 @@
                     }
                 },
 
-                handleViewInvoice() {
+                async handleViewInvoice() {
                     if (!this.paymentId) {
                         this.showToast('Error', 'Payment ID tidak ditemukan');
                         return;
+                    }
+
+                    // Check if payment is successful before allowing invoice access
+                    if (!this.canAccessInvoice) {
+                        // Trigger status check first
+                        this.showToast('Info', 'Memeriksa status pembayaran...');
+                        await this.handleCheckPayment();
+                        
+                        // Check again after status update
+                        if (!this.canAccessInvoice) {
+                            this.showToast('Menunggu Pembayaran', 'Invoice hanya dapat diakses setelah pembayaran berhasil. Silakan selesaikan pembayaran terlebih dahulu.');
+                            return;
+                        }
                     }
 
                     // Buka invoice di tab baru dengan payment ID
