@@ -171,6 +171,6 @@ class FreelanceSeeder extends Seeder
             ],
         ];
 
-        DB::table('freelances')->insert($freelances);
+        DB::table('freelance')->insert($freelances);
     }
 }
