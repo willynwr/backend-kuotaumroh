@@ -191,7 +191,7 @@
                 <div x-show="!loading && !error" class="bg-white rounded-xl shadow-lg print-shadow overflow-hidden">
                     
                     <!-- Invoice Header -->
-                    <div class="bg-gradient-to-r from-primary to-emerald-600 px-8 py-6 text-white">
+                    <div class="bg-emerald-600 px-8 py-6 text-white">
                         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                             <div class="flex items-center gap-3">
                                 <img src="{{ asset('images/LOGO.png') }}" alt="Logo" class="h-12 w-12 bg-white rounded-lg p-1">
@@ -201,7 +201,7 @@
                                 </div>
                             </div>
                             <div class="text-left sm:text-right">
-                                <p class="text-2xl font-bold" x-text="invoice.paymentId"></p>
+                                <p class="text-lg font-bold text-white mb-1" x-text="invoice.paymentId"></p>
                                 <p class="text-emerald-100 text-sm" x-text="'Tanggal: ' + invoice.date"></p>
                             </div>
                         </div>
@@ -290,12 +290,6 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
                                     </svg>
                                     <span x-text="invoice.orderedBy.phone"></span>
-                                </div>
-                                <div class="flex items-center gap-2 text-gray-600 text-sm">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                                    </svg>
-                                    <span x-text="invoice.orderedBy.email"></span>
                                 </div>
                             </div>
                         </div>
@@ -491,11 +485,11 @@
 
                 <!-- Back Button (No Print) -->
                 <div class="mt-6 text-center no-print">
-                    <a href="{{ route('welcome') }}" class="inline-flex items-center gap-2 text-gray-600 hover:text-primary transition-colors">
+                    <a href="{{ route('checkout') }}" class="inline-flex items-center gap-2 text-gray-600 hover:text-primary transition-colors">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
                         </svg>
-                        Kembali ke Beranda
+                        Kembali ke Halaman Checkout
                     </a>
                 </div>
             </div>
@@ -611,7 +605,22 @@
                     this.invoice.date = firstItem.created_at ? this.formatDate(firstItem.created_at) : '';
                     this.invoice.status = this.mapStatus(firstItem.status);
                     this.invoice.paidAt = firstItem.payment_date ? this.formatDate(firstItem.payment_date) : '';
+                    
+                    // Jatuh Tempo (Created + 15 mins)
+                    if (firstItem.created_at) {
+                        const createdDate = new Date(firstItem.created_at);
+                        const dueDate = new Date(createdDate.getTime() + 15 * 60000); // Add 15 minutes
+                        this.invoice.dueDate = this.formatDate(dueDate.toISOString());
+                    } else {
+                        this.invoice.dueDate = '';
+                    }
+
                     this.invoice.paymentMethod = firstItem.payment_method || 'QRIS';
+
+                    // Agent info from travel data
+                    this.invoice.agent.name = firstItem.agent_name || 'Kuotaumroh.id';
+                    this.invoice.agent.pic = 'Kuotaumroh.id'; // PIC diisi nama travel
+                    this.invoice.agent.phone = firstItem.agent_phone || '+62 812-3456-7890'; // Telp travel agent
 
                     // Parse items
                     this.invoice.items = items.map(item => ({
@@ -630,8 +639,8 @@
                     this.invoice.platformFee = parseInt(firstItem.platform_fee || 0);
                     this.invoice.total = parseInt(firstItem.total_payment || firstItem.payment_amount || this.invoice.subtotal);
                     
-                    // Agent info
-                    this.invoice.agent.name = firstItem.agent_name || '';
+                    // Agent info (Original was overwriting, now handled above)
+                    // this.invoice.agent.name = firstItem.agent_name || ''; 
                     this.invoice.notes = 'Terima kasih telah menggunakan layanan Kuotaumroh.id';
                 },
 
@@ -651,10 +660,27 @@
                     this.invoice.paymentId = item.payment_id || item.id || this.paymentId;
                     this.invoice.date = item.created_at ? this.formatDate(item.created_at) : new Date().toISOString();
                     this.invoice.status = this.mapStatus(item.status);
+                    
+                    // Tanggal Bayar (kosong jika belum bayar)
                     this.invoice.paidAt = item.payment_date ? this.formatDate(item.payment_date) : '';
+                    
+                    // Jatuh Tempo (Created + 15 mins)
+                    if (item.created_at) {
+                        const createdDate = new Date(item.created_at);
+                        const dueDate = new Date(createdDate.getTime() + 15 * 60000); // Add 15 minutes
+                        this.invoice.dueDate = this.formatDate(dueDate.toISOString());
+                    } else {
+                        this.invoice.dueDate = '';
+                    }
+
                     this.invoice.paymentMethod = item.payment_method || 'QRIS';
                     
-                    // Ordered by info (untuk individual biasanya nama di item atau dari localStorage)
+                    // Agent info from travel data
+                    this.invoice.agent.name = item.agent_name || 'Kuotaumroh.id';
+                    this.invoice.agent.pic = 'Kuotaumroh.id'; // PIC diisi nama travel
+                    this.invoice.agent.phone = item.agent_phone || '+62 812-3456-7890'; // Telp travel agent
+                    
+                    // Ordered by info
                     this.invoice.orderedBy.name = item.customer_name || item.name || 'Customer';
                     this.invoice.orderedBy.type = 'Individual';
                     this.invoice.orderedBy.phone = item.msisdn || '';

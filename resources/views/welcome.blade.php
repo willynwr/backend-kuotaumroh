@@ -84,13 +84,13 @@
     </header>
 
     <!-- Hero Background Image -->
-    <div class="relative w-full min-h-[600px] overflow-hidden bg-gradient-to-br from-teal-50 via-blue-50 to-cyan-50">
+    <div class="relative w-full min-h-[400px] lg:min-h-[600px] overflow-hidden bg-gradient-to-br from-teal-50 via-blue-50 to-cyan-50">
         <div class="absolute inset-0 bg-cover bg-center opacity-30" style="background-image: url('{{ asset('images/image.png') }}');"></div>
         <!-- Gradient Overlay - fades to transparent at bottom -->
         <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background"></div>
         
         <!-- Hero Content -->
-        <div class="relative z-10 container mx-auto px-4 py-16 flex flex-col items-start justify-center min-h-[600px]">
+        <div class="relative z-10 container mx-auto px-4 py-8 lg:py-16 flex flex-col items-start justify-center min-h-[400px] lg:min-h-[600px]">
             <div class="max-w-2xl">
                 <h1 class="text-5xl md:text-6xl font-bold tracking-tight mb-6 text-gray-900">
                     Paket Internet<br>Umroh & Haji
@@ -111,7 +111,7 @@
     </div>
 
     <!-- Main Content -->
-    <main class="container mx-auto py-16 px-4 max-w-7xl">
+    <main class="container mx-auto py-8 lg:py-16 px-4 max-w-7xl">
 
         <!-- Provider Selection Section -->
         <div id="pilih-provider" class="mb-16 md:mb-20 scroll-mt-24">
