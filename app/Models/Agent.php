@@ -10,6 +10,8 @@ class Agent extends Model
 {
     use HasFactory, HasApiTokens;
 
+    protected $table = 'agent';
+
     protected $fillable = [
         'email',
         'affiliate_id',

@@ -26,7 +26,7 @@ try {
 
     // 2. Test validation rules that should fail
     $rules = [
-        'email' => 'required|email|unique:agents,email|unique:affiliates,email|unique:freelances,email'
+        'email' => 'required|email|unique:agent,email|unique:affiliate,email|unique:freelance,email'
     ];
 
     $validator = Validator::make(['email' => $email], $rules);

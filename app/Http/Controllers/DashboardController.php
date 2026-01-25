@@ -1023,7 +1023,7 @@ class DashboardController extends Controller
     {
         // Validate request
         $validated = $request->validate([
-            'email' => 'required|email|unique:agents,email',
+            'email' => 'required|email|unique:agent,email',
             'nama_pic' => 'required|string|max:255',
             'no_hp' => 'required|string|max:20',
             'provinsi' => 'required|string|max:255',
