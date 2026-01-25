@@ -541,15 +541,17 @@
                         <div>
                             <h3 class="font-bold text-lg mb-2">Customer Service</h3>
                             <div class="space-y-1">
-                                <p>Email: support@kuotaumroh.id</p>
-                                <p>WhatsApp: +62 811-2994-499</p>
+                                <p>Email: info@digilabsmitrasolusi.com</p>
+                                <p>Wa: +62 811-3995-599</p>
                             </div>
                         </div>
                         <div>
                             <h3 class="font-bold text-lg mb-2">Alamat</h3>
                             <p class="text-primary-foreground/90 leading-relaxed">
-                                Jl. Harmoni No. 123, Jakarta<br>
-                                Indonesia
+                                Griya Candramas 3 Blok is nomor 31 , <br>
+                                Desa/Kelurahan Pepe, Kec. Sedati,<br>
+                                Kab. Sidoarjo, Provinsi Jawa Timur,<br>
+                                Kode Pos: 61253
                             </p>
                         </div>
                     </div>
