@@ -236,7 +236,7 @@
                 nextRewardName: 'Voucher Pulsa 50K'
             },
             portalType: '{{ $portalType ?? "freelance" }}',
-            freelanceId: {{ $user->id ?? 'null' }},
+            freelanceId: '{{ $user->id ?? "" }}',
             linkReferral: '{{ $linkReferral ?? "" }}',
             referralCode: '{{ $user->ref_code ?? "" }}',
             referralLink: '{{ !empty($linkReferral) ? url("/agent/" . $linkReferral) : "#" }}',

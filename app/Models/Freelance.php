@@ -2,15 +2,36 @@
 
 namespace App\Models;
 
+use App\Traits\HasCustomId;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Laravel\Sanctum\HasApiTokens;
 
 class Freelance extends Model
 {
-    use HasFactory, HasApiTokens;
+    use HasFactory, HasApiTokens, HasCustomId;
 
     protected $table = 'freelance';
+
+    public $incrementing = false;
+
+    protected $keyType = 'string';
+
+    /**
+     * Get the custom ID prefix for this model (FRL00001)
+     */
+    public static function getIdPrefix(): string
+    {
+        return 'FRL';
+    }
+
+    /**
+     * Get the number of digits for the ID
+     */
+    public static function getIdDigits(): int
+    {
+        return 5;
+    }
 
     protected $fillable = [
         'nama',
@@ -36,6 +57,6 @@ class Freelance extends Model
      */
     public function agents()
     {
-        return $this->hasMany(Agent::class);
+        return $this->hasMany(Agent::class, 'freelance_id', 'id');
     }
 }

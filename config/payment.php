@@ -23,6 +23,17 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Tokodigi Payment API URL
+    |--------------------------------------------------------------------------
+    |
+    | URL API tokodigi.id untuk verifikasi pembayaran
+    | Endpoint: /umroh/payment?id={payment_id}
+    |
+    */
+    'tokodigi_api_url' => env('TOKODIGI_API_URL', 'https://tokodigi.id'),
+
+    /*
+    |--------------------------------------------------------------------------
     | QRIS Static String
     |--------------------------------------------------------------------------
     |

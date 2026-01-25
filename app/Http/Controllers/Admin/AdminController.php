@@ -669,7 +669,7 @@ class AdminController extends Controller
     public function indexAffiliates()
     {
         $affiliates = Affiliate::with('agents')->paginate(10);
-        return view('admin.affiliates.index', compact('affiliates'));
+        return view('admin.affiliate.index', compact('affiliates'));
     }
 
     /**
@@ -677,7 +677,7 @@ class AdminController extends Controller
      */
     public function createAffiliate()
     {
-        return view('admin.affiliates.create');
+        return view('admin.affiliate.create');
     }
 
     /**
@@ -716,7 +716,7 @@ class AdminController extends Controller
                 'is_active' => true,
             ]);
 
-            return $this->redirectBackTo('admin.affiliates.index', $request)->with('success', 'Affiliate berhasil ditambahkan');
+            return $this->redirectBackTo('admin.affiliate.index', $request)->with('success', 'Affiliate berhasil ditambahkan');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
         }
@@ -728,7 +728,7 @@ class AdminController extends Controller
     public function showAffiliate($id)
     {
         $affiliate = Affiliate::with('agents')->findOrFail($id);
-        return view('admin.affiliates.show', compact('affiliate'));
+        return view('admin.affiliate.show', compact('affiliate'));
     }
 
     /**
@@ -737,7 +737,7 @@ class AdminController extends Controller
     public function editAffiliate($id)
     {
         $affiliate = Affiliate::findOrFail($id);
-        return view('admin.affiliates.edit', compact('affiliate'));
+        return view('admin.affiliate.edit', compact('affiliate'));
     }
 
     /**
@@ -764,7 +764,7 @@ class AdminController extends Controller
 
         try {
             $affiliate->update($request->all());
-            return redirect()->route('admin.affiliates.index')->with('success', 'Affiliate berhasil diperbarui');
+            return redirect()->route('admin.affiliate.index')->with('success', 'Affiliate berhasil diperbarui');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
         }
@@ -778,7 +778,7 @@ class AdminController extends Controller
         try {
             $affiliate = Affiliate::findOrFail($id);
             $affiliate->delete();
-            return redirect()->route('admin.affiliates.index')->with('success', 'Affiliate berhasil dihapus');
+            return redirect()->route('admin.affiliate.index')->with('success', 'Affiliate berhasil dihapus');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
@@ -832,7 +832,7 @@ class AdminController extends Controller
     public function indexFreelances()
     {
         $freelances = Freelance::with('agents')->paginate(10);
-        return view('admin.freelances.index', compact('freelances'));
+        return view('admin.freelance.index', compact('freelances'));
     }
 
     /**
@@ -840,7 +840,7 @@ class AdminController extends Controller
      */
     public function createFreelance()
     {
-        return view('admin.freelances.create');
+        return view('admin.freelance.create');
     }
 
     /**
@@ -879,7 +879,7 @@ class AdminController extends Controller
                 'is_active' => true,
             ]);
 
-            return $this->redirectBackTo('admin.freelances.index', $request)->with('success', 'Freelance berhasil ditambahkan');
+            return $this->redirectBackTo('admin.freelance.index', $request)->with('success', 'Freelance berhasil ditambahkan');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
         }
@@ -891,7 +891,7 @@ class AdminController extends Controller
     public function showFreelance($id)
     {
         $freelance = Freelance::with('agents')->findOrFail($id);
-        return view('admin.freelances.show', compact('freelance'));
+        return view('admin.freelance.show', compact('freelance'));
     }
 
     /**
@@ -900,7 +900,7 @@ class AdminController extends Controller
     public function editFreelance($id)
     {
         $freelance = Freelance::findOrFail($id);
-        return view('admin.freelances.edit', compact('freelance'));
+        return view('admin.freelance.edit', compact('freelance'));
     }
 
     /**
@@ -927,7 +927,7 @@ class AdminController extends Controller
 
         try {
             $freelance->update($request->all());
-            return redirect()->route('admin.freelances.index')->with('success', 'Freelance berhasil diperbarui');
+            return redirect()->route('admin.freelance.index')->with('success', 'Freelance berhasil diperbarui');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
         }
@@ -941,7 +941,7 @@ class AdminController extends Controller
         try {
             $freelance = Freelance::findOrFail($id);
             $freelance->delete();
-            return redirect()->route('admin.freelances.index')->with('success', 'Freelance berhasil dihapus');
+            return redirect()->route('admin.freelance.index')->with('success', 'Freelance berhasil dihapus');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
@@ -995,7 +995,7 @@ class AdminController extends Controller
     public function indexAgents()
     {
         $agents = Agent::paginate(10);
-        return view('admin.agents.index', compact('agents'));
+        return view('admin.agent.index', compact('agents'));
     }
 
     /**
@@ -1003,7 +1003,7 @@ class AdminController extends Controller
      */
     public function createAgent()
     {
-        return view('admin.agents.create');
+        return view('admin.agent.create');
     }
 
     /**
@@ -1026,8 +1026,8 @@ class AdminController extends Controller
             'provinsi' => 'required|string|max:100',
             'kabupaten_kota' => 'required|string|max:100',
             'alamat_lengkap' => 'required|string',
-            'affiliate_id' => 'nullable|integer|exists:affiliate,id',
-            'freelance_id' => 'nullable|integer|exists:freelance,id',
+            'affiliate_id' => 'nullable|string|exists:affiliate,id',
+            'freelance_id' => 'nullable|string|exists:freelance,id',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
@@ -1069,7 +1069,7 @@ class AdminController extends Controller
 
             Agent::create($data);
 
-            return $this->redirectBackTo('admin.agents.index', $request)->with('success', 'Travel Agent berhasil ditambahkan');
+            return $this->redirectBackTo('admin.agent.index', $request)->with('success', 'Travel Agent berhasil ditambahkan');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
         }
@@ -1081,7 +1081,7 @@ class AdminController extends Controller
     public function showAgent($id)
     {
         $agent = Agent::findOrFail($id);
-        return view('admin.agents.show', compact('agent'));
+        return view('admin.agent.show', compact('agent'));
     }
 
     /**
@@ -1090,7 +1090,7 @@ class AdminController extends Controller
     public function editAgent($id)
     {
         $agent = Agent::findOrFail($id);
-        return view('admin.agents.edit', compact('agent'));
+        return view('admin.agent.edit', compact('agent'));
     }
 
     /**
@@ -1134,7 +1134,7 @@ class AdminController extends Controller
             ]);
             $payload['no_hp'] = $this->normalizeIndonesianMsisdn((string) $payload['no_hp']);
             $agent->update($payload);
-            return redirect()->route('admin.agents.index')->with('success', 'Agent berhasil diperbarui');
+            return redirect()->route('admin.agent.index')->with('success', 'Agent berhasil diperbarui');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
         }
@@ -1148,7 +1148,7 @@ class AdminController extends Controller
         try {
             $agent = Agent::findOrFail($id);
             $agent->delete();
-            return redirect()->route('admin.agents.index')->with('success', 'Agent berhasil dihapus');
+            return redirect()->route('admin.agent.index')->with('success', 'Agent berhasil dihapus');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
