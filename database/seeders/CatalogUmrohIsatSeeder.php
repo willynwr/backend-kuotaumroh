@@ -12,7 +12,7 @@ class CatalogUmrohIsatSeeder extends Seeder
      */
     public function run(): void
     {
-        DB::table('CATALOG_UMROH_ISAT')->insert([
+        DB::table('catalog_umroh_isat')->insert([
             ['id' => 'R3-ISAT-0011', 'type' => 'INDOSAT', 'sub_type' => 'INTERNET', 'name' => 'Internet 10 Hari', 'days' => 10, 'quota' => '5 GB', 'telp' => null, 'sms' => null, 'bonus' => null, 'price_modal' => 196000, 'price_app' => 245000, 'price_customer' => 245000, 'price_bulk' => 223000, 'price_self' => 225000, 'fee_affiliate' => 8100, 'is_active' => 0, 'product_id' => '618', 'menu_id' => null, 'source_digipos' => 0, 'source_name' => 'ISAT', 'promo' => null],
             ['id' => 'R3-ISAT-0012', 'type' => 'INDOSAT', 'sub_type' => 'INTERNET', 'name' => 'Internet 10 Hari', 'days' => 10, 'quota' => '5 GB', 'telp' => null, 'sms' => null, 'bonus' => null, 'price_modal' => 190493, 'price_app' => 245000, 'price_customer' => 245000, 'price_bulk' => 223000, 'price_self' => 225000, 'fee_affiliate' => 8100, 'is_active' => 1, 'product_id' => 'pre29424474', 'menu_id' => null, 'source_digipos' => 0, 'source_name' => 'DIGIFLAZZ', 'promo' => null],
             ['id' => 'R3-ISAT-0013', 'type' => 'INDOSAT', 'sub_type' => 'INTERNET + TELP/SMS', 'name' => 'Combo 10 Hari', 'days' => 10, 'quota' => '5 GB', 'telp' => '60', 'sms' => '60', 'bonus' => null, 'price_modal' => 252360, 'price_app' => 325000, 'price_customer' => 325000, 'price_bulk' => 296000, 'price_self' => 305000, 'fee_affiliate' => 10800, 'is_active' => 1, 'product_id' => 'pre29424469', 'menu_id' => null, 'source_digipos' => 0, 'source_name' => 'DIGIFLAZZ', 'promo' => null],

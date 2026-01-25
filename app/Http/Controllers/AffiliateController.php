@@ -29,8 +29,8 @@ class AffiliateController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'nama' => 'required|string|max:255',
-            'email' => 'required|email|unique:affiliates,email|unique:agents,email|unique:freelances,email',
-            'no_wa' => 'required|string|unique:affiliates,no_wa',
+            'email' => 'required|email|unique:affiliate,email|unique:agent,email|unique:freelance,email',
+            'no_wa' => 'required|string|unique:affiliate,no_wa',
             'provinsi' => 'required|string',
             'kab_kota' => 'required|string',
             'alamat_lengkap' => 'required|string',
@@ -38,7 +38,7 @@ class AffiliateController extends Controller
             'surat_ppiu' => 'nullable|file|mimes:pdf,png,jpg,jpeg|max:2048',
             'date_register' => 'nullable|date',
             'is_active' => 'nullable|boolean',
-            'link_referral' => 'required|string|alpha_dash:ascii|unique:affiliates,link_referral',
+            'link_referral' => 'required|string|alpha_dash:ascii|unique:affiliate,link_referral',
         ], [
             'logo.max' => 'Ukuran file logo maksimal 2 MB',
             'logo.mimes' => 'Format file logo harus PNG, JPG, JPEG, atau GIF',

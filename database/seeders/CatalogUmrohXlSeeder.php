@@ -12,7 +12,7 @@ class CatalogUmrohXlSeeder extends Seeder
      */
     public function run(): void
     {
-        DB::table('CATALOG_UMROH_XL')->insert([
+        DB::table('catalog_umroh_xl')->insert([
             ['id' => 'R4-XL-001', 'type' => 'XL', 'sub_type' => 'INTERNET', 'name' => 'Internet 10 Hari', 'days' => 10, 'quota' => '5 GB', 'telp' => null, 'sms' => null, 'bonus' => null, 'price_modal' => 221065, 'price_app' => 0, 'price_customer' => 280000, 'price_bulk' => 252000, 'price_self' => 260000, 'fee_affiliate' => 8400, 'is_active' => 1, 'product_id' => 'pre29424509', 'menu_id' => null, 'source_digipos' => 0, 'source_name' => 'DIGIFLAZZ', 'promo' => null],
             ['id' => 'R4-XL-002', 'type' => 'XL', 'sub_type' => 'INTERNET', 'name' => 'Internet 15 Hari', 'days' => 15, 'quota' => '8 GB', 'telp' => null, 'sms' => null, 'bonus' => '2 GB Transit', 'price_modal' => 318000, 'price_app' => 0, 'price_customer' => 378000, 'price_bulk' => 340200, 'price_self' => 358000, 'fee_affiliate' => 11340, 'is_active' => 1, 'product_id' => 'pre29424511', 'menu_id' => null, 'source_digipos' => 0, 'source_name' => 'DIGIFLAZZ', 'promo' => null],
             ['id' => 'R4-XL-003', 'type' => 'XL', 'sub_type' => 'INTERNET', 'name' => 'Internet 20 Hari', 'days' => 20, 'quota' => '8 GB', 'telp' => null, 'sms' => null, 'bonus' => '2 GB Transit', 'price_modal' => 398000, 'price_app' => 0, 'price_customer' => 458000, 'price_bulk' => 412200, 'price_self' => 438000, 'fee_affiliate' => 13740, 'is_active' => 1, 'product_id' => 'pre29424512', 'menu_id' => null, 'source_digipos' => 0, 'source_name' => 'DIGIFLAZZ', 'promo' => null],

@@ -25,7 +25,7 @@ class SamplePesananSeeder extends Seeder
         $agent = Agent::find($agentId);
         if (!$agent) {
             $this->command->warn('Agent ID ' . $agentId . ' belum ada, membuat sample agent...');
-            DB::table('agents')->updateOrInsert(
+            DB::table('agent')->updateOrInsert(
                 ['id' => $agentId],
                 [
                     'jenis_agent' => 'agent',

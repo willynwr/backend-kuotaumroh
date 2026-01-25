@@ -14,8 +14,8 @@ class ReferralCodeGenerator
         do {
             $code = Str::lower(Str::random($length));
 
-            $exists = DB::table('affiliates')->where('ref_code', $code)->exists()
-                || DB::table('freelances')->where('ref_code', $code)->exists();
+            $exists = DB::table('affiliate')->where('ref_code', $code)->exists()
+                || DB::table('freelance')->where('ref_code', $code)->exists();
         } while ($exists);
 
         return $code;
