@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Models\Freelance;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class FreelanceSeeder extends Seeder
@@ -26,8 +26,6 @@ class FreelanceSeeder extends Seeder
                 'is_active' => true,
                 'link_referral' => 'ahmad-freelance',
                 'ref_code' => 'FRL-AHMAD',
-                'created_at' => Carbon::now()->subDays(30),
-                'updated_at' => Carbon::now()->subDays(30),
             ],
             [
                 'nama' => 'apip ',
@@ -40,8 +38,6 @@ class FreelanceSeeder extends Seeder
                 'is_active' => true,
                 'link_referral' => 'apip-reelance',
                 'ref_code' => 'FRL-APIPBACKUP',
-                'created_at' => Carbon::now()->subDays(25),
-                'updated_at' => Carbon::now()->subDays(25),
             ],
             [
                 'nama' => 'Budi Santoso',
@@ -54,8 +50,6 @@ class FreelanceSeeder extends Seeder
                 'is_active' => true,
                 'link_referral' => 'budi-freelance',
                 'ref_code' => 'FRL-BUDI',
-                'created_at' => Carbon::now()->subDays(20),
-                'updated_at' => Carbon::now()->subDays(20),
             ],
             [
                 'nama' => 'Dewi Lestari',
@@ -68,8 +62,6 @@ class FreelanceSeeder extends Seeder
                 'is_active' => true,
                 'link_referral' => 'dewi-freelance',
                 'ref_code' => 'FRL-DEWI',
-                'created_at' => Carbon::now()->subDays(15),
-                'updated_at' => Carbon::now()->subDays(15),
             ],
             [
                 'nama' => 'Eko Prasetyo',
@@ -82,8 +74,6 @@ class FreelanceSeeder extends Seeder
                 'is_active' => true,
                 'link_referral' => 'eko-freelance',
                 'ref_code' => 'FRL-EKO',
-                'created_at' => Carbon::now()->subDays(10),
-                'updated_at' => Carbon::now()->subDays(10),
             ],
             [
                 'nama' => 'Fitri Handayani',
@@ -96,8 +86,6 @@ class FreelanceSeeder extends Seeder
                 'is_active' => true,
                 'link_referral' => 'fitri-freelance',
                 'ref_code' => 'FRL-FITRI',
-                'created_at' => Carbon::now()->subDays(8),
-                'updated_at' => Carbon::now()->subDays(8),
             ],
             [
                 'nama' => 'Guntur Wijaya',
@@ -110,8 +98,6 @@ class FreelanceSeeder extends Seeder
                 'is_active' => true,
                 'link_referral' => 'guntur-freelance',
                 'ref_code' => 'FRL-GUNTUR',
-                'created_at' => Carbon::now()->subDays(5),
-                'updated_at' => Carbon::now()->subDays(5),
             ],
             [
                 'nama' => 'Hana Permata',
@@ -124,8 +110,6 @@ class FreelanceSeeder extends Seeder
                 'is_active' => true,
                 'link_referral' => 'hana-freelance',
                 'ref_code' => 'FRL-HANA',
-                'created_at' => Carbon::now()->subDays(3),
-                'updated_at' => Carbon::now()->subDays(3),
             ],
             [
                 'nama' => 'Irfan Hakim',
@@ -138,8 +122,6 @@ class FreelanceSeeder extends Seeder
                 'is_active' => false,
                 'link_referral' => 'irfan-freelance',
                 'ref_code' => 'FRL-IRFAN',
-                'created_at' => Carbon::now()->subDays(2),
-                'updated_at' => Carbon::now()->subDays(2),
             ],
             [
                 'nama' => 'Joko Susanto',
@@ -152,8 +134,6 @@ class FreelanceSeeder extends Seeder
                 'is_active' => true,
                 'link_referral' => 'joko-freelance',
                 'ref_code' => 'FRL-JOKO',
-                'created_at' => Carbon::now()->subDays(1),
-                'updated_at' => Carbon::now()->subDays(1),
             ],
             [
                 'nama' => 'Faiz Daffa',
@@ -166,11 +146,11 @@ class FreelanceSeeder extends Seeder
                 'is_active' => true,
                 'link_referral' => 'faizdaffanaut',
                 'ref_code' => 'FRL-FAIZ',
-                'created_at' => Carbon::now()->subDays(1),
-                'updated_at' => Carbon::now()->subDays(1),
             ],
         ];
 
-        DB::table('freelance')->insert($freelances);
+        foreach ($freelances as $data) {
+            Freelance::create($data);
+        }
     }
 }

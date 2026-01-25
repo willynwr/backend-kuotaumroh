@@ -797,9 +797,9 @@
             sortDirection: 'desc',
             agents: {!! json_encode($agents) !!},
             stats: {
-                total: 0,
-                activeThisMonth: 0,
-                pointsEarned: 0
+                total: {{ $stats['totalAgents'] ?? 0 }},
+                activeThisMonth: {{ $stats['activeAgentsThisMonth'] ?? 0 }},
+                pointsEarned: {{ $stats['saldoFee'] ?? ($user->saldo_fee ?? 0) }}
             },
             toastVisible: false,
             toastTitle: '',

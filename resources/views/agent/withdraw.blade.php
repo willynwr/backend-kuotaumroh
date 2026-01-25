@@ -160,7 +160,7 @@
     function withdrawApp() {
       return {
         imageBase: @json(asset('images')),
-        agentId: {{ isset($user) && $user ? $user->id : 'null' }},
+        agentId: '{{ isset($user) && $user ? $user->id : "" }}',
         walletBalance: {{ isset($walletBalance) && isset($walletBalance['balance']) ? $walletBalance['balance'] : 0 }},
         minWithdrawal: 100000,
         amount: '',

@@ -234,8 +234,9 @@ function parseReferralString(str) {
   const parts = str.split(':');
   if (parts.length !== 2) return null;
   const type = parts[0];
-  const id = parseInt(parts[1], 10);
-  if (!Number.isFinite(id) || id <= 0) return null;
+  const id = parts[1];
+  // Validate ID: support both integer (legacy) and string format (AFT00001, FRL00012, etc.)
+  if (!id || id.trim() === '') return null;
   if (type !== 'affiliate' && type !== 'freelance') return null;
   return { source_type: type, id };
 }

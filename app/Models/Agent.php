@@ -2,30 +2,36 @@
 
 namespace App\Models;
 
-use App\Traits\HasUuid;
+use App\Traits\HasCustomId;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Laravel\Sanctum\HasApiTokens;
 
 class Agent extends Model
 {
-    use HasFactory, HasApiTokens, HasUuid;
+    use HasFactory, HasApiTokens, HasCustomId;
 
     protected $table = 'agent';
 
-    /**
-     * Indicates if the IDs are auto-incrementing.
-     *
-     * @var bool
-     */
     public $incrementing = false;
 
-    /**
-     * The data type of the auto-incrementing ID.
-     *
-     * @var string
-     */
     protected $keyType = 'string';
+
+    /**
+     * Get the custom ID prefix for this model (AGT00001)
+     */
+    public static function getIdPrefix(): string
+    {
+        return 'AGT';
+    }
+
+    /**
+     * Get the number of digits for the ID
+     */
+    public static function getIdDigits(): int
+    {
+        return 5;
+    }
 
     protected $fillable = [
         'email',

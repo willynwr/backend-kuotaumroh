@@ -244,24 +244,28 @@
             }
 
             if (affiliateId) {
-              setReferral({ source_type: 'affiliate', id: parseInt(affiliateId, 10) });
-              setReferralContext({ source_type: 'affiliate', id: parseInt(affiliateId, 10), url: window.location.href });
+              // Support both integer (legacy) and string format (AFT00001, etc.)
+              const id = affiliateId.trim();
+              if (id) {
+                setReferral({ source_type: 'affiliate', id });
+                setReferralContext({ source_type: 'affiliate', id, url: window.location.href });
+              }
               return;
             }
             if (freelanceId) {
-              setReferral({ source_type: 'freelance', id: parseInt(freelanceId, 10) });
-              setReferralContext({ source_type: 'freelance', id: parseInt(freelanceId, 10), url: window.location.href });
+              // Support both integer (legacy) and string format (FRL00012, etc.)
+              const id = freelanceId.trim();
+              if (id) {
+                setReferral({ source_type: 'freelance', id });
+                setReferralContext({ source_type: 'freelance', id, url: window.location.href });
+              }
               return;
             }
             if (ref) {
-              const parts = ref.split(':');
-              if (parts.length === 2) {
-                const type = parts[0];
-                const id = parseInt(parts[1], 10);
-                if ((type === 'affiliate' || type === 'freelance') && Number.isFinite(id)) {
-                  setReferral({ source_type: type, id });
-                  setReferralContext({ source_type: type, id, url: window.location.href });
-                }
+              const parsed = parseReferralString(ref);
+              if (parsed) {
+                setReferral(parsed);
+                setReferralContext({ ...parsed, url: window.location.href });
               }
             }
           } catch {
