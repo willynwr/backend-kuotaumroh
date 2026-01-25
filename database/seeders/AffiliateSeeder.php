@@ -32,6 +32,6 @@ class AffiliateSeeder extends Seeder
       
         ];
 
-        DB::table('affiliates')->insert($affiliates);
+        DB::table('affiliate')->insert($affiliates);
     }
 }

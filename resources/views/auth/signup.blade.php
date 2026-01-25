@@ -67,6 +67,50 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
+  <!-- Custom Styles for Map Lock -->
+  <style>
+    /* Prevent map interaction when locked */
+    .leaflet-container.map-locked {
+      cursor: default !important;
+    }
+    
+    .leaflet-container.map-locked * {
+      cursor: default !important;
+    }
+
+    /* Smooth transitions for map lock overlay */
+    [x-cloak] {
+      display: none !important;
+    }
+
+    /* Toast notification animation */
+    @keyframes slide-in {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .animate-slide-in {
+      animation: slide-in 0.3s ease-out;
+    }
+
+    /* Ensure error messages are visible above map */
+    [class*="border-destructive"] {
+      position: relative;
+      z-index: 100;
+    }
+
+    .text-destructive {
+      position: relative;
+      z-index: 100;
+    }
+  </style>
+
   <!-- Tailwind Config -->
   <script>
     tailwind.config = {
@@ -172,30 +216,36 @@
 
                   <!-- Email -->
                   <div class="space-y-2">
-                    <label for="email" class="text-sm font-medium">Email</label>
+                    <label for="email" class="text-sm font-medium">Email <span class="text-destructive">*</span></label>
                     <input id="email" type="email" x-model="formData.email" placeholder="Email" disabled
                       class="flex h-10 w-full rounded-md border border-input bg-muted px-3 py-2 text-sm opacity-60 cursor-not-allowed">
                   </div>
                   <!-- Full Name -->
                   <div class="space-y-2">
-                    <label for="full_name" class="text-sm font-medium">Nama PIC</label>
+                    <label for="full_name" class="text-sm font-medium">Nama PIC <span class="text-destructive">*</span></label>
                     <input id="full_name" type="text" x-model="formData.full_name"
-                      class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+                      class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      :class="errors.nama_pic && 'border-destructive focus:ring-destructive'">
+                    <p x-show="errors.nama_pic" class="text-xs text-destructive" x-text="errors.nama_pic"></p>
                   </div>
 
 
                   <!-- Phone Number -->
                   <div class="space-y-2">
-                    <label for="phone" class="text-sm font-medium">No. HP (+62)</label>
-                    <div class="relative">
-                      <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                        <span class="text-sm text-muted-foreground">+62</span>
+                    <label for="phone" class="text-sm font-medium">No. HP (+62) <span class="text-destructive">*</span></label>
+                    <div class="flex gap-0">
+                      <!-- Prefix +62 with background -->
+                      <div class="flex items-center justify-center px-3 rounded-l-md border border-r-0 border-input bg-gray-100">
+                        <span class="text-sm font-bold text-gray-800">+62</span>
                       </div>
+                      <!-- Phone Input -->
                       <input id="phone" type="tel" x-model="formData.phone"
                         @input="formData.phone = formData.phone.replace(/[^0-9]/g, '')" placeholder="81xxx"
-                        class="flex h-10 w-full rounded-md border border-input bg-background pl-12 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+                        class="flex h-10 flex-1 rounded-r-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                        :class="errors.no_hp && 'border-destructive focus:ring-destructive'">
                     </div>
-                    <p class="text-xs text-muted-foreground">Format: 81xxxxxxxx (tanpa 0 atau +62)</p>
+                    <p x-show="errors.no_hp" class="text-xs text-destructive" x-text="errors.no_hp"></p>
+                    <p x-show="!errors.no_hp" class="text-xs text-muted-foreground">Format: 81xxxxxxxx (tanpa 0 atau +62)</p>
                   </div>
                 </div>
 
@@ -291,13 +341,14 @@
                 <!-- Province (Searchable) -->
                 <div class="space-y-2" x-data="{ provinceDropdownOpen: false, provinceSearch: '' }"
                   x-init="$watch('provinceDropdownOpen', value => { if (value) $nextTick(() => $refs.provinceSearchInput.focus()) })">
-                  <label for="province" class="text-sm font-medium">Pilih Provinsi</label>
+                  <label for="province" class="text-sm font-medium">Pilih Provinsi <span class="text-destructive">*</span></label>
 
                   <!-- Custom Searchable Dropdown -->
                   <div class="relative" @click.away="provinceDropdownOpen = false">
                     <!-- Trigger Button -->
                     <button type="button" @click="provinceDropdownOpen = !provinceDropdownOpen"
-                      class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+                      class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      :class="errors.provinsi && 'border-destructive focus:ring-destructive'">
                       <span :class="!formData.province && 'text-muted-foreground'"
                         x-text="formData.province || 'Pilih provinsi'"></span>
                       <svg class="h-4 w-4 transition-transform" :class="provinceDropdownOpen && 'rotate-180'"
@@ -335,18 +386,20 @@
                       </div>
                     </div>
                   </div>
+                  <p x-show="errors.provinsi" class="text-xs text-destructive" x-text="errors.provinsi"></p>
                 </div>
 
                 <!-- City (Searchable) -->
                 <div class="space-y-2" x-data="{ cityDropdownOpen: false, citySearch: '' }"
                   x-init="$watch('cityDropdownOpen', value => { if (value) $nextTick(() => $refs.citySearchInput.focus()) })">
-                  <label for="city" class="text-sm font-medium">Pilih Kota/Kab</label>
+                  <label for="city" class="text-sm font-medium">Pilih Kota/Kab <span class="text-destructive">*</span></label>
 
                   <!-- Custom Searchable Dropdown -->
                   <div class="relative" @click.away="cityDropdownOpen = false">
                     <!-- Trigger Button -->
                     <button type="button" @click="cityDropdownOpen = !cityDropdownOpen"
-                      class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+                      class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      :class="errors.kabupaten_kota && 'border-destructive focus:ring-destructive'">
                       <span :class="!formData.city && 'text-muted-foreground'"
                         x-text="formData.city || 'Pilih kota/kabupaten'"></span>
                       <svg class="h-4 w-4 transition-transform" :class="cityDropdownOpen && 'rotate-180'" fill="none"
@@ -383,13 +436,14 @@
                       </div>
                     </div>
                   </div>
+                  <p x-show="errors.kabupaten_kota" class="text-xs text-destructive" x-text="errors.kabupaten_kota"></p>
                 </div>
               </div>
 
               <!-- Full Address -->
               <div class="space-y-2">
                 <div class="flex justify-between items-center">
-                  <label for="address" class="text-sm font-medium">Alamat Lengkap</label>
+                  <label for="address" class="text-sm font-medium">Alamat Lengkap <span class="text-destructive">*</span></label>
                   <span x-show="isGeocodingAddress" x-transition
                     class="text-xs text-muted-foreground flex items-center gap-1">
                     <svg class="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24">
@@ -402,13 +456,31 @@
                   </span>
                 </div>
                 <textarea id="address" x-model="formData.address" @blur="geocodeAddress()" rows="5"
-                  class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"></textarea>
+                  class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  :class="errors.alamat_lengkap && 'border-destructive focus:ring-destructive'"></textarea>
+                <p x-show="errors.alamat_lengkap" class="text-xs text-destructive" x-text="errors.alamat_lengkap"></p>
               </div>
 
               <!-- Map Section -->
               <div class="space-y-2" x-show="formData.city">
-                <label class="text-sm font-medium">Tandai Lokasi di Peta</label>
-                <p class="text-xs text-muted-foreground">Klik pada peta untuk menandai lokasi Anda</p>
+                <div class="flex items-center justify-between">
+                  <div>
+                    <label class="text-sm font-medium">Tandai Lokasi di Peta</label>
+                    <p class="text-xs text-muted-foreground">Aktifkan peta lalu klik pada peta untuk menandai lokasi</p>
+                  </div>
+                  <!-- Map Lock/Unlock Button -->
+                  <button type="button" @click="toggleMapLock()" 
+                    class="flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-md border transition-colors"
+                    :class="mapLocked ? 'bg-muted text-muted-foreground border-input hover:bg-muted/80' : 'bg-primary text-primary-foreground border-primary hover:bg-primary/90'">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" x-show="mapLocked">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" x-show="!mapLocked">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                    </svg>
+                    <span x-text="mapLocked ? 'Klik untuk Geser Peta' : 'Kunci Peta'"></span>
+                  </button>
+                </div>
 
                 <!-- Map Search -->
                 <div class="relative mb-2">
@@ -453,9 +525,24 @@
                   </div>
                 </div>
 
-                <!-- Map Container -->
-                <div id="map" class="w-full h-80 rounded-md border border-input overflow-hidden"
-                  x-init="$nextTick(() => { if (formData.city && !mapInitialized) initializeMap(); })"></div>
+                <!-- Map Container with Overlay -->
+                <div class="relative">
+                  <div id="map" class="w-full h-80 rounded-md border border-input overflow-hidden"
+                    x-init="$nextTick(() => { if (formData.city && !mapInitialized) initializeMap(); })"></div>
+                  
+                  <!-- Locked Overlay -->
+                  <div x-show="mapLocked" 
+                    @click="toggleMapLock()"
+                    class="absolute inset-0 bg-black/10 backdrop-blur-[1px] rounded-md cursor-pointer flex items-center justify-center transition-opacity hover:bg-black/20 group">
+                    <div class="bg-white/95 px-6 py-4 rounded-lg shadow-lg border border-primary/20 text-center max-w-xs">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mx-auto mb-2 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                      <p class="text-sm font-semibold text-foreground mb-1">Peta Dikunci</p>
+                      <p class="text-xs text-muted-foreground leading-relaxed">Peta tidak akan bergerak saat Anda scroll halaman. Klik di sini untuk mengaktifkan peta agar bisa digeser dan di-zoom.</p>
+                    </div>
+                  </div>
+                </div>
 
                 <!-- Coordinates Manual Input -->
                 <div x-show="formData.city" class="grid grid-cols-2 gap-4 pt-2">
@@ -570,9 +657,50 @@
     </footer>
 
     <!-- Toast Notification -->
-    <div x-show="toastVisible" x-transition class="toast">
+    <div x-show="toastVisible" x-transition 
+      class="fixed top-4 right-4 max-w-md bg-white border border-input rounded-lg shadow-2xl p-4 z-[9999] animate-slide-in">
       <div class="font-semibold mb-1" x-text="toastTitle"></div>
       <div class="text-sm text-muted-foreground" x-text="toastMessage"></div>
+    </div>
+
+    <!-- Success Modal -->
+    <div x-show="showSuccessModal" 
+      x-transition:enter="transition ease-out duration-300"
+      x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100"
+      class="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+      style="display: none;">
+      <div x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 scale-95"
+        x-transition:enter-end="opacity-100 scale-100"
+        class="bg-white rounded-2xl shadow-xl max-w-md w-full p-8 text-center">
+        
+        <!-- Success Icon -->
+        <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-green-100 mb-6">
+          <svg class="h-10 w-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
+          </svg>
+        </div>
+
+        <!-- Title -->
+        <h3 class="text-2xl font-bold text-gray-900 mb-3">Pendaftaran Berhasil!</h3>
+        
+        <!-- Message -->
+        <p class="text-gray-600 mb-8 leading-relaxed">
+          Silakan login untuk masuk dan tunggu approval dari admin.
+        </p>
+
+        <!-- Countdown -->
+        <div class="inline-flex items-center gap-3 px-5 py-3 bg-gray-50 rounded-lg border border-gray-200">
+          <svg class="animate-spin h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span class="text-sm text-gray-700">
+            Mengarahkan dalam <span class="font-bold text-green-600" x-text="successCountdown"></span> detik
+          </span>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -619,6 +747,7 @@
         mapInstance: null,
         marker: null,
         mapInitialized: false,
+        mapLocked: true, // Lock map by default to prevent accidental scrolling
 
         // Map Search
         mapSearchQuery: '',
@@ -627,6 +756,10 @@
         isGeocodingAddress: false,
         mapSearchDebounce: null,
         referralContext: null,
+
+        // Success Modal
+        showSuccessModal: false,
+        successCountdown: 3,
 
         async init() {
           // Get email from URL params (passed after Google auth)
@@ -771,6 +904,32 @@
           });
         },
 
+        toggleMapLock() {
+          this.mapLocked = !this.mapLocked;
+          
+          if (this.mapInstance) {
+            const mapContainer = document.getElementById('map');
+            
+            if (this.mapLocked) {
+              // Lock the map
+              this.mapInstance.dragging.disable();
+              this.mapInstance.touchZoom.disable();
+              this.mapInstance.scrollWheelZoom.disable();
+              if (mapContainer) mapContainer.classList.add('map-locked');
+              
+              this.showToast('Peta Dikunci', 'Peta tidak akan bergerak saat Anda scroll. Lokasi Anda aman!');
+            } else {
+              // Unlock the map
+              this.mapInstance.dragging.enable();
+              this.mapInstance.touchZoom.enable();
+              this.mapInstance.scrollWheelZoom.enable();
+              if (mapContainer) mapContainer.classList.remove('map-locked');
+              
+              this.showToast('Peta Aktif', 'Sekarang Anda bisa menggeser dan zoom peta untuk memilih lokasi.');
+            }
+          }
+        },
+
         async recenterMapToCity() {
           if (!this.mapInstance || !this.formData.city) return;
 
@@ -833,8 +992,16 @@
               }
             }
 
-            // Initialize the map
-            this.mapInstance = L.map('map').setView([centerLat, centerLng], zoomLevel);
+            // Initialize the map with scroll disabled by default
+            this.mapInstance = L.map('map', {
+              scrollWheelZoom: false,
+              dragging: !this.mapLocked,
+              touchZoom: false,
+              doubleClickZoom: true,
+              boxZoom: true,
+              keyboard: true,
+              tap: false
+            }).setView([centerLat, centerLng], zoomLevel);
 
             // Add OpenStreetMap tile layer
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -854,6 +1021,12 @@
             });
 
             this.mapInitialized = true;
+
+            // Add map-locked class if map is locked by default
+            const mapContainer = document.getElementById('map');
+            if (this.mapLocked && mapContainer) {
+              mapContainer.classList.add('map-locked');
+            }
 
             // Fix map size check after render
             setTimeout(() => {
@@ -1035,6 +1208,18 @@
           this.formData.longitude = lng;
 
           console.log('Location set to:', lat, lng);
+          
+          // Auto-lock map after setting location to prevent accidental changes
+          if (!this.mapLocked) {
+            setTimeout(() => {
+              this.mapLocked = true;
+              this.mapInstance.dragging.disable();
+              this.mapInstance.touchZoom.disable();
+              this.mapInstance.scrollWheelZoom.disable();
+              const mapContainer = document.getElementById('map');
+              if (mapContainer) mapContainer.classList.add('map-locked');
+            }, 1000); // Lock after 1 second
+          }
         },
 
         handleFileUpload(event) {
@@ -1107,26 +1292,80 @@
         async handleSubmit() {
           this.errors = {};
 
+          // Frontend validation
           let hasError = false;
-          if (!this.formData.travel_name) {
+          
+          if (!this.formData.full_name || this.formData.full_name.trim() === '') {
+            this.errors.nama_pic = 'Nama PIC wajib diisi';
+            hasError = true;
+          }
+          
+          if (!this.formData.phone || this.formData.phone.trim() === '') {
+            this.errors.no_hp = 'Nomor HP wajib diisi';
+            hasError = true;
+          } else if (this.formData.phone.length < 9) {
+            this.errors.no_hp = 'Nomor HP minimal 9 digit';
+            hasError = true;
+          }
+          
+          if (!this.formData.travel_name || this.formData.travel_name.trim() === '') {
             this.errors.travel_name = 'Nama Travel wajib diisi';
             hasError = true;
           }
+          
           if (!this.formData.travel_type) {
             this.errors.travel_type = 'Jenis Travel wajib dipilih';
             hasError = true;
           }
+          
           if (!this.formData.travel_member) {
             this.errors.travel_member = 'Total Traveller per Bulan wajib diisi';
             hasError = true;
+          } else if (this.formData.travel_member < 1) {
+            this.errors.travel_member = 'Total Traveller minimal 1';
+            hasError = true;
           }
+          
+          if (!this.formData.province || this.formData.province.trim() === '') {
+            this.errors.provinsi = 'Provinsi wajib dipilih';
+            hasError = true;
+          }
+          
+          if (!this.formData.city || this.formData.city.trim() === '') {
+            this.errors.kabupaten_kota = 'Kabupaten/Kota wajib dipilih';
+            hasError = true;
+          }
+          
+          if (!this.formData.address || this.formData.address.trim() === '') {
+            this.errors.alamat_lengkap = 'Alamat lengkap wajib diisi';
+            hasError = true;
+          }
+          
           if (!this.cooperationLetterFile) {
             this.errors.cooperationLetterFile = 'Surat PPIU wajib diupload';
             hasError = true;
           }
 
           if (hasError) {
-            this.showToast('Validasi Gagal', 'Mohon lengkapi data travel yang bertanda bintang');
+            this.showToast('Validasi Gagal', 'Mohon lengkapi semua data yang bertanda bintang (*)');
+            
+            // Scroll to first error with offset
+            await this.$nextTick();
+            const firstErrorElement = document.querySelector('[class*="border-destructive"]');
+            if (firstErrorElement) {
+              const elementPosition = firstErrorElement.getBoundingClientRect().top;
+              const offsetPosition = elementPosition + window.pageYOffset - 100;
+              
+              window.scrollTo({
+                top: offsetPosition,
+                behavior: 'smooth'
+              });
+              
+              // Focus field after scroll
+              setTimeout(() => {
+                firstErrorElement.focus();
+              }, 500);
+            }
             return;
           }
 
@@ -1185,42 +1424,102 @@
             }
 
             // Submit to Laravel route (not API)
-            let response = await fetch('{{ route("agent.store") }}', {
-              method: 'POST',
-              body: formDataToSend,
-              credentials: 'same-origin'
-            });
-
-            const contentType = response.headers.get('content-type') || '';
+            let response;
             let result = null;
-            if (contentType.includes('application/json')) {
-              result = await response.json();
-            } else {
-              // Fallback to text for non-JSON responses (e.g., 413 from server)
-              const text = await response.text();
-              if (!response.ok) {
-                if (response.status === 413) {
-                  throw new Error('Ukuran unggahan melebihi batas server. Pastikan file <= 5MB.');
+            
+            try {
+              response = await fetch('{{ route("agent.store") }}', {
+                method: 'POST',
+                body: formDataToSend,
+                credentials: 'same-origin'
+              });
+            } catch (error) {
+              console.error('Network error:', error);
+              throw new Error('Tidak dapat terhubung ke server. Periksa koneksi internet Anda.');
+            }
+
+            // Parse response
+            const contentType = response.headers.get('content-type') || '';
+            
+            try {
+              if (contentType.includes('application/json')) {
+                result = await response.json();
+              } else {
+                // Non-JSON response (HTML error page, etc.)
+                const text = await response.text();
+                
+                // Don't show raw HTML to user
+                if (!response.ok) {
+                  console.error('Server returned non-JSON response:', text.substring(0, 500));
+                  
+                  if (response.status === 413) {
+                    throw new Error('Ukuran file terlalu besar. Maksimal 5MB untuk setiap file.');
+                  } else if (response.status === 500) {
+                    throw new Error('Terjadi kesalahan pada server. Silakan coba lagi atau hubungi administrator.');
+                  } else if (response.status === 419) {
+                    throw new Error('Sesi Anda telah berakhir. Silakan refresh halaman dan coba lagi.');
+                  } else {
+                    throw new Error('Terjadi kesalahan saat mendaftar. Silakan coba lagi.');
+                  }
                 }
-                throw new Error(text || 'Server error');
               }
+            } catch (parseError) {
+              if (parseError.message.includes('Ukuran file') || parseError.message.includes('Terjadi kesalahan')) {
+                throw parseError;
+              }
+              console.error('Failed to parse response:', parseError);
+              throw new Error('Server mengembalikan response yang tidak valid. Silakan coba lagi.');
             }
 
             if (!response.ok) {
               if (response.status === 422 && result?.errors) {
-                const errorMessages = Object.values(result.errors).flat().join(', ');
-                throw new Error(errorMessages);
+                // Map backend errors to form fields
+                this.errors = {};
+                for (const [key, messages] of Object.entries(result.errors)) {
+                  this.errors[key] = Array.isArray(messages) ? messages[0] : messages;
+                }
+                
+                // Get first error message
+                const firstError = Object.values(result.errors).flat()[0];
+                
+                // Scroll to first error field
+                await this.$nextTick();
+                const firstErrorElement = document.querySelector('[class*="border-destructive"]');
+                if (firstErrorElement) {
+                  // Scroll dengan offset agar tidak tertutup elemen lain
+                  const elementPosition = firstErrorElement.getBoundingClientRect().top;
+                  const offsetPosition = elementPosition + window.pageYOffset - 100;
+                  
+                  window.scrollTo({
+                    top: offsetPosition,
+                    behavior: 'smooth'
+                  });
+                  
+                  // Focus pada field error
+                  setTimeout(() => {
+                    firstErrorElement.focus();
+                  }, 500);
+                }
+                
+                throw new Error(firstError);
               }
-              throw new Error(result?.message || 'Terjadi kesalahan saat mendaftar');
+              throw new Error(result?.message || 'Terjadi kesalahan saat mendaftar. Silakan coba lagi.');
             }
 
             console.log('Success:', result);
-            this.showToast('Berhasil!', 'Pendaftaran Travel Agent berhasil. Mengarahkan ke login...');
             clearReferral();
-
-            setTimeout(() => {
-              window.location.href = '{{ route("login") }}';
-            }, 800);
+            
+            // Show success modal with countdown
+            this.showSuccessModal = true;
+            this.successCountdown = 3;
+            
+            const countdownInterval = setInterval(() => {
+              this.successCountdown--;
+              if (this.successCountdown <= 0) {
+                clearInterval(countdownInterval);
+                window.location.href = '{{ route("login") }}';
+              }
+            }, 1000);
 
           } catch (error) {
             console.error('Submission error:', error);

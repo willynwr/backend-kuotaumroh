@@ -508,11 +508,69 @@ class DashboardController extends Controller
             return redirect()->route('login')->with('error', 'Login gagal. Akun Anda belum terdaftar. Silakan daftar terlebih dahulu atau hubungi tim support.');
         }
 
+        $user = $data['user'];
+        $transactions = [];
+
+        // Jika user adalah agent, ambil data transaksi dari database
+        if ($user instanceof \App\Models\Agent) {
+            // Ambil data pembayaran (batch) beserta pesanan
+            $transactions = \App\Models\Pembayaran::where('agent_id', $user->id)
+                ->with(['pesanan.produk'])
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function($pembayaran) {
+                    // Map items pesanan terlebih dahulu
+                    $items = $pembayaran->pesanan->map(function($pesanan) {
+                        // Map status aktivasi pesanan
+                        $itemStatus = match($pesanan->status_aktivasi) {
+                            'berhasil' => 'completed',
+                            'proses' => 'processing',
+                            'gagal' => 'failed',
+                            default => 'pending'
+                        };
+
+                        return [
+                            'msisdn' => $pesanan->msisdn,
+                            'provider' => $pesanan->produk->provider ?? 'N/A',
+                            'packageName' => $pesanan->nama_paket ?? ($pesanan->produk->nama_paket ?? 'N/A'),
+                            'price' => $pesanan->harga_jual,
+                            'status' => $itemStatus
+                        ];
+                    })->toArray();
+
+                    // Tentukan status batch berdasarkan status pesanan di dalamnya
+                    $statusCounts = collect($items)->countBy('status');
+                    $totalItems = count($items);
+                    
+                    // Logic status batch:
+                    // - completed: jika semua item completed
+                    // - processing: jika ada item yang processing atau campuran
+                    // - pending: jika semua item pending
+                    $batchStatus = 'pending';
+                    if ($statusCounts->get('completed', 0) === $totalItems) {
+                        $batchStatus = 'completed';
+                    } elseif ($statusCounts->get('processing', 0) > 0 || $statusCounts->get('completed', 0) > 0) {
+                        $batchStatus = 'processing';
+                    }
+
+                    return [
+                        'id' => (string)$pembayaran->id,
+                        'batchId' => $pembayaran->batch_id,
+                        'batchName' => $pembayaran->nama_batch ?? 'Batch ' . $pembayaran->batch_id,
+                        'createdAt' => $pembayaran->created_at->toISOString(),
+                        'totalAmount' => $pembayaran->total_pembayaran,
+                        'status' => $batchStatus,
+                        'items' => $items
+                    ];
+                })->toArray();
+        }
+
         return view($data['viewPath'] . '.history', [
             'user' => $data['user'],
             'linkReferral' => $linkReferral,
             'portalType' => $data['portalType'],
-            'stats' => $this->getStats($data['user'])
+            'stats' => $this->getStats($data['user']),
+            'transactions' => $transactions
         ]);
     }
 
@@ -780,6 +838,53 @@ class DashboardController extends Controller
             $viewData['linkReferalAgent'] = $data['user']->link_referal;
         }
 
+        // Jika user adalah agent, ambil data pesanan agent sendiri untuk ditampilkan di halaman referrals
+        if ($data['user'] instanceof \App\Models\Agent) {
+            $user = $data['user'];
+            
+            // Ambil pesanan agent ini
+            $referralOrders = \App\Models\Pesanan::where('agent_id', $user->id)
+                ->with(['produk', 'pembayaran'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            // Hitung komisi/profit dari pesanan yang berhasil (status_aktivasi = 'berhasil')
+            $totalCommission = $referralOrders->filter(function($order) {
+                return $order->status_aktivasi === 'berhasil';
+            })->sum('profit');
+
+            // Hitung komisi pending dari pesanan yang masih proses (status_aktivasi = 'proses')
+            $pendingCommission = $referralOrders->filter(function($order) {
+                return $order->status_aktivasi === 'proses';
+            })->sum('profit');
+
+            // Map data untuk view
+            $referralData = $referralOrders->map(function($order) {
+                // Map status aktivasi pesanan
+                $status = match($order->status_aktivasi) {
+                    'berhasil' => 'sukses',
+                    'proses' => 'proses',
+                    'gagal' => 'batal',
+                    default => 'proses'
+                };
+
+                return [
+                    'id' => (string)$order->id,
+                    'msisdn' => $order->msisdn,
+                    'provider' => $order->produk->provider ?? 'N/A',
+                    'packageName' => $order->nama_paket ?? ($order->produk->nama_paket ?? 'N/A'),
+                    'orderDate' => $order->created_at->toISOString(),
+                    'sellPrice' => $order->harga_jual,
+                    'commission' => $order->profit,
+                    'status' => $status
+                ];
+            })->toArray();
+
+            $viewData['totalCommission'] = $totalCommission;
+            $viewData['pendingCommission'] = $pendingCommission;
+            $viewData['referralOrders'] = $referralData;
+        }
+
         return view($data['viewPath'] . '.referrals', $viewData);
     }
 
@@ -918,7 +1023,7 @@ class DashboardController extends Controller
     {
         // Validate request
         $validated = $request->validate([
-            'email' => 'required|email|unique:agents,email',
+            'email' => 'required|email|unique:agent,email',
             'nama_pic' => 'required|string|max:255',
             'no_hp' => 'required|string|max:20',
             'provinsi' => 'required|string|max:255',

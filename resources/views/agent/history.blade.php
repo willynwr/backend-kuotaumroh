@@ -58,7 +58,7 @@
               <select x-show="viewMode === 'batch'" x-model="statusFilter" class="flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm w-full sm:w-[150px]">
                 <option value="all">Semua Status</option>
                 <option value="pending">Menunggu Pembayaran</option>
-                <option value="processing">Proses Inject</option>
+                <option value="processing">Menunggu Pembayaran</option>
                 <option value="completed">Order Selesai</option>
               </select>
               <select x-show="viewMode === 'number'" x-model="statusFilter" x-cloak class="flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm w-full sm:w-[150px]">
@@ -384,123 +384,10 @@
         toastMessage: '',
         currentPage: 1,
         itemsPerPage: 50,
-        transactions: [
-          {
-            id: '1',
-            batchId: 'ORD-2026-0115',
-            batchName: 'Batch Januari Group A',
-            createdAt: new Date('2026-01-15T10:30:00'),
-            totalAmount: 3250000,
-            status: 'completed',
-            items: [
-              { msisdn: '081234567890', provider: 'Telkomsel', packageName: 'Umroh Gold 10GB', price: 250000, status: 'completed' },
-              { msisdn: '081234567891', provider: 'Telkomsel', packageName: 'Umroh Gold 10GB', price: 250000, status: 'completed' },
-              { msisdn: '085234567892', provider: 'Indosat', packageName: 'Umroh Silver 5GB', price: 150000, status: 'completed' },
-              { msisdn: '08223456789', provider: 'XL', packageName: 'Umroh Premium 15GB', price: 350000, status: 'completed' },
-              { msisdn: '08523456790', provider: 'Indosat', packageName: 'Umroh Gold 10GB', price: 250000, status: 'completed' },
-              { msisdn: '08123456791', provider: 'Telkomsel', packageName: 'Umroh Silver 5GB', price: 150000, status: 'completed' },
-              { msisdn: '08783456792', provider: 'Smartfren', packageName: 'Umroh Basic 3GB', price: 100000, status: 'completed' },
-              { msisdn: '08123456793', provider: 'Telkomsel', packageName: 'Umroh Gold 10GB', price: 250000, status: 'completed' },
-              { msisdn: '08523456794', provider: 'Indosat', packageName: 'Umroh Premium 15GB', price: 350000, status: 'completed' },
-              { msisdn: '08123456795', provider: 'Telkomsel', packageName: 'Umroh Silver 5GB', price: 150000, status: 'completed' },
-              { msisdn: '08983456796', provider: 'Tri', packageName: 'Umroh Basic 3GB', price: 100000, status: 'completed' },
-              { msisdn: '08123456797', provider: 'Telkomsel', packageName: 'Umroh Gold 10GB', price: 250000, status: 'completed' },
-              { msisdn: '08223456798', provider: 'XL', packageName: 'Umroh Silver 5GB', price: 150000, status: 'completed' },
-            ]
-          },
-          {
-            id: '2',
-            batchId: 'ORD-2026-0112',
-            batchName: 'Pesanan Group B',
-            createdAt: new Date('2026-01-12T14:15:00'),
-            totalAmount: 2150000,
-            status: 'processing',
-            items: [
-              { msisdn: '081234567893', provider: 'Telkomsel', packageName: 'Umroh Gold 10GB', price: 250000, status: 'completed' },
-              { msisdn: '081234567894', provider: 'Telkomsel', packageName: 'Umroh Gold 10GB', price: 250000, status: 'processing' },
-              { msisdn: '085234567895', provider: 'Indosat', packageName: 'Umroh Silver 5GB', price: 150000, status: 'processing' },
-              { msisdn: '08223456896', provider: 'XL', packageName: 'Umroh Premium 15GB', price: 350000, status: 'processing' },
-              { msisdn: '08123456897', provider: 'Telkomsel', packageName: 'Umroh Silver 5GB', price: 150000, status: 'completed' },
-              { msisdn: '08523456898', provider: 'Indosat', packageName: 'Umroh Gold 10GB', price: 250000, status: 'processing' },
-              { msisdn: '08783456899', provider: 'Smartfren', packageName: 'Umroh Basic 3GB', price: 100000, status: 'completed' },
-              { msisdn: '08123456800', provider: 'Telkomsel', packageName: 'Umroh Gold 10GB', price: 250000, status: 'processing' },
-              { msisdn: '08523456801', provider: 'Indosat', packageName: 'Umroh Premium 15GB', price: 350000, status: 'completed' },
-            ]
-          },
-          {
-            id: '3',
-            batchId: 'ORD-2026-0110',
-            batchName: 'Batch Desember Group C',
-            createdAt: new Date('2026-01-10T09:00:00'),
-            totalAmount: 2650000,
-            status: 'completed',
-            items: [
-              { msisdn: '08123456802', provider: 'Telkomsel', packageName: 'Umroh Gold 10GB', price: 250000, status: 'completed' },
-              { msisdn: '08523456803', provider: 'Indosat', packageName: 'Umroh Silver 5GB', price: 150000, status: 'completed' },
-              { msisdn: '08223456804', provider: 'XL', packageName: 'Umroh Premium 15GB', price: 350000, status: 'completed' },
-              { msisdn: '08983456805', provider: 'Tri', packageName: 'Umroh Basic 3GB', price: 100000, status: 'completed' },
-              { msisdn: '08123456806', provider: 'Telkomsel', packageName: 'Umroh Gold 10GB', price: 250000, status: 'completed' },
-              { msisdn: '08523456807', provider: 'Indosat', packageName: 'Umroh Silver 5GB', price: 150000, status: 'completed' },
-              { msisdn: '08223456808', provider: 'XL', packageName: 'Umroh Gold 10GB', price: 250000, status: 'completed' },
-              { msisdn: '08123456809', provider: 'Telkomsel', packageName: 'Umroh Premium 15GB', price: 350000, status: 'completed' },
-              { msisdn: '08523456810', provider: 'Indosat', packageName: 'Umroh Gold 10GB', price: 250000, status: 'completed' },
-              { msisdn: '08783456811', provider: 'Smartfren', packageName: 'Umroh Basic 3GB', price: 100000, status: 'completed' },
-              { msisdn: '08123456812', provider: 'Telkomsel', packageName: 'Umroh Silver 5GB', price: 150000, status: 'completed' },
-            ]
-          },
-          {
-            id: '4',
-            batchId: 'ORD-2026-0108',
-            batchName: 'Pesanan Pending Group D',
-            createdAt: new Date('2026-01-08T16:45:00'),
-            totalAmount: 1800000,
-            status: 'pending',
-            items: [
-              { msisdn: '08123456813', provider: 'Telkomsel', packageName: 'Umroh Gold 10GB', price: 250000, status: 'pending' },
-              { msisdn: '08523456814', provider: 'Indosat', packageName: 'Umroh Silver 5GB', price: 150000, status: 'pending' },
-              { msisdn: '08223456815', provider: 'XL', packageName: 'Umroh Premium 15GB', price: 350000, status: 'pending' },
-              { msisdn: '08123456816', provider: 'Telkomsel', packageName: 'Umroh Gold 10GB', price: 250000, status: 'pending' },
-              { msisdn: '08523456817', provider: 'Indosat', packageName: 'Umroh Basic 3GB', price: 100000, status: 'pending' },
-              { msisdn: '08983456818', provider: 'Tri', packageName: 'Umroh Silver 5GB', price: 150000, status: 'pending' },
-              { msisdn: '08123456819', provider: 'Telkomsel', packageName: 'Umroh Gold 10GB', price: 250000, status: 'pending' },
-              { msisdn: '08223456820', provider: 'XL', packageName: 'Umroh Gold 10GB', price: 250000, status: 'pending' },
-            ]
-          },
-          {
-            id: '5',
-            batchId: 'ORD-2026-0105',
-            batchName: 'Batch Mixed Status',
-            createdAt: new Date('2026-01-05T11:20:00'),
-            totalAmount: 2900000,
-            status: 'processing',
-            items: [
-              { msisdn: '08123456821', provider: 'Telkomsel', packageName: 'Umroh Gold 10GB', price: 250000, status: 'completed' },
-              { msisdn: '08523456822', provider: 'Indosat', packageName: 'Umroh Silver 5GB', price: 150000, status: 'failed' },
-              { msisdn: '08223456823', provider: 'XL', packageName: 'Umroh Premium 15GB', price: 350000, status: 'processing' },
-              { msisdn: '08123456824', provider: 'Telkomsel', packageName: 'Umroh Gold 10GB', price: 250000, status: 'processing' },
-              { msisdn: '08523456825', provider: 'Indosat', packageName: 'Umroh Silver 5GB', price: 150000, status: 'failed' },
-              { msisdn: '08783456826', provider: 'Smartfren', packageName: 'Umroh Basic 3GB', price: 100000, status: 'completed' },
-              { msisdn: '08123456827', provider: 'Telkomsel', packageName: 'Umroh Premium 15GB', price: 350000, status: 'processing' },
-              { msisdn: '08523456828', provider: 'Indosat', packageName: 'Umroh Gold 10GB', price: 250000, status: 'completed' },
-              { msisdn: '08223456829', provider: 'XL', packageName: 'Umroh Silver 5GB', price: 150000, status: 'pending' },
-              { msisdn: '08983456830', provider: 'Tri', packageName: 'Umroh Basic 3GB', price: 100000, status: 'processing' },
-              { msisdn: '08123456831', provider: 'Telkomsel', packageName: 'Umroh Gold 10GB', price: 250000, status: 'completed' },
-              { msisdn: '08523456832', provider: 'Indosat', packageName: 'Umroh Premium 15GB', price: 350000, status: 'processing' },
-            ]
-          },
-          {
-            id: '6',
-            batchId: 'ORD-2026-0102',
-            batchName: 'Batch Menunggu Pembayaran',
-            createdAt: new Date('2026-01-02T08:00:00'),
-            totalAmount: 1500000,
-            status: 'pending',
-            items: [
-              { msisdn: '081299990001', provider: 'Telkomsel', packageName: 'Umroh Gold 10GB', price: 250000, status: 'pending' },
-              { msisdn: '081299990002', provider: 'Telkomsel', packageName: 'Umroh Gold 10GB', price: 250000, status: 'pending' },
-            ]
-          },
-        ],
+        transactions: @json($transactions ?? []).map(tx => ({
+          ...tx,
+          createdAt: new Date(tx.createdAt)
+        })),
         init() {
           this.$nextTick(() => {
             flatpickr('#dateRangePicker', {
@@ -686,7 +573,7 @@
         getStatusLabel(status) {
           switch (status) {
             case 'pending': return 'Menunggu Pembayaran';
-            case 'processing': return 'Proses Inject';
+            case 'processing': return 'Menunggu Pembayaran';
             case 'completed': return 'Order Selesai';
             default: return status;
           }

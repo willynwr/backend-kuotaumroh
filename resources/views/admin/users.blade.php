@@ -361,7 +361,11 @@
     x-transition:leave-start="opacity-100 translate-x-0"
     x-transition:leave-end="opacity-0 translate-x-full">
     <div class="rounded-lg shadow-2xl overflow-hidden"
-      :class="notificationType === 'success' ? 'bg-white border-l-4 border-green-500' : 'bg-white border-l-4 border-red-500'">
+      :class="{
+        'bg-white border-l-4 border-green-500': notificationType === 'success',
+        'bg-white border-l-4 border-red-500': notificationType === 'error',
+        'bg-white border-l-4 border-orange-500': notificationType === 'warning'
+      }">
       <div class="p-4">
         <div class="flex items-start gap-3">
           <!-- Icon -->
@@ -380,13 +384,24 @@
                 </svg>
               </div>
             </template>
+            <template x-if="notificationType === 'warning'">
+              <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+              </div>
+            </template>
           </div>
           
           <!-- Content -->
           <div class="flex-1 pt-0.5">
             <h3 class="text-sm font-semibold" 
-              :class="notificationType === 'success' ? 'text-green-900' : 'text-red-900'"
-              x-text="notificationType === 'success' ? 'Berhasil!' : 'Error!'">
+              :class="{
+                'text-green-900': notificationType === 'success',
+                'text-red-900': notificationType === 'error',
+                'text-orange-900': notificationType === 'warning'
+              }"
+              x-text="notificationType === 'success' ? 'Berhasil!' : (notificationType === 'warning' ? 'Perhatian!' : 'Error!')">
             </h3>
             <p class="mt-1 text-sm text-gray-600" x-text="notificationMessage"></p>
           </div>
@@ -403,7 +418,11 @@
         <!-- Progress Bar -->
         <div class="mt-3 h-1 bg-gray-200 rounded-full overflow-hidden">
           <div class="h-full transition-all duration-[3000ms] ease-linear"
-            :class="notificationType === 'success' ? 'bg-green-500' : 'bg-red-500'"
+            :class="{
+              'bg-green-500': notificationType === 'success',
+              'bg-red-500': notificationType === 'error',
+              'bg-orange-500': notificationType === 'warning'
+            }"
             x-init="$nextTick(() => { if(notificationModalOpen) $el.style.width = '0%'; setTimeout(() => $el.style.width = '100%', 10); })">
           </div>
         </div>
@@ -769,7 +788,7 @@ function usersPage() {
             if(!this.approvalUser) return;
             try {
                 const formData = new FormData();
-                formData.append('link_referral', this.referralSlug);
+                formData.append('link_referal', this.referralSlug);
                 formData.append('_token', '{{ csrf_token() }}');
                 
                 const res = await fetch(`/admin/agents/${this.approvalUser.id}/approve`, {
@@ -778,9 +797,25 @@ function usersPage() {
                     body: formData
                 });
                 const data = await res.json();
-                if(data.success) window.location.reload();
-                else this.showNotification(data.message || 'Error', 'error');
-            } catch(e) { this.showNotification('Error approving user', 'error'); }
+                
+                if(res.ok) {
+                    this.showNotification('Agent berhasil di-approve', 'success');
+                    this.closeApproveModal();
+                    setTimeout(() => window.location.reload(), 1500);
+                } else if(res.status === 422) {
+                    // Validation error
+                    if(data.errors && data.errors.link_referal) {
+                        this.showNotification(data.errors.link_referal[0], 'error');
+                    } else {
+                        this.showNotification(data.message || 'Validasi gagal', 'error');
+                    }
+                } else {
+                    this.showNotification(data.message || 'Error', 'error');
+                }
+            } catch(e) { 
+                console.error('Error:', e);
+                this.showNotification('Error approving user', 'error'); 
+            }
         },
         
         openRejectModal(u) { this.approvalUser = u; this.rejectModalOpen = true; },
@@ -798,9 +833,18 @@ function usersPage() {
                     }
                 });
                 const data = await res.json();
-                if(data.success) window.location.reload();
-                else this.showNotification(data.message || 'Error', 'error');
-            } catch(e) { this.showNotification('Error rejecting user', 'error'); }
+                
+                if(res.ok && data.success) {
+                    this.showNotification('Agent berhasil ditolak', 'warning');
+                    this.closeRejectModal();
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    this.showNotification(data.message || 'Error menolak agent', 'error');
+                }
+            } catch(e) { 
+                console.error('Error:', e);
+                this.showNotification('Error rejecting user', 'error'); 
+            }
         },
         
         openFileModal(path) {

@@ -114,14 +114,14 @@ class FreelanceController extends Controller
 
         $validator = Validator::make($request->all(), [
             'nama' => 'string|max:255',
-            'email' => 'email|unique:freelances,email,' . $id . '|unique:agents,email|unique:affiliates,email',
-            'no_wa' => 'string|unique:freelances,no_wa,' . $id,
+            'email' => 'email|unique:freelance,email,' . $id . '|unique:agent,email|unique:affiliate,email',
+            'no_wa' => 'string|unique:freelance,no_wa,' . $id,
             'provinsi' => 'string',
             'kab_kota' => 'string',
             'alamat_lengkap' => 'string',
             'date_register' => 'date',
             'is_active' => 'boolean',
-            'link_referral' => 'string|alpha_dash:ascii|unique:freelances,link_referral,' . $id,
+            'link_referral' => 'string|alpha_dash:ascii|unique:freelance,link_referral,' . $id,
         ]);
 
         if ($validator->fails()) {
