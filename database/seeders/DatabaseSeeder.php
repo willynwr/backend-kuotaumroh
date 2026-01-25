@@ -17,6 +17,13 @@ class DatabaseSeeder extends Seeder
             AgentSeeder::class,
             FreelanceSeeder::class,
             ProdukSeeder::class,
+            CatalogUmrohAxisSeeder::class,
+            CatalogUmrohByuSeeder::class,
+            CatalogUmrohIsatSeeder::class,
+            CatalogUmrohSfrenSeeder::class,
+            CatalogUmrohTriSeeder::class,
+            CatalogUmrohTselSeeder::class,
+            CatalogUmrohXlSeeder::class,
         ]);
 
         // \App\Models\User::factory(10)->create();

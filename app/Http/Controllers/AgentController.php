@@ -319,12 +319,12 @@ class AgentController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                'email' => 'required|email|unique:agents,email|unique:affiliates,email|unique:freelances,email',
-                'affiliate_id' => 'nullable|exists:affiliates,id',
-                'freelance_id' => 'nullable|exists:freelances,id',
+                'email' => 'required|email|unique:agent,email|unique:affiliate,email|unique:freelance,email',
+                'affiliate_id' => 'nullable|exists:affiliate,id',
+                'freelance_id' => 'nullable|exists:freelance,id',
                 'kategori_agent' => 'required|in:Referral,Host',
                 'nama_pic' => 'required|string|max:255',
-                'no_hp' => 'required|string|unique:agents,no_hp|unique:affiliates,no_wa|unique:freelances,no_wa|regex:/^62[0-9]{9,13}$/',
+                'no_hp' => 'required|string|unique:agent,no_hp|unique:affiliate,no_wa|unique:freelance,no_wa|regex:/^62[0-9]{9,13}$/',
                 'nama_travel' => 'required|string|max:255',
                 'jenis_travel' => 'required|string|in:UMROH,LEISURE,UMROH LEISURE',
                 'total_traveller' => 'required|integer|min:1',
@@ -436,12 +436,12 @@ class AgentController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'email' => 'email|unique:agents,email,' . $id . '|unique:affiliates,email|unique:freelances,email',
-            'affiliate_id' => 'nullable|exists:affiliates,id',
-            'freelance_id' => 'nullable|exists:freelances,id',
+            'email' => 'email|unique:agent,email,' . $id . '|unique:affiliate,email|unique:freelance,email',
+            'affiliate_id' => 'nullable|exists:affiliate,id',
+            'freelance_id' => 'nullable|exists:freelance,id',
             'kategori_agent' => 'in:Referral,Host',
             'nama_pic' => 'string',
-            'no_hp' => 'string|unique:agents,no_hp,' . $id,
+            'no_hp' => 'string|unique:agent,no_hp,' . $id,
             'nama_travel' => 'nullable|string',
             'jenis_travel' => 'nullable|string',
             'provinsi' => 'string',

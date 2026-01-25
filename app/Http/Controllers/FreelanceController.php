@@ -29,8 +29,8 @@ class FreelanceController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'nama' => 'required|string|max:255',
-            'email' => 'required|email|unique:freelances,email|unique:agents,email|unique:affiliates,email',
-            'no_wa' => 'required|string|unique:freelances,no_wa',
+            'email' => 'required|email|unique:freelance,email|unique:agent,email|unique:affiliate,email',
+            'no_wa' => 'required|string|unique:freelance,no_wa',
             'provinsi' => 'required|string',
             'kab_kota' => 'required|string',
             'alamat_lengkap' => 'required|string',
@@ -38,7 +38,7 @@ class FreelanceController extends Controller
             'surat_ppiu' => 'nullable|file|mimes:pdf,png,jpg,jpeg|max:2048',
             'date_register' => 'nullable|date',
             'is_active' => 'nullable|boolean',
-            'link_referral' => 'required|string|alpha_dash:ascii|unique:freelances,link_referral',
+            'link_referral' => 'required|string|alpha_dash:ascii|unique:freelance,link_referral',
         ], [
             'logo.max' => 'Ukuran file logo maksimal 2 MB',
             'logo.mimes' => 'Format file logo harus PNG, JPG, JPEG, atau GIF',
@@ -114,14 +114,14 @@ class FreelanceController extends Controller
 
         $validator = Validator::make($request->all(), [
             'nama' => 'string|max:255',
-            'email' => 'email|unique:freelances,email,' . $id . '|unique:agents,email|unique:affiliates,email',
-            'no_wa' => 'string|unique:freelances,no_wa,' . $id,
+            'email' => 'email|unique:freelance,email,' . $id . '|unique:agent,email|unique:affiliate,email',
+            'no_wa' => 'string|unique:freelance,no_wa,' . $id,
             'provinsi' => 'string',
             'kab_kota' => 'string',
             'alamat_lengkap' => 'string',
             'date_register' => 'date',
             'is_active' => 'boolean',
-            'link_referral' => 'string|alpha_dash:ascii|unique:freelances,link_referral,' . $id,
+            'link_referral' => 'string|alpha_dash:ascii|unique:freelance,link_referral,' . $id,
         ]);
 
         if ($validator->fails()) {

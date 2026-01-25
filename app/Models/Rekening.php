@@ -9,6 +9,8 @@ class Rekening extends Model
 {
     use HasFactory;
 
+    protected $table = 'rekening';
+
     protected $fillable = [
         'agent_id',
         'nama_rekening',
