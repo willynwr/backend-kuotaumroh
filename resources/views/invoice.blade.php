@@ -135,7 +135,7 @@
     </style>
 </head>
 
-<body class="min-h-screen bg-gray-100">
+<body class="min-h-screen bg-gray-100 overflow-x-hidden">
     <div x-data="invoiceApp()" x-init="init()">
 
         <!-- Header (No Print) -->
@@ -187,8 +187,24 @@
                     </button>
                 </div>
 
-                <!-- Invoice Card -->
-                <div x-show="!loading && !error" class="bg-white rounded-xl shadow-lg print-shadow overflow-hidden">
+                <!-- Payment Pending State - Invoice Not Available -->
+                <div x-show="paymentPending && !loading && !error" class="bg-yellow-50 border border-yellow-200 rounded-xl p-6 text-center">
+                    <svg class="w-12 h-12 text-yellow-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <h3 class="text-lg font-semibold text-yellow-900 mb-2">Menunggu Pembayaran</h3>
+                    <p class="text-yellow-700 mb-4">Invoice hanya dapat diakses setelah pembayaran berhasil.</p>
+                    <p class="text-yellow-600 text-sm mb-4">Silakan selesaikan pembayaran terlebih dahulu, lalu kembali ke halaman ini.</p>
+                    <a href="{{ route('checkout') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                        </svg>
+                        Kembali ke Checkout
+                    </a>
+                </div>
+
+                <!-- Invoice Card (Only shows when payment is successful) -->
+                <div x-show="!loading && !error && !paymentPending" class="bg-white rounded-xl shadow-lg print-shadow overflow-hidden">
                     
                     <!-- Invoice Header -->
                     <div class="bg-emerald-600 px-8 py-6 text-white">
@@ -315,11 +331,55 @@
                     </div>
 
                     <!-- Order Items -->
-                    <div class="px-8 py-6">
+                    <div class="px-4 sm:px-8 py-6">
                         <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Detail Pesanan</h3>
                         
-                        <!-- Table -->
-                        <div class="overflow-x-auto">
+                        <!-- Mobile Card View -->
+                        <div class="sm:hidden space-y-3">
+                            <template x-for="(item, index) in invoice.items" :key="'mobile-'+index">
+                                <div class="border rounded-lg p-4 bg-gray-50 space-y-2">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <span class="text-xs font-medium text-gray-500">Item <span x-text="index + 1"></span></span>
+                                        <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium"
+                                            :class="getStatusClass(item.status)"
+                                            x-text="getStatusLabel(item.status)"></span>
+                                    </div>
+                                    <div class="space-y-1.5 text-sm">
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Nomor HP</span>
+                                            <span class="font-mono text-xs bg-white px-2 py-0.5 rounded" x-text="item.msisdn"></span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Paket</span>
+                                            <span class="font-medium text-right" x-text="item.packageName"></span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Tipe</span>
+                                            <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary" x-text="item.packageType"></span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Kuota</span>
+                                            <span x-text="item.quota"></span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Masa Aktif</span>
+                                            <span x-text="item.validity"></span>
+                                        </div>
+                                        <div class="flex justify-between" x-show="item.scheduledAt">
+                                            <span class="text-gray-600">Jadwal</span>
+                                            <span class="text-xs" x-text="item.scheduledAt"></span>
+                                        </div>
+                                        <div class="flex justify-between pt-2 border-t border-gray-200">
+                                            <span class="font-semibold">Harga</span>
+                                            <span class="font-bold text-primary" x-text="formatRupiah(item.price)"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+
+                        <!-- Desktop Table View -->
+                        <div class="hidden sm:block overflow-x-auto">
                             <table class="w-full text-sm">
                                 <thead>
                                     <tr class="border-b-2 border-gray-200">
@@ -394,8 +454,8 @@
                             </table>
                         </div>
                         
-                        <!-- Show More Button -->
-                        <div x-show="invoice.items.length > 5" class="mt-4 text-center no-print">
+                        <!-- Show More Button (Desktop Only) -->
+                        <div x-show="invoice.items.length > 5" class="mt-4 text-center no-print hidden sm:block">
                             <button 
                                 x-show="!showAllItems"
                                 x-transition:enter="transition ease-out duration-200"
@@ -511,6 +571,7 @@
                 showAllItems: false,
                 loading: true,
                 error: null,
+                paymentPending: false,  // True if payment is not yet successful
                 paymentId: '{{ $invoiceId ?? "" }}',  // From route parameter
                 
                 // Invoice Data
@@ -559,6 +620,7 @@
                     try {
                         this.loading = true;
                         this.error = null;
+                        this.paymentPending = false;
 
                         // Get agent_id from URL or localStorage
                         const urlParams = new URLSearchParams(window.location.search);
@@ -573,6 +635,19 @@
                         }
 
                         console.log('✅ Invoice data received:', response);
+
+                        // Check payment status first - only allow access for successful payments
+                        const data = response.data;
+                        const firstItem = Array.isArray(data) ? data[0] : data;
+                        const status = firstItem?.status || '';
+                        const mappedStatus = this.mapStatus(status);
+
+                        if (mappedStatus !== 'paid') {
+                            console.log('⚠️ Payment not successful, status:', status);
+                            this.paymentPending = true;
+                            this.loading = false;
+                            return;
+                        }
 
                         // Parse data berdasarkan type (bulk atau individual)
                         if (response.type === 'bulk') {
