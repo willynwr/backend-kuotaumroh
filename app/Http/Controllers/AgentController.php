@@ -225,7 +225,8 @@ class AgentController extends Controller
             $profitData['yearly_profit'] = $user->saldo_tahun ?? 0;
             
             // Ambil history profit per bulan dari pesanan
-            $monthlyHistory = \App\Models\Pesanan::where('agent_id', $user->id)
+            $monthlyHistory = \App\Models\Pesanan::where('kategori_channel', 'agent')
+                ->where('channel_id', $user->id)
                 ->whereHas('pembayaran', function($query) {
                     $query->whereIn('status_pembayaran', ['selesai', 'berhasil']);
                 })
@@ -238,7 +239,8 @@ class AgentController extends Controller
             // Untuk setiap bulan, ambil detail transaksinya dan restructure ke array
             $monthlyHistoryArray = [];
             foreach ($monthlyHistory as $monthData) {
-                $details = \App\Models\Pesanan::where('agent_id', $user->id)
+                $details = \App\Models\Pesanan::where('kategori_channel', 'agent')
+                    ->where('channel_id', $user->id)
                     ->whereHas('pembayaran', function($query) {
                         $query->whereIn('status_pembayaran', ['selesai', 'berhasil']);
                     })
@@ -266,7 +268,8 @@ class AgentController extends Controller
             $profitData['monthly_history'] = $monthlyHistoryArray;
             
             // Ambil history profit per tahun dari pesanan
-            $profitData['yearly_history'] = \App\Models\Pesanan::where('agent_id', $user->id)
+            $profitData['yearly_history'] = \App\Models\Pesanan::where('kategori_channel', 'agent')
+                ->where('channel_id', $user->id)
                 ->whereHas('pembayaran', function($query) {
                     $query->whereIn('status_pembayaran', ['selesai', 'berhasil']);
                 })

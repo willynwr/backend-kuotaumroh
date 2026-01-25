@@ -265,16 +265,18 @@ Route::prefix('agent')->name('agent.')->group(function () {
 // Agent Signup dengan Referral Link dari Affiliate/Freelance (Must be after agent.* routes)
 Route::get('/agent/{link_referral}', [App\Http\Controllers\AgentController::class, 'signupWithReferral'])->name('agent.signup.referral');
 
-// agent routes
-Route::get('/agent', [App\Http\Controllers\AgentController::class, 'index']);
-Route::get('/agent/{id}', [App\Http\Controllers\AgentController::class, 'show']);
-Route::post('/agent', [App\Http\Controllers\AgentController::class, 'store'])->name('agent.store');
-Route::post('/agent/{id}', [App\Http\Controllers\AgentController::class, 'update']);
-Route::post('/agent/{id}/approve', [App\Http\Controllers\AgentController::class, 'approve']);
-Route::post('/agent/{id}/reject', [App\Http\Controllers\AgentController::class, 'reject']);
-Route::post('/agent/{id}/activate', [App\Http\Controllers\AgentController::class, 'activate']);
-Route::post('/agent/{id}/deactivate', [App\Http\Controllers\AgentController::class, 'deactivate']);
-Route::delete('/agent/{id}', [App\Http\Controllers\AgentController::class, 'destroy']);
+// agent API routes (use /api prefix to avoid conflict with login page)
+Route::prefix('api')->group(function () {
+    Route::get('/agent', [App\Http\Controllers\AgentController::class, 'index']);
+    Route::get('/agent/{id}', [App\Http\Controllers\AgentController::class, 'show']);
+    Route::post('/agent', [App\Http\Controllers\AgentController::class, 'store'])->name('agent.store');
+    Route::post('/agent/{id}', [App\Http\Controllers\AgentController::class, 'update']);
+    Route::post('/agent/{id}/approve', [App\Http\Controllers\AgentController::class, 'approve']);
+    Route::post('/agent/{id}/reject', [App\Http\Controllers\AgentController::class, 'reject']);
+    Route::post('/agent/{id}/activate', [App\Http\Controllers\AgentController::class, 'activate']);
+    Route::post('/agent/{id}/deactivate', [App\Http\Controllers\AgentController::class, 'deactivate']);
+    Route::delete('/agent/{id}', [App\Http\Controllers\AgentController::class, 'destroy']);
+});
 
 // produk routes
 Route::get('/produk', [App\Http\Controllers\ProdukController::class, 'index']);
@@ -284,15 +286,17 @@ Route::post('/produk', [App\Http\Controllers\ProdukController::class, 'store']);
 Route::post('/produk/{id}', [App\Http\Controllers\ProdukController::class, 'update']);
 Route::delete('/produk/{id}', [App\Http\Controllers\ProdukController::class, 'destroy']);
 
-// affiliate routes
-Route::get('/affiliate', [App\Http\Controllers\AffiliateController::class, 'index']);
-Route::get('/affiliate/{id}', [App\Http\Controllers\AffiliateController::class, 'show']);
-Route::post('/affiliate', [App\Http\Controllers\AffiliateController::class, 'store']);
-Route::put('/affiliate/{id}', [App\Http\Controllers\AffiliateController::class, 'update']);
-Route::delete('/affiliate/{id}', [App\Http\Controllers\AffiliateController::class, 'destroy']);
-Route::post('/affiliate/{id}/activate', [App\Http\Controllers\AffiliateController::class, 'activate']);
-Route::post('/affiliate/{id}/deactivate', [App\Http\Controllers\AffiliateController::class, 'deactivate']);
-Route::get('/affiliate/{id}/agent', [App\Http\Controllers\AffiliateController::class, 'agents']);
+// affiliate API routes (use /api prefix to avoid conflict with portal routes)
+Route::prefix('api')->group(function () {
+    Route::get('/affiliate', [App\Http\Controllers\AffiliateController::class, 'index']);
+    Route::get('/affiliate/{id}', [App\Http\Controllers\AffiliateController::class, 'show']);
+    Route::post('/affiliate', [App\Http\Controllers\AffiliateController::class, 'store']);
+    Route::put('/affiliate/{id}', [App\Http\Controllers\AffiliateController::class, 'update']);
+    Route::delete('/affiliate/{id}', [App\Http\Controllers\AffiliateController::class, 'destroy']);
+    Route::post('/affiliate/{id}/activate', [App\Http\Controllers\AffiliateController::class, 'activate']);
+    Route::post('/affiliate/{id}/deactivate', [App\Http\Controllers\AffiliateController::class, 'deactivate']);
+    Route::get('/affiliate/{id}/agent', [App\Http\Controllers\AffiliateController::class, 'agents']);
+});
 
 // affiliate portal routes
 Route::prefix('affiliate')->group(function () {
@@ -355,14 +359,17 @@ Route::prefix('freelance')->group(function () {
     })->name('freelance.rewards');
 });
 
-Route::get('/freelance', [App\Http\Controllers\FreelanceController::class, 'index']);
-Route::get('/freelance/{id}', [App\Http\Controllers\FreelanceController::class, 'show']);
-Route::post('/freelance', [App\Http\Controllers\FreelanceController::class, 'store']);
-Route::put('/freelance/{id}', [App\Http\Controllers\FreelanceController::class, 'update']);
-Route::delete('/freelance/{id}', [App\Http\Controllers\FreelanceController::class, 'destroy']);
-Route::post('/freelance/{id}/activate', [App\Http\Controllers\FreelanceController::class, 'activate']);
-Route::post('/freelance/{id}/deactivate', [App\Http\Controllers\FreelanceController::class, 'deactivate']);
-Route::get('/freelance/{id}/agent', [App\Http\Controllers\FreelanceController::class, 'agents']);
+// freelance API routes (use /api prefix to avoid conflict with portal routes)
+Route::prefix('api')->group(function () {
+    Route::get('/freelance', [App\Http\Controllers\FreelanceController::class, 'index']);
+    Route::get('/freelance/{id}', [App\Http\Controllers\FreelanceController::class, 'show']);
+    Route::post('/freelance', [App\Http\Controllers\FreelanceController::class, 'store']);
+    Route::put('/freelance/{id}', [App\Http\Controllers\FreelanceController::class, 'update']);
+    Route::delete('/freelance/{id}', [App\Http\Controllers\FreelanceController::class, 'destroy']);
+    Route::post('/freelance/{id}/activate', [App\Http\Controllers\FreelanceController::class, 'activate']);
+    Route::post('/freelance/{id}/deactivate', [App\Http\Controllers\FreelanceController::class, 'deactivate']);
+    Route::get('/freelance/{id}/agent', [App\Http\Controllers\FreelanceController::class, 'agents']);
+});
 
 // auth routes
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
