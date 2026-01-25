@@ -24,7 +24,6 @@ class DatabaseSeeder extends Seeder
             CatalogUmrohTriSeeder::class,
             CatalogUmrohTselSeeder::class,
             CatalogUmrohXlSeeder::class,
-            SamplePesananSeeder::class,
         ]);
 
         // \App\Models\User::factory(10)->create();
