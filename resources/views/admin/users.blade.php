@@ -791,7 +791,7 @@ function usersPage() {
                 formData.append('link_referal', this.referralSlug);
                 formData.append('_token', '{{ csrf_token() }}');
                 
-                const res = await fetch(`/admin/agents/${this.approvalUser.id}/approve`, {
+                const res = await fetch(`/admin/agent/${this.approvalUser.id}/approve`, {
                     method: 'POST',
                     headers: { 'Accept': 'application/json' },
                     body: formData
@@ -824,7 +824,7 @@ function usersPage() {
         async submitReject() {
             if(!this.approvalUser) return;
              try {
-                const res = await fetch(`/admin/agents/${this.approvalUser.id}/reject`, {
+                const res = await fetch(`/admin/agent/${this.approvalUser.id}/reject`, {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
@@ -878,11 +878,11 @@ function usersPage() {
             try {
                 let url = '';
                 if (this.banUser.role === 'agent') {
-                    url = `/admin/agents/${this.banUser.id}/${this.banAction}`;
+                    url = `/admin/agent/${this.banUser.id}/${this.banAction}`;
                 } else if (this.banUser.role === 'affiliate') {
-                    url = `/admin/affiliates/${this.banUser.id}/${this.banAction}`;
+                    url = `/admin/affiliate/${this.banUser.id}/${this.banAction}`;
                 } else if (this.banUser.role === 'freelance') {
-                    url = `/admin/freelances/${this.banUser.id}/${this.banAction}`;
+                    url = `/admin/freelance/${this.banUser.id}/${this.banAction}`;
                 }
                 
                 const res = await fetch(url, {
