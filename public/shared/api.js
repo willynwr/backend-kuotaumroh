@@ -568,6 +568,71 @@ async function getPaymentStatus(paymentId) {
 }
 
 /**
+ * Get individual payment detail (for invoice)
+ * @param {number} paymentId - Payment ID
+ * @returns {Promise<Object>} Payment detail
+ * 
+ * Endpoint: GET /api/umroh/payment?id=123
+ * Note: Sama dengan getPaymentStatus, endpoint yang sama
+ */
+async function getIndividualPaymentDetail(paymentId) {
+  try {
+    const response = await fetch(`${API_BASE}/proxy/umroh/payment?id=${paymentId}`);
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching payment detail:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get invoice detail (auto-detect bulk or individual)
+ * @param {number} paymentId - Payment ID
+ * @param {number} agentId - Agent ID (optional, untuk bulk)
+ * @returns {Promise<Object>} Invoice data
+ */
+async function getInvoiceDetail(paymentId, agentId = null) {
+  try {
+    // Coba fetch sebagai individual dulu
+    console.log('🔍 Checking payment type for ID:', paymentId);
+    
+    const individualResponse = await getIndividualPaymentDetail(paymentId);
+    
+    // Jika berhasil dan ada data, return sebagai individual
+    if (individualResponse && (Array.isArray(individualResponse) ? individualResponse.length > 0 : individualResponse.id)) {
+      const data = Array.isArray(individualResponse) ? individualResponse[0] : individualResponse;
+      return {
+        success: true,
+        type: 'individual',
+        data: data
+      };
+    }
+    
+    // Jika individual tidak ada, coba bulk
+    if (agentId) {
+      console.log('🔍 Trying as bulk payment with agent:', agentId);
+      const bulkResponse = await getBulkPaymentDetail(paymentId, agentId);
+      
+      if (bulkResponse && Array.isArray(bulkResponse) && bulkResponse.length > 0) {
+        return {
+          success: true,
+          type: 'bulk',
+          data: bulkResponse
+        };
+      }
+    }
+    
+    throw new Error('Payment not found');
+  } catch (error) {
+    console.error('Error fetching invoice detail:', error);
+    return {
+      success: false,
+      message: error.message || 'Gagal memuat invoice'
+    };
+  }
+}
+
+/**
  * Create INDIVIDUAL payment (untuk homepage / public user)
  * @param {Object} orderData - Order data
  * @returns {Promise<Object>} Payment response with QR code
