@@ -25,6 +25,11 @@ class BulkPaymentService
     protected string $externalApiUrl = 'https://kuotaumroh.id/api';
 
     /**
+     * Base URL untuk tokodigi payment API
+     */
+    protected string $tokodigiApiUrl = 'https://tokodigi.id';
+
+    /**
      * Biaya platform default (dalam rupiah)
      */
     protected int $platformFee = 0;
@@ -40,6 +45,7 @@ class BulkPaymentService
         $this->platformFee = config('payment.platform_fee', 0);
         $this->paymentExpiredMinutes = config('payment.expired_minutes', 15);
         $this->externalApiUrl = config('payment.external_api_url', 'https://kuotaumroh.id/api');
+        $this->tokodigiApiUrl = config('payment.tokodigi_api_url', 'https://tokodigi.id');
     }
 
     /**
@@ -444,26 +450,84 @@ class BulkPaymentService
     }
 
     /**
-     * Verify payment via external API
+     * Verify payment via tokodigi API and update local status if successful
+     * API Endpoint: https://tokodigi.id/umroh/payment?id={payment_id}
      */
     public function verifyPayment(int $paymentId, array $verificationData = []): array
     {
         try {
-            $response = Http::timeout(30)->post("{$this->externalApiUrl}/umroh/payment/verify", [
+            // Check payment status from tokodigi API
+            $response = Http::timeout(30)->get("{$this->tokodigiApiUrl}/umroh/payment", [
                 'id' => $paymentId,
-                ...$verificationData,
+            ]);
+
+            Log::info('Tokodigi payment verification request', [
+                'payment_id' => $paymentId,
+                'url' => "{$this->tokodigiApiUrl}/umroh/payment?id={$paymentId}",
             ]);
 
             if ($response->successful()) {
-                return $response->json();
+                $data = $response->json();
+                
+                Log::info('Payment verification response from tokodigi API', [
+                    'payment_id' => $paymentId,
+                    'response' => $data,
+                ]);
+                
+                // Check if payment is successful on external API
+                // Handle various status formats from tokodigi API
+                $externalStatus = strtolower($data['status'] ?? $data['payment_status'] ?? $data['data']['status'] ?? '');
+                
+                if (in_array($externalStatus, ['success', 'sukses', 'berhasil', 'paid', 'completed'])) {
+                    // Update local database status
+                    $updated = $this->markPaymentSuccess($paymentId, $data['qris_rrn'] ?? $data['rrn'] ?? null);
+                    
+                    if ($updated) {
+                        Log::info('Local payment status updated to success', [
+                            'payment_id' => $paymentId,
+                        ]);
+                        
+                        return [
+                            'success' => true,
+                            'message' => 'Pembayaran berhasil diverifikasi',
+                            'status' => 'berhasil',
+                            'data' => $data,
+                        ];
+                    }
+                    
+                    // Payment was already marked as success before
+                    return [
+                        'success' => true,
+                        'message' => 'Pembayaran sudah berhasil sebelumnya',
+                        'status' => 'berhasil',
+                        'data' => $data,
+                    ];
+                }
+                
+                // Payment not yet paid or still pending
+                return [
+                    'success' => true,
+                    'message' => 'Status pembayaran: ' . ($externalStatus ?: 'menunggu pembayaran'),
+                    'status' => $externalStatus ?: 'pending',
+                    'data' => $data,
+                ];
             }
+
+            Log::warning('Tokodigi API returned non-successful response', [
+                'payment_id' => $paymentId,
+                'status_code' => $response->status(),
+                'body' => $response->body(),
+            ]);
 
             return [
                 'success' => false,
-                'message' => 'Verification failed',
+                'message' => 'Verification failed - API returned error',
             ];
         } catch (\Exception $e) {
-            Log::error('Exception verifying payment: ' . $e->getMessage());
+            Log::error('Exception verifying payment: ' . $e->getMessage(), [
+                'payment_id' => $paymentId,
+                'exception' => $e->getTraceAsString(),
+            ]);
             return [
                 'success' => false,
                 'message' => $e->getMessage(),
