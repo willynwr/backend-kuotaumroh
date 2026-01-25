@@ -38,7 +38,7 @@
       </div>
     @endif
 
-    <form x-ref="addAffiliateForm" method="POST" action="{{ route('admin.affiliates.store') }}" @submit.prevent="openConfirmAddModal()" class="p-6 space-y-6">
+    <form x-ref="addAffiliateForm" method="POST" action="{{ route('admin.affiliate.store') }}" @submit.prevent="openConfirmAddModal()" class="p-6 space-y-6">
       @csrf
       <input type="hidden" name="_form" value="affiliate">
       <input type="hidden" name="redirect_to" value="/admin/users?tab=affiliate">

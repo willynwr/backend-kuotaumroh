@@ -46,7 +46,8 @@ class AgentStatsController extends Controller
         $totalProfit = $agent->saldo_tahun ?? 0;
         
         // Hitung total transaksi (jumlah pesanan) bulan ini yang pembayarannya berhasil
-        $monthlyTransactions = Pesanan::where('agent_id', $agentId)
+        $monthlyTransactions = Pesanan::where('kategori_channel', 'agent')
+            ->where('channel_id', $agentId)
             ->whereHas('pembayaran', function($query) {
                 $query->where('status_pembayaran', 'selesai');
             })
@@ -54,7 +55,8 @@ class AgentStatsController extends Controller
             ->count();
         
         // Hitung total transaksi tahun ini yang pembayarannya berhasil
-        $totalTransactions = Pesanan::where('agent_id', $agentId)
+        $totalTransactions = Pesanan::where('kategori_channel', 'agent')
+            ->where('channel_id', $agentId)
             ->whereHas('pembayaran', function($query) {
                 $query->where('status_pembayaran', 'selesai');
             })

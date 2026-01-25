@@ -38,7 +38,7 @@
       </div>
     @endif
 
-    <form x-ref="addTravelAgentForm" method="POST" action="{{ route('admin.agents.store') }}" enctype="multipart/form-data" @submit.prevent="openConfirmAddTravelAgentModal()" class="p-6 space-y-6">
+    <form x-ref="addTravelAgentForm" method="POST" action="{{ route('admin.agent.store') }}" enctype="multipart/form-data" @submit.prevent="openConfirmAddTravelAgentModal()" class="p-6 space-y-6">
       @csrf
       <input type="hidden" name="_form" value="agent">
       <input type="hidden" name="redirect_to" value="/admin/users?tab=agent">
