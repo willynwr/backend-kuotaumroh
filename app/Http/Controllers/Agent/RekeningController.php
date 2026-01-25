@@ -33,7 +33,7 @@ class RekeningController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'agent_id' => 'required|exists:agents,id',
+            'agent_id' => 'required|string|exists:agent,id',
             'nama_rekening' => 'required|string|max:255',
             'bank' => 'required|string|max:255',
             'nomor_rekening' => 'required|string|max:255',
