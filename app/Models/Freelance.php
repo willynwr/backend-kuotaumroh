@@ -10,6 +10,8 @@ class Freelance extends Model
 {
     use HasFactory, HasApiTokens;
 
+    protected $table = 'freelance';
+
     protected $fillable = [
         'nama',
         'email',
