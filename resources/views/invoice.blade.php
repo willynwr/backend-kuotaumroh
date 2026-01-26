@@ -318,14 +318,6 @@
                                     <span class="text-gray-600">Metode Bayar</span>
                                     <span class="font-semibold" x-text="invoice.paymentMethod"></span>
                                 </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">Tanggal Bayar</span>
-                                    <span class="font-semibold" x-text="invoice.paidAt || '-'"></span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">Jatuh Tempo</span>
-                                    <span class="font-semibold" x-text="invoice.dueDate"></span>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -577,11 +569,9 @@
                 // Invoice Data
                 invoice: {
                     date: '',
-                    dueDate: '',
                     status: 'pending',
                     paymentMethod: 'QRIS',
                     paymentId: '',
-                    paidAt: '',
                     batchId: '',
                     batchName: '',
                     agent: {
@@ -693,16 +683,6 @@
                     this.invoice.batchName = firstItem.batch_name || '';
                     this.invoice.date = firstItem.created_at ? this.formatDate(firstItem.created_at) : '';
                     this.invoice.status = this.mapStatus(firstItem.status);
-                    this.invoice.paidAt = firstItem.payment_date ? this.formatDate(firstItem.payment_date) : '';
-                    
-                    // Jatuh Tempo (Created + 15 mins)
-                    if (firstItem.created_at) {
-                        const createdDate = new Date(firstItem.created_at);
-                        const dueDate = new Date(createdDate.getTime() + 15 * 60000); // Add 15 minutes
-                        this.invoice.dueDate = this.formatDate(dueDate.toISOString());
-                    } else {
-                        this.invoice.dueDate = '';
-                    }
 
                     this.invoice.paymentMethod = firstItem.payment_method || 'QRIS';
 
@@ -749,18 +729,6 @@
                     this.invoice.paymentId = item.payment_id || item.id || this.paymentId;
                     this.invoice.date = item.created_at ? this.formatDate(item.created_at) : new Date().toISOString();
                     this.invoice.status = this.mapStatus(item.status);
-                    
-                    // Tanggal Bayar (kosong jika belum bayar)
-                    this.invoice.paidAt = item.payment_date ? this.formatDate(item.payment_date) : '';
-                    
-                    // Jatuh Tempo (Created + 15 mins)
-                    if (item.created_at) {
-                        const createdDate = new Date(item.created_at);
-                        const dueDate = new Date(createdDate.getTime() + 15 * 60000); // Add 15 minutes
-                        this.invoice.dueDate = this.formatDate(dueDate.toISOString());
-                    } else {
-                        this.invoice.dueDate = '';
-                    }
 
                     this.invoice.paymentMethod = item.payment_method || 'QRIS';
                     
