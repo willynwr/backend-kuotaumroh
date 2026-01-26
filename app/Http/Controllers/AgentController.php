@@ -56,10 +56,19 @@ class AgentController extends Controller
             ->first();
 
         if ($affiliate) {
-            // Redirect ke login dengan affiliate referral
-            return redirect()->route('login', [
+            // Simpan data referral ke session
+            session([
                 'ref' => 'affiliate:' . $affiliate->id,
-                'referrer_name' => $affiliate->nama
+                'referrer_name' => $affiliate->nama,
+                'referrer_type' => 'affiliate',
+                'referrer_id' => $affiliate->id
+            ]);
+            
+            // Tampilkan halaman login langsung tanpa redirect
+            return view('auth.login', [
+                'referrerName' => $affiliate->nama,
+                'referralType' => 'affiliate',
+                'referralId' => $affiliate->id
             ]);
         }
 
@@ -69,10 +78,19 @@ class AgentController extends Controller
             ->first();
 
         if ($freelance) {
-            // Redirect ke login dengan freelance referral
-            return redirect()->route('login', [
+            // Simpan data referral ke session
+            session([
                 'ref' => 'freelance:' . $freelance->id,
-                'referrer_name' => $freelance->nama
+                'referrer_name' => $freelance->nama,
+                'referrer_type' => 'freelance',
+                'referrer_id' => $freelance->id
+            ]);
+            
+            // Tampilkan halaman login langsung tanpa redirect
+            return view('auth.login', [
+                'referrerName' => $freelance->nama,
+                'referralType' => 'freelance',
+                'referralId' => $freelance->id
             ]);
         }
 
