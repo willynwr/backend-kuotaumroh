@@ -185,6 +185,48 @@ class UmrohPaymentController extends Controller
     }
 
     /**
+     * GET /api/umroh/payment/local-detail
+     * 
+     * Get payment detail from local database (not from external API)
+     * Use this for invoice to get the updated status from local DB
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getLocalDetail(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'id' => 'required', // Allow both string and integer
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $paymentId = $request->input('id');
+            $detail = $this->paymentService->getLocalPaymentDetail($paymentId);
+
+            return response()->json($detail);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil detail pembayaran',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * GET /api/umroh/payment/status
      * 
      * Get payment status (for polling)

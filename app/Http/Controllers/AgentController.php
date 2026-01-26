@@ -99,7 +99,7 @@ class AgentController extends Controller
     }
 
     /**
-     * Tampilkan halaman toko agent berdasarkan link_referral
+     * Redirect ke landing page dengan menyimpan agent_id di session
      * Route: /u/{link_referal}
      */
     public function showStore($linkReferal)
@@ -128,7 +128,14 @@ class AgentController extends Controller
                 ];
             }
 
-            return view('agent.store', compact('agent'));
+            // Simpan agent info ke session
+            session([
+                'pending_agent_id' => is_object($agent) ? $agent->id : $agent['id'],
+                'pending_agent_link' => 'kuotaumroh'
+            ]);
+
+            // Redirect ke landing page
+            return redirect()->route('welcome');
         }
 
         // Cari agent berdasarkan link_referal
@@ -140,6 +147,72 @@ class AgentController extends Controller
         if (!$agent) {
             return redirect('/u/kuotaumroh')->with('error', 'Toko tidak ditemukan atau sudah tidak aktif');
         }
+
+        // Simpan agent info ke session
+        session([
+            'pending_agent_id' => $agent->id,
+            'pending_agent_link' => $agent->link_referal
+        ]);
+
+        // Redirect ke landing page
+        return redirect()->route('welcome');
+    }
+
+    /**
+     * Redirect dari landing page ke toko agent
+     * Route: /store/redirect
+     */
+    public function redirectToStore(Request $request)
+    {
+        // Ambil agent info dari session
+        $agentLink = session('pending_agent_link');
+
+        if (!$agentLink) {
+            // Jika tidak ada agent di session, redirect ke default store
+            $agentLink = 'kuotaumroh';
+        }
+
+        // Handle default store "kuotaumroh"
+        if ($agentLink === 'kuotaumroh') {
+            // Cari agent dengan link_referal 'kuotaumroh' di database
+            $defaultAgent = Agent::where('link_referal', 'kuotaumroh')->first();
+            
+            if ($defaultAgent) {
+                $agent = $defaultAgent;
+            } else {
+                // Fallback: Create a virtual agent object
+                $agent = (object) [
+                    'id' => 1,
+                    'nama_travel' => 'Kuotaumroh.id',
+                    'nama_pic' => 'Official Store',
+                    'email' => 'support@kuotaumroh.id',
+                    'no_hp' => '628112994499',
+                    'alamat_lengkap' => 'Indonesia',
+                    'logo' => null,
+                    'link_referal' => 'kuotaumroh',
+                    'is_active' => true,
+                ];
+            }
+
+            // Clear session setelah digunakan
+            session()->forget(['pending_agent_id', 'pending_agent_link']);
+
+            return view('agent.store', compact('agent'));
+        }
+
+        // Cari agent berdasarkan link_referal dari session
+        $agent = Agent::where('link_referal', $agentLink)
+            ->where('is_active', true)
+            ->first();
+
+        // Jika agent tidak ditemukan
+        if (!$agent) {
+            session()->forget(['pending_agent_id', 'pending_agent_link']);
+            return redirect('/u/kuotaumroh')->with('error', 'Toko tidak ditemukan atau sudah tidak aktif');
+        }
+
+        // Clear session setelah digunakan
+        session()->forget(['pending_agent_id', 'pending_agent_link']);
 
         // Tampilkan halaman toko agent
         return view('agent.store', compact('agent'));

@@ -55,7 +55,9 @@ class Pembayaran extends Model
     const METODE_SALDO = 'SALDO';
 
     protected $fillable = [
+        'external_payment_id',
         'batch_id',
+        'batch_name',
         'agent_id',
         'produk_id',
         'nama_batch',
@@ -65,6 +67,9 @@ class Pembayaran extends Model
         'total_pembayaran',
         'profit',
         'metode_pembayaran',
+        'qris_string',
+        'qris_nmid',
+        'qris_rrn',
         'bank',
         'no_rekening',
         'va',
@@ -73,6 +78,7 @@ class Pembayaran extends Model
         'paid_at',           // waktu pembayaran sukses
         'expired_at',
         'status_pembayaran',
+        'detail_pesanan',
         'provider',
     ];
 

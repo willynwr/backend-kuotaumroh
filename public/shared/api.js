@@ -586,6 +586,25 @@ async function getIndividualPaymentDetail(paymentId) {
 }
 
 /**
+ * Get local payment detail from database (with updated status)
+ * Use this for invoice to get the updated status after markPaymentSuccess()
+ * @param {number} paymentId - Payment ID
+ * @returns {Promise<Object>} Payment detail from local database
+ * 
+ * Endpoint: GET /api/umroh/payment/local-detail?id=123
+ */
+async function getLocalPaymentDetail(paymentId) {
+  try {
+    const response = await fetch(`${API_BASE}/umroh/payment/local-detail?id=${paymentId}`);
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching local payment detail:', error);
+    throw error;
+  }
+}
+
+
+/**
  * Get invoice detail (auto-detect bulk or individual)
  * @param {number} paymentId - Payment ID
  * @param {number} agentId - Agent ID (optional, untuk bulk)
@@ -593,14 +612,38 @@ async function getIndividualPaymentDetail(paymentId) {
  */
 async function getInvoiceDetail(paymentId, agentId = null) {
   try {
-    // Coba fetch sebagai individual dulu
-    console.log('🔍 Checking payment type for ID:', paymentId);
+    console.log('🔍 Fetching invoice for payment:', paymentId, 'agent:', agentId);
     
+    // Coba ambil dari local database dulu (untuk status yang sudah diupdate)
+    try {
+      console.log('🔍 Trying local database first for ID:', paymentId);
+      const localResponse = await getLocalPaymentDetail(paymentId);
+      
+      if (localResponse && localResponse.success && localResponse.data) {
+        console.log('✅ Found in local database');
+        return {
+          success: true,
+          type: 'local',
+          data: localResponse.data
+        };
+      }
+    } catch (localError) {
+      console.log('⚠️ Not found in local database, trying external API...');
+    }
+    
+    // Fallback: Coba ambil dari external API via proxy
+    console.log('🔍 Fetching from external API (proxy)');
+    
+    // Coba sebagai individual payment dulu
     const individualResponse = await getIndividualPaymentDetail(paymentId);
     
-    // Jika berhasil dan ada data, return sebagai individual
-    if (individualResponse && (Array.isArray(individualResponse) ? individualResponse.length > 0 : individualResponse.id)) {
+    console.log('📦 Individual response raw:', individualResponse);
+    
+    if (individualResponse && (Array.isArray(individualResponse) ? individualResponse.length > 0 : individualResponse.id || individualResponse.payment_id)) {
       const data = Array.isArray(individualResponse) ? individualResponse[0] : individualResponse;
+      console.log('✅ Found as individual payment from external API');
+      console.log('📦 Data to return:', data);
+      console.log('📦 Data status field:', data.status, '| status_pembayaran:', data.status_pembayaran);
       return {
         success: true,
         type: 'individual',
@@ -614,6 +657,7 @@ async function getInvoiceDetail(paymentId, agentId = null) {
       const bulkResponse = await getBulkPaymentDetail(paymentId, agentId);
       
       if (bulkResponse && Array.isArray(bulkResponse) && bulkResponse.length > 0) {
+        console.log('✅ Found as bulk payment from external API');
         return {
           success: true,
           type: 'bulk',

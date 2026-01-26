@@ -210,7 +210,7 @@
                     <div class="bg-emerald-600 px-8 py-6 text-white">
                         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                             <div class="flex items-center gap-3">
-                                <img src="{{ asset('images/LOGO.png') }}" alt="Logo" class="h-12 w-12 bg-white rounded-lg p-1">
+                                <img src="{{ asset('images/LOGO.png') }}" alt="Logo" class="h-12 w-12 rounded-lg p-1">
                                 <div>
                                     <h1 class="text-2xl font-bold">INVOICE</h1>
                                     <p class="text-emerald-100 text-sm">Kuotaumroh.id</p>
@@ -635,19 +635,33 @@
                         }
 
                         console.log('✅ Invoice data received:', response);
+                        console.log('📦 Response type:', response.type);
+                        console.log('📦 Response data:', response.data);
+                        console.log('📦 Response data type:', typeof response.data);
+                        console.log('📦 Response data is array:', Array.isArray(response.data));
 
                         // Check payment status first - only allow access for successful payments
                         const data = response.data;
                         const firstItem = Array.isArray(data) ? data[0] : data;
-                        const status = firstItem?.status || '';
+                        
+                        console.log('📦 FirstItem:', firstItem);
+                        console.log('📦 FirstItem keys:', firstItem ? Object.keys(firstItem) : 'null');
+                        
+                        // Get status from multiple possible fields
+                        const status = firstItem?.status || firstItem?.status_pembayaran || firstItem?.payment_status || '';
+                        console.log('📊 Status raw value:', status, '| typeof:', typeof status);
+                        
                         const mappedStatus = this.mapStatus(status);
+                        console.log('📊 Status mapped:', mappedStatus);
 
                         if (mappedStatus !== 'paid') {
-                            console.log('⚠️ Payment not successful, status:', status);
+                            console.log('⚠️ Payment not successful, status:', status, '| mapped:', mappedStatus);
                             this.paymentPending = true;
                             this.loading = false;
                             return;
                         }
+
+                        console.log('✅ Payment status is PAID, proceeding with invoice...');
 
                         // Parse data berdasarkan type (bulk atau individual)
                         if (response.type === 'bulk') {
@@ -810,18 +824,38 @@
 
                 // Map Status
                 mapStatus(status) {
+                    if (!status) return 'pending';
+                    
+                    // Convert to lowercase for case-insensitive comparison
+                    const statusLower = status.toString().toLowerCase().trim();
+                    
+                    console.log('🔍 mapStatus input:', status, '| lowercase:', statusLower);
+                    
+                    // Check if status contains any success keyword FIRST (most important)
+                    if (statusLower.includes('sukses') || statusLower.includes('success') || 
+                        statusLower.includes('berhasil') || statusLower.includes('completed') ||
+                        statusLower.includes('paid') || statusLower.includes('lunas')) {
+                        console.log('✅ mapStatus matched success keyword');
+                        return 'paid';
+                    }
+                    
                     const statusMap = {
-                        'PAID': 'paid',
-                        'UNPAID': 'pending',
-                        'PENDING': 'pending',
-                        'VERIFY': 'pending',
-                        'EXPIRED': 'expired',
-                        'FAILED': 'expired',
-                        'success': 'paid',
+                        'paid': 'paid',
+                        'unpaid': 'pending',
                         'pending': 'pending',
-                        'expired': 'expired'
+                        'verify': 'pending',
+                        'expired': 'expired',
+                        'failed': 'expired',
+                        'success': 'paid',
+                        'sukses': 'paid',
+                        'berhasil': 'paid',
+                        'completed': 'paid',
+                        'lunas': 'paid'
                     };
-                    return statusMap[status] || 'pending';
+                    
+                    const result = statusMap[statusLower] || 'pending';
+                    console.log('📊 mapStatus result:', result);
+                    return result;
                 },
 
                 // Format Date
@@ -851,21 +885,7 @@
                     return null;
                 },
 
-                // Map Status from API to UI
-                mapStatus(status) {
-                    const statusMap = {
-                        'PAID': 'paid',
-                        'UNPAID': 'pending',
-                        'PENDING': 'pending',
-                        'VERIFY': 'pending',
-                        'EXPIRED': 'expired',
-                        'FAILED': 'expired',
-                        'success': 'paid',
-                        'pending': 'pending',
-                        'expired': 'expired'
-                    };
-                    return statusMap[status] || 'pending';
-                },
+                // Map Status from API to UI (removed duplicate - using main mapStatus above)
 
                 // Format Rupiah
                 formatRupiah(amount) {
