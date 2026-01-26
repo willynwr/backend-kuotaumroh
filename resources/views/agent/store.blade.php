@@ -448,7 +448,7 @@
                                     <span class="font-medium" x-text="selectedPackage?.name || '-'"></span>
                                 </div>
                                 
-                                <!-- Cetak Invoice Toggle -->
+                                {{-- <!-- Cetak Invoice Toggle -->
                                 <div class="flex items-center justify-between pt-2">
                                     <span class="text-muted-foreground text-sm">Cetak Invoice</span>
                                     <button @click="invoiceCetakEnabled = !invoiceCetakEnabled"
@@ -457,7 +457,7 @@
                                         <span :class="invoiceCetakEnabled ? 'translate-x-6' : 'translate-x-1'"
                                             class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"></span>
                                     </button>
-                                </div>
+                                </div> --}}
 
                                 <!-- Invoice Method Options (when enabled) -->
                                 <div x-show="invoiceCetakEnabled" x-collapse class="border-t pt-3 space-y-3">

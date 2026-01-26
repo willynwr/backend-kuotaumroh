@@ -82,6 +82,10 @@ Route::prefix('umroh')->group(function () {
     // GET /api/umroh/payment/status?id=123
     Route::get('/payment/status', [UmrohPaymentController::class, 'getPaymentStatus']);
 
+    // GET /api/umroh/payment/local-detail?id=123
+    // Get payment detail from local database (with updated status)
+    Route::get('/payment/local-detail', [UmrohPaymentController::class, 'getLocalDetail']);
+
     // POST /api/umroh/payment/verify
     Route::post('/payment/verify', [UmrohPaymentController::class, 'verifyPayment']);
 

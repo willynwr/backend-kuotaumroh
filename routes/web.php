@@ -85,6 +85,9 @@ Route::get('/agent/{link_referral}', [App\Http\Controllers\AgentController::clas
 // Halaman Toko Agent - /u/{link_referal}
 Route::get('/u/{link_referal}', [App\Http\Controllers\AgentController::class, 'showStore'])->name('agent.store.view');
 
+// Redirect dari landing page ke toko agent
+Route::get('/store/redirect', [App\Http\Controllers\AgentController::class, 'redirectToStore'])->name('agent.store.redirect');
+
 Route::get('/callback', function () {
     return view('auth.callback');
 })->name('callback');

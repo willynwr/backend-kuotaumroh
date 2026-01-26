@@ -100,18 +100,32 @@
                     perjalanan ibadah Anda. Proses cepat,<br>
                     harga terjangkau.
                 </p>
-                
-                <!-- Checkmark Feature -->
+            
+                {{-- <!-- Checkmark Feature -->
                 <a href="#pilih-provider" 
                     class="inline-flex items-center justify-center rounded-md bg-teal-600 text-white h-8 px-8 text-lg font-semibold hover:bg-teal-700 transition-colors shadow-lg">
                     Lihat Paket
-                </a>
+                </a> --}}
             </div>
         </div>
     </div>
 
     <!-- Main Content -->
     <main class="container mx-auto py-8 lg:py-16 px-4 max-w-7xl">
+
+        @if(session('pending_agent_link'))
+        <!-- Agent Info Banner -->
+        <div class="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div class="flex items-center">
+                <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <p class="text-sm text-blue-800">
+                    Anda akan diarahkan ke toko <strong>{{ session('pending_agent_link') }}</strong> setelah memilih paket
+                </p>
+            </div>
+        </div>
+        @endif
 
         <!-- Provider Selection Section -->
         <div id="pilih-provider" class="mb-16 md:mb-20 scroll-mt-24">
@@ -129,7 +143,7 @@
                 <div class="rounded-2xl border border-gray-200 shadow-md overflow-hidden bg-white">
                     <div class="h-40 sm:h-48 md:h-56 bg-cover bg-center" style="background-image: url('{{ asset('images/Telkomsel.png') }}');"></div>
                     <div class="px-4 py-3 flex justify-center">
-                        <a href="/u/kuotaumroh" class="inline-flex items-center justify-center rounded-md bg-emerald-700 text-white font-medium text-sm py-2 px-6 w-full sm:w-auto hover:bg-emerald-800 transition-colors shadow">
+                        <a href="{{ session('pending_agent_link') ? route('agent.store.redirect') : '/u/kuotaumroh' }}" class="inline-flex items-center justify-center rounded-md bg-emerald-700 text-white font-medium text-sm py-2 px-6 w-full sm:w-auto hover:bg-emerald-800 transition-colors shadow">
                             Pilih Paket
                         </a>
                     </div>
@@ -139,7 +153,7 @@
                 <div class="rounded-2xl border border-gray-200 shadow-md overflow-hidden bg-white">
                     <div class="h-40 sm:h-48 md:h-56 bg-cover bg-center" style="background-image: url('{{ asset('images/Indosat.png') }}');"></div>
                     <div class="px-4 py-3 flex justify-center">
-                        <a href="/u/kuotaumroh" class="inline-flex items-center justify-center rounded-md bg-emerald-700 text-white font-medium text-sm py-2 px-6 w-full sm:w-auto hover:bg-emerald-800 transition-colors shadow">
+                        <a href="{{ session('pending_agent_link') ? route('agent.store.redirect') : '/u/kuotaumroh' }}" class="inline-flex items-center justify-center rounded-md bg-emerald-700 text-white font-medium text-sm py-2 px-6 w-full sm:w-auto hover:bg-emerald-800 transition-colors shadow">
                             Pilih Paket
                         </a>
                     </div>
@@ -149,7 +163,7 @@
                 <div class="rounded-2xl border border-gray-200 shadow-md overflow-hidden bg-white">
                     <div class="h-40 sm:h-48 md:h-56 bg-cover bg-center" style="background-image: url('{{ asset('images/XL.png') }}');"></div>
                     <div class="px-4 py-3 flex justify-center">
-                        <a href="/u/kuotaumroh" class="inline-flex items-center justify-center rounded-md bg-emerald-700 text-white font-medium text-sm py-2 px-6 w-full sm:w-auto hover:bg-emerald-800 transition-colors shadow">
+                        <a href="{{ session('pending_agent_link') ? route('agent.store.redirect') : '/u/kuotaumroh' }}" class="inline-flex items-center justify-center rounded-md bg-emerald-700 text-white font-medium text-sm py-2 px-6 w-full sm:w-auto hover:bg-emerald-800 transition-colors shadow">
                             Pilih Paket
                         </a>
                     </div>
@@ -159,7 +173,7 @@
                 <div class="rounded-2xl border border-gray-200 shadow-md overflow-hidden bg-white">
                     <div class="h-40 sm:h-48 md:h-56 bg-cover bg-center" style="background-image: url('{{ asset('images/AXIS.png') }}');"></div>
                     <div class="px-4 py-3 flex justify-center">
-                        <a href="/u/kuotaumroh" class="inline-flex items-center justify-center rounded-md bg-emerald-700 text-white font-medium text-sm py-2 px-6 w-full sm:w-auto hover:bg-emerald-800 transition-colors shadow">
+                        <a href="{{ session('pending_agent_link') ? route('agent.store.redirect') : '/u/kuotaumroh' }}" class="inline-flex items-center justify-center rounded-md bg-emerald-700 text-white font-medium text-sm py-2 px-6 w-full sm:w-auto hover:bg-emerald-800 transition-colors shadow">
                             Pilih Paket
                         </a>
                     </div>
@@ -169,7 +183,7 @@
                 <div class="rounded-2xl border border-gray-200 shadow-md overflow-hidden bg-white">
                     <div class="h-40 sm:h-48 md:h-56 bg-cover bg-center" style="background-image: url('{{ asset('images/3.png') }}');"></div>
                     <div class="px-4 py-3 flex justify-center">
-                        <a href="/u/kuotaumroh" class="inline-flex items-center justify-center rounded-md bg-emerald-700 text-white font-medium text-sm py-2 px-6 w-full sm:w-auto hover:bg-emerald-800 transition-colors shadow">
+                        <a href="{{ session('pending_agent_link') ? route('agent.store.redirect') : '/u/kuotaumroh' }}" class="inline-flex items-center justify-center rounded-md bg-emerald-700 text-white font-medium text-sm py-2 px-6 w-full sm:w-auto hover:bg-emerald-800 transition-colors shadow">
                             Pilih Paket
                         </a>
                     </div>
@@ -179,7 +193,7 @@
                 <div class="rounded-2xl border border-gray-200 shadow-md overflow-hidden bg-white">
                     <div class="h-40 sm:h-48 md:h-56 bg-cover bg-center" style="background-image: url('{{ asset('images/ByU.png') }}');"></div>
                     <div class="px-4 py-3 flex justify-center">
-                        <a href="/u/kuotaumroh" class="inline-flex items-center justify-center rounded-md bg-emerald-700 text-white font-medium text-sm py-2 px-6 w-full sm:w-auto hover:bg-emerald-800 transition-colors shadow">
+                        <a href="{{ session('pending_agent_link') ? route('agent.store.redirect') : '/u/kuotaumroh' }}" class="inline-flex items-center justify-center rounded-md bg-emerald-700 text-white font-medium text-sm py-2 px-6 w-full sm:w-auto hover:bg-emerald-800 transition-colors shadow">
                             Pilih Paket
                         </a>
                     </div>

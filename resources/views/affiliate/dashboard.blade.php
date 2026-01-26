@@ -239,8 +239,8 @@
             affiliateId: '{{ $user->id ?? "" }}',
             linkReferral: '{{ $linkReferral ?? "" }}',
             referralCode: '{{ $user->ref_code ?? "" }}',
-            referralLink: '{{ url("/agent/" . ($linkReferral ?? "")) }}',
-            shareText: 'Daftar sebagai Agent Kuotaumroh.id di bawah referral saya dan dapatkan penghasilan tambahan! {{ url("/agent/" . ($linkReferral ?? "")) }}',
+            referralLink: '{{ str_replace("portal.", "", url("/agent/" . ($linkReferral ?? ""))) }}',
+            shareText: 'Daftar sebagai Agent Kuotaumroh.id di bawah referral saya dan dapatkan penghasilan tambahan! {{ str_replace("portal.", "", url("/agent/" . ($linkReferral ?? ""))) }}',
             menuItems: [{
                     id: 'order',
                     title: 'Pesanan Baru',
