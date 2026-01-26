@@ -328,65 +328,126 @@
                         
                         <!-- Mobile Card View -->
                         <div class="sm:hidden space-y-3">
-                            <template x-for="(item, index) in invoice.items" :key="'mobile-'+index">
-                                <div class="border rounded-lg p-4 bg-gray-50 space-y-2">
-                                    <div class="flex justify-between items-start mb-2">
-                                        <span class="text-xs font-medium text-gray-500">Item <span x-text="index + 1"></span></span>
-                                        <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium"
-                                            :class="getStatusClass(item.status)"
-                                            x-text="getStatusLabel(item.status)"></span>
-                                    </div>
-                                    <div class="space-y-1.5 text-sm">
-                                        <div class="flex justify-between">
-                                            <span class="text-gray-600">Nomor HP</span>
-                                            <span class="font-mono text-xs bg-white px-2 py-0.5 rounded" x-text="item.msisdn"></span>
+                            <!-- Bulk Invoice: Group by Provider -->
+                            <template x-if="isBulkInvoice">
+                                <div class="space-y-3">
+                                    <template x-for="(group, index) in getProviderGroups()" :key="'mobile-group-'+index">
+                                        <div class="border rounded-lg p-4 bg-gray-50">
+                                            <div class="flex justify-between items-start mb-2">
+                                                <div>
+                                                    <span class="font-semibold text-gray-900" x-text="group.count"></span>
+                                                    <span class="text-gray-600 ml-1">Paket</span>
+                                                    <span class="font-semibold text-primary ml-1" x-text="group.provider"></span>
+                                                </div>
+                                                <span class="font-bold text-primary" x-text="formatRupiah(group.total)"></span>
+                                            </div>
                                         </div>
-                                        <div class="flex justify-between">
-                                            <span class="text-gray-600">Paket</span>
-                                            <span class="font-medium text-right" x-text="item.packageName"></span>
+                                    </template>
+                                </div>
+                            </template>
+                            
+                            <!-- Individual Invoice: Show full details -->
+                            <template x-if="!isBulkInvoice">
+                                <div class="space-y-3">
+                                    <template x-for="(item, index) in invoice.items" :key="'mobile-'+index">
+                                        <div class="border rounded-lg p-4 bg-gray-50 space-y-2">
+                                            <div class="flex justify-between items-start mb-2">
+                                                <span class="text-xs font-medium text-gray-500">Item <span x-text="index + 1"></span></span>
+                                                <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium"
+                                                    :class="getStatusClass(item.status)"
+                                                    x-text="getStatusLabel(item.status)"></span>
+                                            </div>
+                                            <div class="space-y-1.5 text-sm">
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Nomor HP</span>
+                                                    <span class="font-mono text-xs bg-white px-2 py-0.5 rounded" x-text="item.msisdn"></span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Paket</span>
+                                                    <span class="font-medium text-right" x-text="item.packageName"></span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Tipe</span>
+                                                    <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary" x-text="item.packageType"></span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Kuota</span>
+                                                    <span x-text="item.quota"></span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Masa Aktif</span>
+                                                    <span x-text="item.validity"></span>
+                                                </div>
+                                                <div class="flex justify-between" x-show="item.scheduledAt">
+                                                    <span class="text-gray-600">Jadwal</span>
+                                                    <span class="text-xs" x-text="item.scheduledAt"></span>
+                                                </div>
+                                                <div class="flex justify-between pt-2 border-t border-gray-200">
+                                                    <span class="font-semibold">Harga</span>
+                                                    <span class="font-bold text-primary" x-text="formatRupiah(item.price)"></span>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="flex justify-between">
-                                            <span class="text-gray-600">Tipe</span>
-                                            <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary" x-text="item.packageType"></span>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <span class="text-gray-600">Kuota</span>
-                                            <span x-text="item.quota"></span>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <span class="text-gray-600">Masa Aktif</span>
-                                            <span x-text="item.validity"></span>
-                                        </div>
-                                        <div class="flex justify-between" x-show="item.scheduledAt">
-                                            <span class="text-gray-600">Jadwal</span>
-                                            <span class="text-xs" x-text="item.scheduledAt"></span>
-                                        </div>
-                                        <div class="flex justify-between pt-2 border-t border-gray-200">
-                                            <span class="font-semibold">Harga</span>
-                                            <span class="font-bold text-primary" x-text="formatRupiah(item.price)"></span>
-                                        </div>
-                                    </div>
+                                    </template>
                                 </div>
                             </template>
                         </div>
 
                         <!-- Desktop Table View -->
                         <div class="hidden sm:block overflow-x-auto">
-                            <table class="w-full text-sm">
-                                <thead>
-                                    <tr class="border-b-2 border-gray-200">
-                                        <th class="py-3 text-left font-semibold text-gray-700">No</th>
-                                        <th class="py-3 text-left font-semibold text-gray-700">Nomor HP</th>
-                                        <th class="py-3 text-left font-semibold text-gray-700">Paket</th>
-                                        <th class="py-3 text-left font-semibold text-gray-700">Tipe</th>
-                                        <th class="py-3 text-left font-semibold text-gray-700">Kuota</th>
-                                        <th class="py-3 text-left font-semibold text-gray-700">Masa Aktif</th>
-                                        <th class="py-3 text-left font-semibold text-gray-700">Jadwal Aktivasi</th>
-                                        <th class="py-3 text-center font-semibold text-gray-700">Status</th>
-                                        <th class="py-3 text-right font-semibold text-gray-700">Harga</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
+                            <!-- Bulk Invoice: Provider-based table -->
+                            <template x-if="isBulkInvoice">
+                                <table class="w-full text-sm">
+                                    <thead>
+                                        <tr class="border-b-2 border-gray-200">
+                                            <th class="py-3 text-left font-semibold text-gray-700">No</th>
+                                            <th class="py-3 text-left font-semibold text-gray-700">Paket</th>
+                                            <th class="py-3 text-center font-semibold text-gray-700">Tipe</th>
+                                            <th class="py-3 text-center font-semibold text-gray-700">Kuota</th>
+                                            <th class="py-3 text-center font-semibold text-gray-700">Masa Aktif</th>
+                                            <th class="py-3 text-center font-semibold text-gray-700">Status</th>
+                                            <th class="py-3 text-right font-semibold text-gray-700">Harga</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template x-for="(group, index) in getProviderGroups()" :key="'group-'+index">
+                                            <tr class="border-b border-gray-100 hover:bg-gray-50">
+                                                <td class="py-4 text-gray-600" x-text="index + 1"></td>
+                                                <td class="py-4">
+                                                    <span class="font-medium" x-text="group.count + ' Paket ' + group.provider"></span>
+                                                </td>
+                                                <td class="py-4 text-center">
+                                                    <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">BULK</span>
+                                                </td>
+                                                <td class="py-4 text-center text-gray-600">-</td>
+                                                <td class="py-4 text-center text-gray-600">-</td>
+                                                <td class="py-4 text-center">
+                                                    <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Berhasil</span>
+                                                </td>
+                                                <td class="py-4 text-right font-semibold" x-text="formatRupiah(group.total)"></td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </template>
+                            
+                            <!-- Individual Invoice: Detailed table -->
+                            <template x-if="!isBulkInvoice">
+                                <table class="w-full text-sm">
+                                    <thead>
+                                        <tr class="border-b-2 border-gray-200">
+                                            <th class="py-3 text-left font-semibold text-gray-700">No</th>
+                                            <th class="py-3 text-left font-semibold text-gray-700">Nomor HP</th>
+                                            <th class="py-3 text-left font-semibold text-gray-700">Paket</th>
+                                            <th class="py-3 text-left font-semibold text-gray-700">Tipe</th>
+                                            <th class="py-3 text-left font-semibold text-gray-700">Kuota</th>
+                                            <th class="py-3 text-left font-semibold text-gray-700">Masa Aktif</th>
+                                            <th class="py-3 text-left font-semibold text-gray-700">Jadwal Aktivasi</th>
+                                            <th class="py-3 text-center font-semibold text-gray-700">Status</th>
+                                            <th class="py-3 text-right font-semibold text-gray-700">Harga</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
                                     <!-- First 5 items (always visible) -->
                                     <template x-for="(item, index) in invoice.items.slice(0, 5)" :key="'first-'+index">
                                         <tr class="border-b border-gray-100 hover:bg-gray-50">
@@ -444,10 +505,11 @@
                                     </template>
                                 </tbody>
                             </table>
+                            </template>
                         </div>
                         
-                        <!-- Show More Button (Desktop Only) -->
-                        <div x-show="invoice.items.length > 5" class="mt-4 text-center no-print hidden sm:block">
+                        <!-- Show More Button (Desktop Only - Individual Invoice Only) -->
+                        <div x-show="!isBulkInvoice && invoice.items.length > 5" class="mt-4 text-center no-print hidden sm:block">
                             <button 
                                 x-show="!showAllItems"
                                 x-transition:enter="transition ease-out duration-200"
@@ -592,6 +654,47 @@
                     discount: 0,
                     total: 0,
                     notes: ''
+                },
+
+                // Computed: Check if this is bulk invoice
+                get isBulkInvoice() {
+                    return this.invoice.items && this.invoice.items.length > 1;
+                },
+
+                // Get provider-grouped data for bulk invoice
+                getProviderGroups() {
+                    if (!this.isBulkInvoice) return [];
+                    
+                    const grouped = {};
+                    this.invoice.items.forEach(item => {
+                        const provider = this.extractProvider(item.packageName || '');
+                        if (!grouped[provider]) {
+                            grouped[provider] = { count: 0, total: 0, items: [] };
+                        }
+                        grouped[provider].count++;
+                        grouped[provider].total += parseInt(item.price || 0);
+                        grouped[provider].items.push(item);
+                    });
+                    
+                    // Convert to array for iteration
+                    return Object.entries(grouped).map(([provider, data]) => ({
+                        provider,
+                        count: data.count,
+                        total: data.total,
+                        items: data.items
+                    }));
+                },
+
+                extractProvider(packageName) {
+                    const name = packageName.toUpperCase();
+                    if (name.includes('TELKOMSEL') || name.includes('TSEL')) return 'Telkomsel';
+                    if (name.includes('INDOSAT') || name.includes('ISAT')) return 'Indosat';
+                    if (name.includes('XL')) return 'XL';
+                    if (name.includes('AXIS')) return 'Axis';
+                    if (name.includes('TRI') || name.includes('3')) return 'Tri';
+                    if (name.includes('SMARTFREN') || name.includes('SFREN')) return 'Smartfren';
+                    if (name.includes('BY.U') || name.includes('BYU')) return 'by.U';
+                    return 'Lainnya';
                 },
 
                 // Init
