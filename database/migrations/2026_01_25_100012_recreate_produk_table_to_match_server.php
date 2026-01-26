@@ -115,7 +115,7 @@ return new class extends Migration
             $table->integer('harga_modal')->default(0);
             $table->integer('harga_jual')->default(0);
             $table->integer('profit')->default(0);
-            $table->string('metode_pembayaran')->nullable();
+            $table->dateTime('tanggal_pembayaran');
             $table->integer('total_pembayaran')->default(0);
             $table->enum('status_pembayaran', ['berhasil', 'proses', 'gagal'])->default('proses');
             $table->timestamps();
