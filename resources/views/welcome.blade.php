@@ -114,7 +114,7 @@
     <main class="container mx-auto py-8 lg:py-16 px-4 max-w-7xl">
 
         @if(session('pending_agent_link'))
-        <!-- Agent Info Banner -->
+        {{-- <!-- Agent Info Banner -->
         <div class="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div class="flex items-center">
                 <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -124,16 +124,13 @@
                     Anda akan diarahkan ke toko <strong>{{ session('pending_agent_link') }}</strong> setelah memilih paket
                 </p>
             </div>
-        </div>
+        </div> --}}
         @endif
 
         <!-- Provider Selection Section -->
         <div id="pilih-provider" class="mb-16 md:mb-20 scroll-mt-24">
             <div class="mb-6 md:mb-10">
-                <h2 class="text-2xl md:text-4xl font-bold mb-2 md:mb-3 text-gray-900">Pilih Provider</h2>
-                <p class="text-sm md:text-xl text-gray-600">
-                    Silakan pilih provider paket internet Anda di bawah ini:
-                </p>
+                <h2 class="text-2xl md:text-4xl font-bold mb-2 md:mb-3 text-gray-900">Pilih Paket Anda</h2>
             </div>
 
             <!-- Provider Cards Grid -->
