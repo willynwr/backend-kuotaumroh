@@ -172,8 +172,21 @@ class AgentController extends Controller
             $agentLink = 'kuotaumroh';
         }
 
+        // Clear session setelah digunakan
+        session()->forget(['pending_agent_id', 'pending_agent_link']);
+
+        // Redirect ke URL toko yang sebenarnya: /store/{link_referal}
+        return redirect('/store/' . $agentLink);
+    }
+
+    /**
+     * Tampilkan halaman toko agent langsung (tanpa redirect ke landing)
+     * Route: GET /store/{link_referal}
+     */
+    public function showStoreDirect($linkReferal)
+    {
         // Handle default store "kuotaumroh"
-        if ($agentLink === 'kuotaumroh') {
+        if ($linkReferal === 'kuotaumroh') {
             // Cari agent dengan link_referal 'kuotaumroh' di database
             $defaultAgent = Agent::where('link_referal', 'kuotaumroh')->first();
             
@@ -194,25 +207,18 @@ class AgentController extends Controller
                 ];
             }
 
-            // Clear session setelah digunakan
-            session()->forget(['pending_agent_id', 'pending_agent_link']);
-
             return view('agent.store', compact('agent'));
         }
 
-        // Cari agent berdasarkan link_referal dari session
-        $agent = Agent::where('link_referal', $agentLink)
+        // Cari agent berdasarkan link_referal
+        $agent = Agent::where('link_referal', $linkReferal)
             ->where('is_active', true)
             ->first();
 
         // Jika agent tidak ditemukan
         if (!$agent) {
-            session()->forget(['pending_agent_id', 'pending_agent_link']);
-            return redirect('/u/kuotaumroh')->with('error', 'Toko tidak ditemukan atau sudah tidak aktif');
+            return redirect('/store/kuotaumroh')->with('error', 'Toko tidak ditemukan atau sudah tidak aktif');
         }
-
-        // Clear session setelah digunakan
-        session()->forget(['pending_agent_id', 'pending_agent_link']);
 
         // Tampilkan halaman toko agent
         return view('agent.store', compact('agent'));
