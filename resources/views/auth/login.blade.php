@@ -232,6 +232,15 @@
 
         init() {
           try {
+            // Prioritas 1: Data dari PHP (untuk URL bersih /agent/{link_referral})
+            @if(isset($referrerName) && isset($referralType) && isset($referralId))
+              this.referrerName = '{{ $referrerName }}';
+              setReferral({ source_type: '{{ $referralType }}', id: '{{ $referralId }}' });
+              setReferralContext({ source_type: '{{ $referralType }}', id: '{{ $referralId }}', url: window.location.href });
+              return;
+            @endif
+
+            // Prioritas 2: Query parameters (fallback untuk kompatibilitas)
             const params = new URLSearchParams(window.location.search);
             const ref = params.get('ref');
             const affiliateId = params.get('affiliate_id');
