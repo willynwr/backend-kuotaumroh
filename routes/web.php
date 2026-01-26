@@ -82,11 +82,14 @@ Route::get('/agent/pending', function(Request $request) {
 // Agent Signup dengan Referral Link dari Affiliate/Freelance
 Route::get('/agent/{link_referral}', [App\Http\Controllers\AgentController::class, 'signupWithReferral'])->name('agent.signup.referral');
 
-// Halaman Toko Agent - /u/{link_referal}
+// Halaman Toko Agent - /u/{link_referal} (redirect ke landing page dulu)
 Route::get('/u/{link_referal}', [App\Http\Controllers\AgentController::class, 'showStore'])->name('agent.store.view');
 
-// Redirect dari landing page ke toko agent
+// Redirect dari landing page ke toko agent (HARUS sebelum route dynamic!)
 Route::get('/store/redirect', [App\Http\Controllers\AgentController::class, 'redirectToStore'])->name('agent.store.redirect');
+
+// Halaman Toko Agent - /store/{link_referal} (langsung tampilkan toko)
+Route::get('/store/{link_referal}', [App\Http\Controllers\AgentController::class, 'showStoreDirect'])->name('agent.store.direct');
 
 Route::get('/callback', function () {
     return view('auth.callback');

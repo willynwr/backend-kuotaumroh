@@ -177,13 +177,13 @@
                         </div>
                         
                         <div class="p-6 space-y-4">
-                            <!-- Detail Paket & Nomor -->
+                            <!-- Detail Paket & Provider -->
                             <div class="bg-gradient-to-br from-purple-50 to-blue-50 border border-purple-100 rounded-lg p-3 text-center">
                                 <template x-if="orderData.items && orderData.items.length > 0">
                                     <div>
                                         <p class="text-xs text-purple-600 font-medium mb-1">Detail Pesanan</p>
                                         <p class="text-sm font-semibold text-purple-900" x-text="orderData.items.length + ' Paket'"></p>
-                                        <p class="text-xs text-purple-700 mt-1" x-text="orderData.items.map(i => i.msisdn).join(', ')"></p>
+                                        <p class="text-xs text-purple-700 mt-1" x-text="getPackageSummary()"></p>
                                     </div>
                                 </template>
                             </div>
@@ -283,14 +283,13 @@
                         <div class="p-4 sm:p-6">
                             <!-- Mobile Card View -->
                             <div class="sm:hidden space-y-3">
-                                <template x-for="(item, index) in orderData.items" :key="index">
+                                <template x-for="(group, provider) in getGroupedByProvider()" :key="provider">
                                     <div class="border rounded-lg p-3 bg-muted/30">
                                         <div class="flex justify-between items-start mb-2">
-                                            <span class="text-sm font-medium" x-text="'#' + (index + 1)"></span>
-                                            <span class="font-semibold text-primary" x-text="formatRupiah(item.price)"></span>
+                                            <span class="text-sm font-medium" x-text="provider"></span>
+                                            <span class="font-semibold text-primary" x-text="formatRupiah(group.total)"></span>
                                         </div>
-                                        <p class="text-sm text-muted-foreground font-mono" x-text="item.msisdn"></p>
-                                        <p class="text-sm" x-text="item.packageName"></p>
+                                        <p class="text-sm text-muted-foreground" x-text="group.count + ' Paket'"></p>
                                     </div>
                                 </template>
                                 
@@ -317,18 +316,18 @@
                                     <thead class="text-xs uppercase bg-muted/50">
                                         <tr>
                                             <th class="px-4 py-3">No</th>
-                                            <th class="px-4 py-3">Nomor HP</th>
-                                            <th class="px-4 py-3">Paket</th>
+                                            <th class="px-4 py-3">Provider</th>
+                                            <th class="px-4 py-3">Jumlah Paket</th>
                                             <th class="px-4 py-3 text-right">Subtotal</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <template x-for="(item, index) in orderData.items" :key="index">
+                                        <template x-for="(group, provider, index) in getGroupedByProvider()" :key="provider">
                                             <tr class="border-b">
                                                 <td class="px-4 py-3 text-muted-foreground" x-text="index + 1"></td>
-                                                <td class="px-4 py-3 font-mono" x-text="item.msisdn"></td>
-                                                <td class="px-4 py-3" x-text="item.packageName"></td>
-                                                <td class="px-4 py-3 text-right font-medium" x-text="formatRupiah(item.price)"></td>
+                                                <td class="px-4 py-3 font-medium" x-text="provider"></td>
+                                                <td class="px-4 py-3" x-text="group.count + ' Paket'"></td>
+                                                <td class="px-4 py-3 text-right font-medium" x-text="formatRupiah(group.total)"></td>
                                             </tr>
                                         </template>
 
@@ -489,6 +488,40 @@ function checkoutApp() {
 
         get canAccessInvoice() {
             return this.paymentStatus === 'activated';
+        },
+
+        getPackageSummary() {
+            const grouped = {};
+            this.orderData.items.forEach(item => {
+                const provider = this.extractProvider(item.packageName || '');
+                grouped[provider] = (grouped[provider] || 0) + 1;
+            });
+            return Object.entries(grouped).map(([provider, count]) => `${count} Paket ${provider}`).join(', ');
+        },
+
+        getGroupedByProvider() {
+            const grouped = {};
+            this.orderData.items.forEach(item => {
+                const provider = this.extractProvider(item.packageName || '');
+                if (!grouped[provider]) {
+                    grouped[provider] = { count: 0, total: 0 };
+                }
+                grouped[provider].count++;
+                grouped[provider].total += parseInt(item.price || 0);
+            });
+            return grouped;
+        },
+
+        extractProvider(packageName) {
+            const name = packageName.toUpperCase();
+            if (name.includes('TELKOMSEL') || name.includes('TSEL')) return 'Telkomsel';
+            if (name.includes('INDOSAT') || name.includes('ISAT')) return 'Indosat';
+            if (name.includes('XL')) return 'XL';
+            if (name.includes('AXIS')) return 'Axis';
+            if (name.includes('TRI') || name.includes('3')) return 'Tri';
+            if (name.includes('SMARTFREN') || name.includes('SFREN')) return 'Smartfren';
+            if (name.includes('BY.U') || name.includes('BYU')) return 'by.U';
+            return 'Lainnya';
         },
 
         qrCodeInstance: null,
