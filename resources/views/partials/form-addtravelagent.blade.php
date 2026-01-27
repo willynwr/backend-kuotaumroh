@@ -132,21 +132,34 @@
                 class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
             </div>
 
-            <div>
+            <div x-data="{ logoPreview: null }">
               <label class="block text-sm font-medium text-slate-700 mb-1">Logo Travel</label>
               <div class="space-y-2">
                 <input type="file" name="logo" accept="image/*" 
-                  @change="logoFile = $event.target.files[0]"
-                  class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20">
+                  @change="
+                    logoFile = $event.target.files[0];
+                    if (logoFile) {
+                      const reader = new FileReader();
+                      reader.onload = (e) => { logoPreview = e.target.result; };
+                      reader.readAsDataURL(logoFile);
+                    }
+                  "
+                  class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 file:cursor-pointer cursor-pointer">
                 <p class="text-xs text-muted-foreground">Format: JPG, PNG, GIF, SVG (Max: 2MB)</p>
-                <template x-if="logoFile">
-                  <div class="mt-2 p-2 bg-gray-50 rounded border flex items-center gap-2">
-                    <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                    <span class="text-sm text-gray-700" x-text="logoFile.name"></span>
+                
+                <!-- Preview -->
+                <div x-show="logoPreview" class="mt-3">
+                  <p class="text-xs text-green-600 font-medium mb-2">Preview logo:</p>
+                  <div class="relative inline-block">
+                    <img :src="logoPreview" alt="Preview Logo" class="h-24 w-auto object-contain border border-green-500 rounded-md shadow-sm bg-white p-2">
+                    <button type="button" @click="logoPreview = null; logoFile = null; $el.closest('div[x-data]').querySelector('input[type=file]').value = ''"
+                      class="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-1.5 hover:bg-destructive/90 transition-colors shadow-md">
+                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
                   </div>
-                </template>
+                </div>
               </div>
             </div>
           </div>
@@ -260,12 +273,92 @@
 
         <!-- Map Section -->
         <div x-show="newTravelAgent.city" class="space-y-2">
-          <label class="text-sm font-medium text-slate-700">Tandai Lokasi di Peta</label>
-          <p class="text-xs text-muted-foreground">Klik pada peta untuk menandai lokasi Anda</p>
+          <div class="flex items-center justify-between">
+            <div>
+              <label class="text-sm font-medium text-slate-700">Tandai Lokasi di Peta</label>
+              <p class="text-xs text-muted-foreground">Aktifkan peta lalu klik pada peta untuk menandai lokasi</p>
+            </div>
+            <!-- Map Lock/Unlock Button -->
+            <button type="button" @click="toggleMapLock()" 
+              class="flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-md border transition-colors"
+              :class="mapLocked ? 'bg-muted text-muted-foreground border-input hover:bg-muted/80' : 'bg-primary text-primary-foreground border-primary hover:bg-primary/90'">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" x-show="mapLocked">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" x-show="!mapLocked">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+              </svg>
+              <span x-text="mapLocked ? 'Klik untuk Geser Peta' : 'Kunci Peta'"></span>
+            </button>
+          </div>
+
+          <!-- Map Search -->
+          <div class="relative mb-2">
+            <div class="relative">
+              <input type="text" x-model="mapSearchQuery" @input="handleMapSearch()"
+                @keydown.enter.prevent=""
+                placeholder="Cari lokasi (contoh: Monas, Jalan Sudirman)"
+                class="flex h-10 w-full rounded-md border border-input bg-background pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+              <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <div class="absolute inset-y-0 right-0 flex items-center pr-3" x-show="isSearchingMap">
+                <svg class="animate-spin h-4 w-4 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              </div>
+            </div>
+
+            <!-- Search Results Dropdown -->
+            <div x-show="mapSearchResults.length > 0" @click.away="mapSearchResults = []"
+              class="absolute z-40 w-full mt-1 bg-white rounded-lg border border-gray-200 shadow-xl max-h-80 overflow-y-auto" style="display: none;">
+              <div class="py-1">
+                <template x-for="(result, index) in mapSearchResults" :key="index">
+                  <button type="button" @click="selectMapLocation(result)"
+                    class="w-full text-left px-4 py-3 hover:bg-green-50 transition-colors border-b border-gray-100 last:border-0 group">
+                    <div class="flex items-start gap-3">
+                      <div class="flex-shrink-0 mt-0.5">
+                        <svg class="h-5 w-5 text-green-600 group-hover:text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <div class="font-medium text-gray-900 group-hover:text-green-700 mb-0.5" 
+                          x-text="result.name || (result.description ? result.description.split(',')[0] : result.display_name)"></div>
+                        <div class="text-xs text-gray-500 truncate leading-relaxed" x-text="result.description || result.display_name"></div>
+                      </div>
+                      <div class="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <svg class="h-4 w-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
+                    </div>
+                  </button>
+                </template>
+              </div>
+            </div>
+          </div>
           
-          <!-- Map Container -->
-          <div :id="'map-agent'" class="w-full h-80 rounded-md border border-input overflow-hidden"
-            x-init="$nextTick(() => { if (newTravelAgent.city && !mapAgentInitialized) initializeMapAgent(); })"></div>
+          <!-- Map Container with Overlay -->
+          <div class="relative">
+            <div id="map-agent" class="w-full h-80 rounded-md border border-input overflow-hidden bg-gray-100"></div>
+            
+            <!-- Locked Overlay -->
+            <div x-show="mapLocked" @click="toggleMapLock()"
+              class="absolute inset-0 bg-black/10 backdrop-blur-[1px] rounded-md cursor-pointer flex items-center justify-center transition-opacity hover:bg-black/20 group">
+              <div class="bg-white/95 px-6 py-4 rounded-lg shadow-lg border border-primary/20 text-center max-w-xs">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mx-auto mb-2 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                <p class="text-sm font-semibold text-foreground mb-1">Peta Dikunci</p>
+                <p class="text-xs text-muted-foreground leading-relaxed">Peta tidak akan bergerak saat Anda scroll halaman. Klik di sini untuk mengaktifkan peta agar bisa digeser dan di-zoom.</p>
+              </div>
+            </div>
+          </div>
 
           <!-- Coordinates Input -->
           <div class="grid grid-cols-2 gap-4 pt-2">

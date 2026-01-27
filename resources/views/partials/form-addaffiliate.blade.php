@@ -38,14 +38,14 @@
       </div>
     @endif
 
-    <form x-ref="addAffiliateForm" method="POST" action="{{ route('admin.affiliate.store') }}" @submit.prevent="openConfirmAddModal()" class="p-6 space-y-6">
+    <form x-ref="addAffiliateForm" method="POST" action="/admin/affiliate" enctype="multipart/form-data" 
+      @submit="console.log('Form submitting...'); console.log('KTP file:', $event.target.querySelector('input[name=ktp]').files[0])"
+      class="p-6 space-y-6">
       @csrf
       <input type="hidden" name="_form" value="affiliate">
       <input type="hidden" name="redirect_to" value="/admin/users?tab=affiliate">
-      <input type="hidden" name="provinsi" :value="newAffiliate.provinsi">
-      <input type="hidden" name="kab_kota" :value="newAffiliate.kab_kota">
-      <input type="hidden" name="latitude" :value="newAffiliate.latitude">
-      <input type="hidden" name="longitude" :value="newAffiliate.longitude">
+      <input type="hidden" name="provinsi" x-bind:value="newAffiliate.provinsi">
+      <input type="hidden" name="kab_kota" x-bind:value="newAffiliate.kab_kota">
 
       <!-- Personal Information Section -->
       <div class="space-y-4">
@@ -159,28 +159,58 @@
             class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"></textarea>
         </div>
 
-        <!-- Map Section -->
-        <div x-show="newAffiliate.kab_kota" class="space-y-2">
-          <label class="text-sm font-medium text-slate-700">Tandai Lokasi di Peta</label>
-          <p class="text-xs text-muted-foreground">Klik pada peta untuk menandai lokasi Anda</p>
+        <!-- KTP Upload Section -->
+        <div class="space-y-2" x-data="{ ktpPreview: null, ktpType: null }">
+          <label class="block text-sm font-medium text-slate-700 mb-1">Upload KTP</label>
+          <input type="file" name="ktp" accept="image/png,image/jpeg,image/jpg,application/pdf"
+            @change="
+              const file = $event.target.files[0];
+              console.log('KTP file selected:', file);
+              if (file) {
+                console.log('File name:', file.name, 'Size:', file.size, 'Type:', file.type);
+                ktpType = file.type;
+                if (file.type.startsWith('image/')) {
+                  const reader = new FileReader();
+                  reader.onload = (e) => { ktpPreview = e.target.result; };
+                  reader.readAsDataURL(file);
+                } else {
+                  ktpPreview = 'pdf';
+                }
+              }
+            "
+            class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium file:cursor-pointer hover:file:text-primary transition-colors cursor-pointer">
+          <p class="text-xs text-muted-foreground">Format: PNG, JPG, PDF. Maksimal 5MB</p>
           
-          <!-- Map Container -->
-          <div :id="'map-affiliate'" class="w-full h-80 rounded-md border border-input overflow-hidden"
-            x-init="$nextTick(() => { if (newAffiliate.kab_kota && !mapAffiliateInitialized) initializeMapAffiliate(); })"></div>
-
-          <!-- Coordinates Input -->
-          <div class="grid grid-cols-2 gap-4 pt-2">
-            <div class="space-y-2">
-              <label class="text-sm font-medium text-slate-700">Latitude</label>
-              <input type="number" step="any" x-model.number="newAffiliate.latitude"
-                @input="updateMapFromCoordinatesAffiliate()" placeholder="-6.xxxxx"
-                class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+          <!-- Preview -->
+          <div x-show="ktpPreview" class="mt-3">
+            <!-- Image Preview -->
+            <div x-show="ktpType && ktpType.startsWith('image/')" class="relative inline-block">
+              <img :src="ktpPreview" alt="Preview KTP" class="h-32 w-auto object-contain border rounded-md shadow-sm">
+              <button type="button" @click="ktpPreview = null; ktpType = null; $el.closest('.space-y-2').querySelector('input[type=file]').value = ''"
+                class="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-1.5 hover:bg-destructive/90 transition-colors shadow-md">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
-            <div class="space-y-2">
-              <label class="text-sm font-medium text-slate-700">Longitude</label>
-              <input type="number" step="any" x-model.number="newAffiliate.longitude"
-                @input="updateMapFromCoordinatesAffiliate()" placeholder="106.xxxxx"
-                class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+            
+            <!-- PDF Preview -->
+            <div x-show="ktpType && ktpType === 'application/pdf'" class="relative inline-block">
+              <div class="flex items-center gap-3 p-3 border rounded-md bg-gray-50">
+                <svg class="h-12 w-12 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+                <div class="flex-1">
+                  <p class="text-sm font-medium text-gray-900">File KTP (PDF)</p>
+                  <p class="text-xs text-gray-500">Siap diupload</p>
+                </div>
+                <button type="button" @click="ktpPreview = null; ktpType = null; $el.closest('.space-y-2').querySelector('input[type=file]').value = ''"
+                  class="text-gray-400 hover:text-red-600 transition-colors">
+                  <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -20,6 +20,26 @@
           <span class="text-xs" x-text="getSortIcon('email')"></span>
         </div>
       </th>
+      <th @click="sort('phone')" class="h-12 px-4 text-left align-middle font-medium text-muted-foreground cursor-pointer hover:bg-muted/50 transition-colors">
+        <div class="flex items-center gap-1">
+          <span>No. WhatsApp</span>
+          <span class="text-xs" x-text="getSortIcon('phone')"></span>
+        </div>
+      </th>
+      <th class="h-12 px-4 text-center align-middle font-medium text-muted-foreground">KTP</th>
+      <th @click="sort('province')" class="h-12 px-4 text-left align-middle font-medium text-muted-foreground cursor-pointer hover:bg-muted/50 transition-colors">
+        <div class="flex items-center gap-1">
+          <span>Provinsi</span>
+          <span class="text-xs" x-text="getSortIcon('province')"></span>
+        </div>
+      </th>
+      <th @click="sort('city')" class="h-12 px-4 text-left align-middle font-medium text-muted-foreground cursor-pointer hover:bg-muted/50 transition-colors">
+        <div class="flex items-center gap-1">
+          <span>Kota/Kab</span>
+          <span class="text-xs" x-text="getSortIcon('city')"></span>
+        </div>
+      </th>
+      <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Detail Alamat</th>
       <th @click="sort('created_at')" class="h-12 px-4 text-left align-middle font-medium text-muted-foreground cursor-pointer hover:bg-muted/50 transition-colors">
         <div class="flex items-center gap-1">
           <span>Tanggal Daftar</span>
@@ -47,6 +67,11 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
               </svg>
             </button>
+            <button @click="openEditFreelance(user)" title="Edit" class="text-yellow-600 hover:text-yellow-800 transition-colors">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+              </svg>
+            </button>
             <button @click="toggleBan(user)" :title="user.status === 'active' ? 'Ban' : 'Aktifkan'" :class="user.status === 'active' ? 'text-red-600 hover:text-red-800' : 'text-green-600 hover:text-green-800'" class="transition-colors">
               <svg x-show="user.status === 'active'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -59,6 +84,14 @@
         </td>
         <td class="p-4 align-middle font-medium" x-text="user.name"></td>
         <td class="p-4 align-middle text-muted-foreground" x-text="user.email"></td>
+        <td class="p-4 align-middle text-muted-foreground" x-text="user.phone || '-'"></td>
+        <td class="p-4 align-middle text-center">
+          <button x-show="user.ktp_url" @click="openFileModal(user.ktp_url)" class="text-sm text-primary hover:underline">Lihat</button>
+          <span x-show="!user.ktp_url" class="text-muted-foreground">-</span>
+        </td>
+        <td class="p-4 align-middle text-muted-foreground" x-text="user.province || '-'"></td>
+        <td class="p-4 align-middle text-muted-foreground" x-text="user.city || '-'"></td>
+        <td class="p-4 align-middle text-muted-foreground" x-text="user.address || '-'"></td>
         <td class="p-4 align-middle" x-text="formatDate(user.created_at)"></td>
         <td class="p-4 align-middle text-sm">
           <a x-show="user.referral_code" :href="getReferralLink(user)" target="_blank" x-text="user.referral_code" class="text-primary hover:underline"></a>
@@ -67,7 +100,7 @@
       </tr>
     </template>
     <tr x-show="paginatedUsers.length === 0">
-      <td colspan="6" class="p-8 text-center text-muted-foreground">Tidak ada data freelance</td>
+      <td colspan="11" class="p-8 text-center text-muted-foreground">Tidak ada data freelance</td>
     </tr>
   </tbody>
 </table>
