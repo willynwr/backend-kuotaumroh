@@ -434,7 +434,7 @@ class AgentController extends Controller
                 'link_gmaps' => 'nullable|string',
                 'long' => 'nullable|numeric',
                 'lat' => 'nullable|numeric',
-                'link_referal' => 'nullable|string',
+                'link_referal' => 'nullable|string|unique:agent,link_referal|unique:affiliate,link_referral|unique:freelance,link_referral',
                 'rekening_agent' => 'nullable|string',
                 'date_approve' => 'nullable|date',
                 // Max 5 MB to match frontend hint

@@ -40,6 +40,7 @@ class Affiliate extends Model
         'provinsi',
         'kab_kota',
         'alamat_lengkap',
+        'ktp',
         'date_register',
         'is_active',
         'link_referral',
