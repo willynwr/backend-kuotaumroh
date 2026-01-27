@@ -132,21 +132,34 @@
                 class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
             </div>
 
-            <div>
+            <div x-data="{ logoPreview: null }">
               <label class="block text-sm font-medium text-slate-700 mb-1">Logo Travel</label>
               <div class="space-y-2">
                 <input type="file" name="logo" accept="image/*" 
-                  @change="logoFile = $event.target.files[0]"
-                  class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20">
+                  @change="
+                    logoFile = $event.target.files[0];
+                    if (logoFile) {
+                      const reader = new FileReader();
+                      reader.onload = (e) => { logoPreview = e.target.result; };
+                      reader.readAsDataURL(logoFile);
+                    }
+                  "
+                  class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 file:cursor-pointer cursor-pointer">
                 <p class="text-xs text-muted-foreground">Format: JPG, PNG, GIF, SVG (Max: 2MB)</p>
-                <template x-if="logoFile">
-                  <div class="mt-2 p-2 bg-gray-50 rounded border flex items-center gap-2">
-                    <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                    <span class="text-sm text-gray-700" x-text="logoFile.name"></span>
+                
+                <!-- Preview -->
+                <div x-show="logoPreview" class="mt-3">
+                  <p class="text-xs text-green-600 font-medium mb-2">Preview logo:</p>
+                  <div class="relative inline-block">
+                    <img :src="logoPreview" alt="Preview Logo" class="h-24 w-auto object-contain border border-green-500 rounded-md shadow-sm bg-white p-2">
+                    <button type="button" @click="logoPreview = null; logoFile = null; $el.closest('div[x-data]').querySelector('input[type=file]').value = ''"
+                      class="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-1.5 hover:bg-destructive/90 transition-colors shadow-md">
+                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
                   </div>
-                </template>
+                </div>
               </div>
             </div>
           </div>

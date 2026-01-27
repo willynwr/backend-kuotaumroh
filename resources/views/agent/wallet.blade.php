@@ -17,7 +17,7 @@
         </div>
       </div>
 
-      <div class="grid gap-4 md:grid-cols-2 mb-6">
+      <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
         <!-- Saldo Tersedia -->
         <div class="rounded-lg border bg-white shadow-sm p-6">
           <div class="flex items-center gap-4">
@@ -28,9 +28,6 @@
               <p class="text-sm font-medium text-muted-foreground">Saldo Profit Tersedia</p>
               <h3 class="text-2xl font-bold" x-text="formatRupiah(walletBalance.balance)"></h3>
             </div>
-            <a href="{{ isset($linkReferral) ? url('/dash/' . $linkReferral . '/history-profit') : route('agent.history-profit') }}" class="rounded-md p-2 hover:bg-primary/10 transition-colors" title="Lihat History Profit">
-              <svg class="h-5 w-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            </a>
           </div>
         </div>
 
@@ -43,6 +40,32 @@
             <div>
               <p class="text-sm font-medium text-muted-foreground">Saldo Diproses</p>
               <h3 class="text-2xl font-bold" x-text="formatRupiah(walletBalance.pendingWithdrawal)"></h3>
+            </div>
+          </div>
+        </div>
+
+        <!-- Total Komisi -->
+        <div class="rounded-lg border bg-slate-50 border-slate-200 shadow-sm p-6">
+          <div class="flex items-center gap-4">
+            <div class="rounded-full bg-primary/10 p-3">
+              <svg class="h-5 w-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+            </div>
+            <div>
+              <p class="text-sm text-muted-foreground">Total Komisi</p>
+              <p class="text-2xl font-bold" x-text="formatRupiah(referralData.totalCommission)"></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Komisi Pending -->
+        <div class="rounded-lg border bg-slate-50 border-slate-200 shadow-sm p-6">
+          <div class="flex items-center gap-4">
+            <div class="rounded-full bg-muted p-3">
+              <svg class="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+            </div>
+            <div>
+              <p class="text-sm text-muted-foreground">Komisi Pending</p>
+              <p class="text-2xl font-bold" x-text="formatRupiah(referralData.pendingCommission)"></p>
             </div>
           </div>
         </div>
@@ -69,20 +92,40 @@
                 <table class="w-full">
                   <thead>
                     <tr class="border-b">
+                      <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Nomor HP</th>
+                      <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Provider</th>
+                      <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Paket</th>
                       <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Tanggal</th>
-                      <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Tipe</th>
-                      <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Keterangan</th>
-                      <th class="h-12 px-4 text-right align-middle font-medium text-muted-foreground">Jumlah</th>
+                      <th class="h-12 px-4 text-right align-middle font-medium text-muted-foreground">Harga Jual</th>
+                      <th class="h-12 px-4 text-right align-middle font-medium text-muted-foreground">Profit</th>
+                      <th class="h-12 px-4 text-center align-middle font-medium text-muted-foreground">Status</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <template x-for="item in incomeHistory" :key="item.id">
+                    <template x-for="row in referralHistory" :key="row.id">
                       <tr class="border-b transition-colors hover:bg-muted/50">
-                        <td class="p-4 align-middle" x-text="formatDate(item.date)"></td>
-                        <td class="p-4 align-middle"><span class="badge badge-outline" x-text="getTypeLabel(item.type)"></span></td>
-                        <td class="p-4 align-middle" x-text="item.description"></td>
-                        <td class="p-4 align-middle text-right font-medium text-primary" x-text="'+' + formatRupiah(item.amount)"></td>
+                        <td class="p-4 align-middle font-mono text-sm" x-text="row.msisdn"></td>
+                        <td class="p-4 align-middle">
+                          <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-800" x-text="row.provider"></span>
+                        </td>
+                        <td class="p-4 align-middle" x-text="row.packageName"></td>
+                        <td class="p-4 align-middle text-muted-foreground text-sm" x-text="formatDate(row.orderDate)"></td>
+                        <td class="p-4 align-middle text-right font-medium" x-text="formatRupiah(row.sellPrice)"></td>
+                        <td class="p-4 align-middle text-right font-bold text-primary" x-text="'+' + formatRupiah(row.commission)"></td>
+                        <td class="p-4 align-middle text-center">
+                          <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold" 
+                            :class="{
+                              'bg-green-100 text-green-800': row.status === 'sukses',
+                              'bg-yellow-100 text-yellow-800': row.status === 'proses',
+                              'bg-red-100 text-red-800': row.status === 'batal'
+                            }" 
+                            x-text="row.status.charAt(0).toUpperCase() + row.status.slice(1)">
+                          </span>
+                        </td>
                       </tr>
+                    </template>
+                    <template x-if="referralHistory.length === 0">
+                      <tr><td colspan="7" class="p-8 text-center text-muted-foreground">Tidak ada data referral</td></tr>
                     </template>
                   </tbody>
                 </table>
@@ -195,12 +238,8 @@
       return {
         imageBase: @json(asset('images')),
         walletBalance: @json($walletBalance ?? ['balance' => 0, 'pendingWithdrawal' => 0]),
-        incomeHistory: [
-          { id: '1', date: new Date('2024-01-15'), type: 'commission', description: 'Komisi Batch #ORD-2024-0115', amount: 450000 },
-          { id: '2', date: new Date('2024-01-12'), type: 'refund', description: 'Refund gagal aktivasi', amount: 75000 },
-          { id: '3', date: new Date('2024-01-10'), type: 'commission', description: 'Komisi Batch #ORD-2024-0110', amount: 320000 },
-          { id: '4', date: new Date('2024-01-08'), type: 'bonus', description: 'Bonus target bulanan', amount: 500000 },
-        ],
+        referralData: @json($referralData ?? ['totalCommission' => 0, 'pendingCommission' => 0]),
+        referralHistory: @json($referralHistory ?? []),
         withdrawalHistory: @json($withdrawalHistory ?? []),
         rejectReasonModal: false,
         selectedReject: null,
@@ -211,10 +250,6 @@
         formatDate(date) {
           const d = new Date(date);
           return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-        },
-        getTypeLabel(type) {
-          const labels = { commission: 'Komisi', refund: 'Refund', bonus: 'Bonus' };
-          return labels[type] || type;
         },
         getStatusLabel(status) {
           const labels = { pending: 'Diproses', approve: 'Selesai', reject: 'Ditolak' };

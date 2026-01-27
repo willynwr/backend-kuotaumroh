@@ -14,6 +14,26 @@
         </div>
       </div>
 
+      {{-- Info Section - Status Verifikasi (Tampil di atas pada mobile) --}}
+      <div class="mb-6 rounded-lg border bg-white shadow-sm p-6">
+        <div class="flex items-start gap-4">
+          <div class="flex-shrink-0">
+            <div class="rounded-full bg-blue-50 p-3">
+              <svg class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+          </div>
+          <div class="flex-1">
+            <h3 class="text-lg font-semibold mb-2">📋 Status Verifikasi</h3>
+            <p class="text-sm text-muted-foreground">
+              Akun Anda sedang dalam <strong>proses verifikasi</strong> oleh tim kami. 
+             
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-12">
         <!-- Box 1: Profit Bulan Ini - LOCKED -->
         <div>
@@ -161,26 +181,6 @@
               </div>
             </div>
           </template>
-        </div>
-      </div>
-
-      {{-- Info Section --}}
-      <div class="mt-12 rounded-lg border bg-white shadow-sm p-6">
-        <div class="flex items-start gap-4">
-          <div class="flex-shrink-0">
-            <div class="rounded-full bg-blue-50 p-3">
-              <svg class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-          </div>
-          <div class="flex-1">
-            <h3 class="text-lg font-semibold mb-2">📋 Status Verifikasi</h3>
-            <p class="text-sm text-muted-foreground">
-              Akun Anda sedang dalam <strong>proses verifikasi</strong> oleh tim kami. 
-             
-            </p>
-          </div>
         </div>
       </div>
 
