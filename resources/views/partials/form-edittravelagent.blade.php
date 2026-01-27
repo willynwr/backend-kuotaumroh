@@ -264,18 +264,130 @@
         <h4 class="font-semibold text-slate-900 border-b pb-2">Dokumen</h4>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
+          <!-- Logo Travel -->
+          <div class="space-y-2" x-data="{ logoPreview: editingTravelAgent.logo_url ? '/storage/' + editingTravelAgent.logo_url : null, isNewLogo: false }">
             <label class="block text-sm font-medium text-slate-700 mb-1">Logo Travel (Opsional)</label>
+            
+            <!-- Current Logo Preview -->
+            <div x-show="logoPreview && !isNewLogo" class="mb-3">
+              <p class="text-xs text-muted-foreground mb-2">Logo saat ini:</p>
+              <div class="relative inline-block group">
+                <img :src="logoPreview" alt="Logo Travel Saat Ini" class="h-24 w-auto object-contain border rounded-md shadow-sm bg-white p-2">
+                <button type="button" @click="window.open(logoPreview, '_blank')"
+                  class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-md">
+                  <svg class="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
             <input type="file" name="logo" accept="image/*"
-              class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium">
-            <p class="text-xs text-muted-foreground mt-1">PNG, JPG. Kosongkan jika tidak ingin mengubah.</p>
+              @change="
+                const file = $event.target.files[0];
+                if (file) {
+                  isNewLogo = true;
+                  const reader = new FileReader();
+                  reader.onload = (e) => { logoPreview = e.target.result; };
+                  reader.readAsDataURL(file);
+                }
+              "
+              class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium file:cursor-pointer hover:file:text-primary">
+            <p class="text-xs text-muted-foreground">PNG, JPG. Kosongkan jika tidak ingin mengubah.</p>
+            
+            <!-- New Logo Preview -->
+            <div x-show="logoPreview && isNewLogo" class="mt-3">
+              <p class="text-xs text-green-600 font-medium mb-2">Logo baru dipilih:</p>
+              <div class="relative inline-block">
+                <img :src="logoPreview" alt="Preview Logo Baru" class="h-24 w-auto object-contain border border-green-500 rounded-md shadow-sm bg-white p-2">
+                <button type="button" @click="logoPreview = editingTravelAgent.logo_url ? '/storage/' + editingTravelAgent.logo_url : null; isNewLogo = false; $el.closest('.space-y-2').querySelector('input[type=file]').value = ''"
+                  class="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-1.5 hover:bg-destructive/90 transition-colors shadow-md">
+                  <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
           </div>
 
-          <div>
+          <!-- Surat PPIU -->
+          <div class="space-y-2" x-data="{ ppiuPreview: editingTravelAgent.ppiu_url ? '/storage/' + editingTravelAgent.ppiu_url : null, ppiuType: editingTravelAgent.ppiu_url ? (editingTravelAgent.ppiu_url.endsWith('.pdf') ? 'application/pdf' : 'image') : null, isNewPpiu: false }">
             <label class="block text-sm font-medium text-slate-700 mb-1">Surat PPIU (Opsional)</label>
+            
+            <!-- Current PPIU Preview -->
+            <div x-show="ppiuPreview && !isNewPpiu" class="mb-3">
+              <p class="text-xs text-muted-foreground mb-2">Surat PPIU saat ini:</p>
+              <div x-show="ppiuType === 'image'" class="relative inline-block group">
+                <img :src="ppiuPreview" alt="PPIU Saat Ini" class="h-24 w-auto object-contain border rounded-md shadow-sm">
+                <button type="button" @click="window.open(ppiuPreview, '_blank')"
+                  class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-md">
+                  <svg class="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                </button>
+              </div>
+              <div x-show="ppiuType === 'application/pdf'" class="inline-block">
+                <a :href="ppiuPreview" target="_blank" class="flex items-center gap-3 p-3 border rounded-md bg-gray-50 hover:bg-gray-100 transition-colors">
+                  <svg class="h-12 w-12 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                  <div class="flex-1">
+                    <p class="text-sm font-medium text-gray-900">Surat PPIU (PDF)</p>
+                    <p class="text-xs text-gray-500">Klik untuk lihat</p>
+                  </div>
+                </a>
+              </div>
+            </div>
+
             <input type="file" name="surat_ppiu" accept="image/*,application/pdf"
-              class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium">
-            <p class="text-xs text-muted-foreground mt-1">PNG, JPG, PDF. Kosongkan jika tidak ingin mengubah.</p>
+              @change="
+                const file = $event.target.files[0];
+                if (file) {
+                  isNewPpiu = true;
+                  ppiuType = file.type;
+                  if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => { ppiuPreview = e.target.result; };
+                    reader.readAsDataURL(file);
+                  } else {
+                    ppiuPreview = 'pdf';
+                  }
+                }
+              "
+              class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium file:cursor-pointer hover:file:text-primary">
+            <p class="text-xs text-muted-foreground">PNG, JPG, PDF. Kosongkan jika tidak ingin mengubah.</p>
+            
+            <!-- New PPIU Preview -->
+            <div x-show="ppiuPreview && isNewPpiu" class="mt-3">
+              <p class="text-xs text-green-600 font-medium mb-2">File baru dipilih:</p>
+              <div x-show="ppiuType && ppiuType.startsWith('image/')" class="relative inline-block">
+                <img :src="ppiuPreview" alt="Preview PPIU Baru" class="h-24 w-auto object-contain border border-green-500 rounded-md shadow-sm">
+                <button type="button" @click="ppiuPreview = editingTravelAgent.ppiu_url ? '/storage/' + editingTravelAgent.ppiu_url : null; ppiuType = editingTravelAgent.ppiu_url ? (editingTravelAgent.ppiu_url.endsWith('.pdf') ? 'application/pdf' : 'image') : null; isNewPpiu = false; $el.closest('.space-y-2').querySelector('input[type=file]').value = ''"
+                  class="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-1.5 hover:bg-destructive/90 transition-colors shadow-md">
+                  <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div x-show="ppiuType && ppiuType === 'application/pdf'" class="relative inline-block">
+                <div class="flex items-center gap-3 p-3 border border-green-500 rounded-md bg-green-50">
+                  <svg class="h-12 w-12 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                  <div class="flex-1">
+                    <p class="text-sm font-medium text-gray-900">Surat PPIU Baru (PDF)</p>
+                  </div>
+                  <button type="button" @click="ppiuPreview = editingTravelAgent.ppiu_url ? '/storage/' + editingTravelAgent.ppiu_url : null; ppiuType = editingTravelAgent.ppiu_url ? (editingTravelAgent.ppiu_url.endsWith('.pdf') ? 'application/pdf' : 'image') : null; isNewPpiu = false; $el.closest('.space-y-2').querySelector('input[type=file]').value = ''"
+                    class="bg-destructive text-white rounded-full p-1.5 hover:bg-destructive/90 transition-colors">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
