@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Agent;
 use App\Models\Affiliate;
 use App\Models\Freelance;
+use App\Models\Admin;
 use Illuminate\Http\Request;
 use Laravel\Socialite\Facades\Socialite;
 
@@ -55,9 +56,17 @@ class AuthController extends Controller
             $user = null;
             $role = null;
 
-            // 1. Check agents table
+            // Check all tables
+            $admin = Admin::where('email', $email)->first();
             $agent = Agent::where('email', $email)->first();
-            if ($agent) {
+            $affiliate = Affiliate::where('email', $email)->first();
+            $freelance = Freelance::where('email', $email)->first();
+
+            // Determine role
+            if ($admin) {
+                $user = $admin;
+                $role = 'admin';
+            } elseif ($agent) {
                 $user = $agent;
                 $jenis = strtolower($agent->jenis_agent ?? 'agent');
                 
@@ -68,24 +77,12 @@ class AuthController extends Controller
                 } else {
                     $role = 'agent';
                 }
-            }
-
-            // 2. Check affiliates table if not found in agents
-            if (!$user) {
-                $affiliate = Affiliate::where('email', $email)->first();
-                if ($affiliate) {
-                    $user = $affiliate;
-                    $role = 'affiliate';
-                }
-            }
-
-            // 3. Check freelances table if still not found
-            if (!$user) {
-                $freelance = Freelance::where('email', $email)->first();
-                if ($freelance) {
-                    $user = $freelance;
-                    $role = 'freelance';
-                }
+            } elseif ($affiliate) {
+                $user = $affiliate;
+                $role = 'affiliate';
+            } elseif ($freelance) {
+                $user = $freelance;
+                $role = 'freelance';
             }
 
             // User not found
@@ -104,19 +101,28 @@ class AuthController extends Controller
             // User found - generate token
             $token = $user->createToken('auth-token')->plainTextToken;
 
+            // Prepare user response based on role
+            $userData = [
+                'id' => $user->id,
+                'email' => $user->email,
+            ];
+
+            if ($role === 'admin') {
+                $userData['nama'] = $user->nama ?? $name;
+                $userData['no_wa'] = $user->no_wa ?? null;
+            } else {
+                $userData['nama_pic'] = $user->nama_pic ?? $user->nama ?? $name;
+                $userData['nama'] = $user->nama_pic ?? $user->nama ?? $name;
+                $userData['jenis_agent'] = $user->jenis_agent ?? null;
+                $userData['agent_code'] = $user->agent_code ?? null;
+                $userData['link_referral'] = $user->link_referral ?? $user->link_referal ?? null;
+                $userData['status'] = $user->status ?? 'approved';
+            }
+
             return response()->json([
                 'success' => true,
                 'is_registered' => true,
-                'user' => [
-                    'id' => $user->id,
-                    'nama_pic' => $user->nama_pic ?? $user->nama ?? $name,
-                    'nama' => $user->nama_pic ?? $user->nama ?? $name,
-                    'email' => $user->email,
-                    'jenis_agent' => $user->jenis_agent ?? null,
-                    'agent_code' => $user->agent_code ?? null,
-                    'link_referral' => $user->link_referral ?? $user->link_referal ?? null,
-                    'status' => $user->status ?? 'approved',
-                ],
+                'user' => $userData,
                 'token' => $token,
                 'role' => $role
             ]);

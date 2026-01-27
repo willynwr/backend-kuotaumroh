@@ -30,6 +30,12 @@ Route::middleware('web')->group(function () {
     Route::post('/auth/logout', [App\Http\Controllers\Api\AuthController::class, 'destroySession']);
 });
 
+// Admin API Routes (protected with Sanctum)
+Route::middleware('auth:sanctum')->prefix('admin')->group(function () {
+    Route::get('/me', [App\Http\Controllers\Api\AdminController::class, 'getCurrentAdmin']);
+    Route::post('/logout', [App\Http\Controllers\Api\AdminController::class, 'logout']);
+});
+
 /*
 |--------------------------------------------------------------------------
 | Proxy API Routes (untuk menghindari CORS)
