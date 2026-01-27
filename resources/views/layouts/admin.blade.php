@@ -23,6 +23,20 @@
   <!-- Alpine.js -->
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
+  <!-- Shared Utilities -->
+  <script src="{{ asset('frontend/shared/utils.js') }}"></script>
+
+  <!-- API Configuration -->
+  <script>
+    const API_BASE_URL = '{{ url('/') }}';
+    const API_URL = `${API_BASE_URL}/api`;
+    
+    function apiUrl(endpoint) {
+      const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+      return `${API_URL}/${cleanEndpoint}`;
+    }
+  </script>
+
   <!-- Tailwind Config -->
   <script>
     tailwind.config = {

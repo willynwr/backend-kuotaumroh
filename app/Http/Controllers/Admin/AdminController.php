@@ -137,11 +137,24 @@ class AdminController extends Controller
             ];
         });
 
+        // Get all admins
+        $admins = \App\Models\Admin::all()->map(function ($admin) {
+            return [
+                'id' => $admin->id,
+                'name' => $admin->nama,
+                'email' => $admin->email,
+                'phone' => $admin->no_wa,
+                'role' => 'admin',
+                'created_at' => $admin->created_at,
+            ];
+        });
+
         // Combine all users
         $users = collect()
             ->merge($affiliates)
             ->merge($agents)
             ->merge($freelances)
+            ->merge($admins)
             ->sortByDesc('created_at')
             ->values()
             ->all();
@@ -156,6 +169,7 @@ class AdminController extends Controller
             'freelance' => Freelance::count(),
             'freelanceActive' => Freelance::where('is_active', true)->count(),
             'freelanceBanned' => Freelance::where('is_active', false)->count(),
+            'admins' => \App\Models\Admin::count(),
         ];
 
         return view('admin.users', compact('users', 'stats'));
@@ -1274,6 +1288,104 @@ class AdminController extends Controller
                 return response()->json(['success' => false, 'message' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
             }
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Store new admin
+     */
+    public function storeAdmin(Request $request)
+    {
+        $validated = $request->validate([
+            'nama' => 'required|string|max:255',
+            'email' => 'required|email',
+            'no_wa' => 'required|string|max:20|unique:admin,no_wa',
+        ], [
+            'nama.required' => 'Nama harus diisi',
+            'email.required' => 'Email harus diisi',
+            'email.email' => 'Format email tidak valid',
+            'no_wa.required' => 'Nomor WhatsApp harus diisi',
+            'no_wa.unique' => 'Nomor WhatsApp sudah terdaftar, gunakan nomor lain',
+        ]);
+
+        // Check if email exists in any user table (admin, agent, affiliate, freelance)
+        $emailExists = false;
+        $existingTable = '';
+
+        if (\App\Models\Admin::where('email', $validated['email'])->exists()) {
+            $emailExists = true;
+            $existingTable = 'Administrator';
+        } elseif (Agent::where('email', $validated['email'])->exists()) {
+            $emailExists = true;
+            $existingTable = 'Travel Agent';
+        } elseif (Affiliate::where('email', $validated['email'])->exists()) {
+            $emailExists = true;
+            $existingTable = 'Affiliate';
+        } elseif (Freelance::where('email', $validated['email'])->exists()) {
+            $emailExists = true;
+            $existingTable = 'Freelance';
+        }
+
+        if ($emailExists) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['email' => 'Email sudah terdaftar sebagai ' . $existingTable . ', gunakan email lain']);
+        }
+
+        try {
+            $admin = \App\Models\Admin::create([
+                'nama' => $validated['nama'],
+                'email' => $validated['email'],
+                'no_wa' => $validated['no_wa'],
+            ]);
+
+            return redirect()->route('admin.users')
+                ->with('success', 'Administrator ' . $admin->nama . ' berhasil ditambahkan dengan ID: ' . $admin->id);
+        } catch (\Exception $e) {
+            \Log::error('Error creating admin: ' . $e->getMessage());
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Gagal menambahkan administrator: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Delete admin
+     */
+    public function deleteAdmin($id)
+    {
+        try {
+            $admin = \App\Models\Admin::findOrFail($id);
+            
+            // Get logged in admin from localStorage
+            $currentAdminEmail = request()->user()?->email ?? null;
+            
+            // Prevent self-deletion
+            if ($admin->email === $currentAdminEmail) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak dapat menghapus akun admin yang sedang login'
+                ], 403);
+            }
+
+            $adminName = $admin->nama;
+            $admin->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Administrator "' . $adminName . '" berhasil dihapus'
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Admin tidak ditemukan'
+            ], 404);
+        } catch (\Exception $e) {
+            \Log::error('Error deleting admin: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus administrator: ' . $e->getMessage()
+            ], 500);
         }
     }
 }

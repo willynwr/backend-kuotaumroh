@@ -3,7 +3,7 @@
 @section('title', 'Dashboard Admin')
 
 @section('content')
-<div x-data="adminDashboard()">
+<div x-data="adminDashboard()" x-init="checkAdminAuth()">
   <!-- Header Component -->
   @include('components.admin.header')
 
@@ -199,6 +199,14 @@
 
       formatRupiah(amount) {
         return `Rp ${amount.toLocaleString('id-ID')}`;
+      },
+
+      checkAdminAuth() {
+        // Check if user is logged in and is admin
+        if (!isLoggedIn() || getUserRole() !== 'admin') {
+          window.location.href = '{{ url('/maha') }}';
+          return;
+        }
       },
 
       init() {
