@@ -3,8 +3,9 @@
 @section('title', 'Kelola Users')
 
 @push('styles')
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
-  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<style>
+    [x-cloak] { display: none !important; }
+</style>
 @endpush
 
 @section('content')
@@ -568,19 +569,38 @@
     </div>
   </div>
 
+  <!-- Edit Modals - Placed outside conditional divs for better Alpine reactivity -->
+  @include('partials.form-editaffiliate')
+  @include('partials.form-editfreelance')
+  @include('partials.form-edittravelagent')
+
 </div>
 @endsection
 
 @push('styles')
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
-  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
 <style>
     [x-cloak] { display: none !important; }
+    .map-locked { cursor: not-allowed !important; }
+    
+    /* Google Maps Styling */
+    #map-agent, #map-edit-agent {
+        min-height: 320px;
+        background-color: #e5e7eb;
+    }
+    
+    #map-agent > div, #map-edit-agent > div {
+        border-radius: 0.375rem;
+    }
+    
+    /* Ensure map container has proper dimensions */
+    #map-agent .gm-style, #map-edit-agent .gm-style {
+        border-radius: 0.375rem;
+    }
 </style>
 @endpush
 
 @push('scripts')
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://maps.googleapis.com/maps/api/js?key={{ config('services.google_maps.api_key') }}&libraries=places" async defer></script>
 <script>
 function usersPage() {
     return {
@@ -614,6 +634,9 @@ function usersPage() {
         addAffiliateModalOpen: false,
         addFreelanceModalOpen: false,
         addTravelAgentModalOpen: false,
+        editAffiliateModalOpen: false,
+        editFreelanceModalOpen: false,
+        editTravelAgentModalOpen: false,
         confirmAddModalOpen: false,
         confirmAddFreelanceModalOpen: false,
         confirmAddTravelAgentModalOpen: false,
@@ -626,6 +649,9 @@ function usersPage() {
         approvalUser: null,
         referralSlug: '',
         selectedUser: null,
+        editingAffiliate: {},
+        editingFreelance: {},
+        editingTravelAgent: {},
         fileModalType: 'image',
         fileModalSrc: '',
         logoFile: null,
@@ -643,12 +669,27 @@ function usersPage() {
         mapAffiliateInstance: null,
         mapFreelanceInstance: null,
         mapAgentInstance: null,
+        mapEditAgentInstance: null,
         markerAffiliate: null,
         markerFreelance: null,
         markerAgent: null,
+        markerEditAgent: null,
         mapAffiliateInitialized: false,
         mapFreelanceInitialized: false,
         mapAgentInitialized: false,
+        mapEditAgentInitialized: false,
+        mapLocked: true, // Lock map by default
+        mapLockedEditAgent: true,
+        mapSearchQuery: '',
+        mapSearchQueryEditAgent: '',
+        mapSearchResults: [],
+        mapSearchResultsEditAgent: [],
+        isSearchingMap: false,
+        isSearchingMapEditAgent: false,
+        mapSearchDebounce: null,
+        mapSearchDebounceEditAgent: null,
+        placesServiceAgent: null,
+        placesServiceEditAgent: null,
         
         provinces: [],
         provinceCodes: {},
@@ -658,6 +699,13 @@ function usersPage() {
         selectedDownline: null,
 
         init() {
+            console.log('Alpine.js initialized for usersPage');
+            console.log('Initial modal states:', {
+                editAffiliateModalOpen: this.editAffiliateModalOpen,
+                editFreelanceModalOpen: this.editFreelanceModalOpen,
+                editTravelAgentModalOpen: this.editTravelAgentModalOpen
+            });
+            
             this.loadProvinces();
             
             // Tab Persistence: Check URL first, then LocalStorage
@@ -845,15 +893,18 @@ function usersPage() {
                 // Admin doesn't need map initialization
                 return;
             }
-            // Initialize map based on type
+            // Initialize map based on type with delay for modal rendering
             this.$nextTick(() => {
-                if (type === 'agent') {
-                    this.initializeMapAgent();
-                } else if (type === 'affiliate') {
-                    this.initializeMapAffiliate();
-                } else if (type === 'freelance') {
-                    this.initializeMapFreelance();
-                }
+                setTimeout(() => {
+                    if (type === 'agent') {
+                        console.log('Initializing map for travel agent...');
+                        this.initializeMapAgent();
+                    } else if (type === 'affiliate') {
+                        this.initializeMapAffiliate();
+                    } else if (type === 'freelance') {
+                        this.initializeMapFreelance();
+                    }
+                }, 300);
             });
         },
         backToSelection() {
@@ -864,10 +915,112 @@ function usersPage() {
         },
         openAddAffiliateModal() { this.addAffiliateModalOpen = true; },
         closeAddAffiliateModal() { this.addAffiliateModalOpen = false; },
+        openEditAffiliate(user) {
+            console.log('Opening edit affiliate modal for:', user);
+            this.editingAffiliate = {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                phone: user.phone,
+                phoneClean: user.phone ? user.phone.replace(/^62/, '') : '',
+                province: user.province,
+                city: user.city,
+                address: user.address,
+                referral_code: user.referral_code,
+                ktp_url: user.ktp_url
+            };
+            console.log('Editing affiliate data:', this.editingAffiliate);
+            if (user.province) this.loadCitiesForEdit(user.province);
+            this.editAffiliateModalOpen = true;
+            console.log('Modal should be open now:', this.editAffiliateModalOpen);
+            
+            // Force Alpine to re-evaluate
+            this.$nextTick(() => {
+                console.log('After nextTick - editAffiliateModalOpen:', this.editAffiliateModalOpen);
+            });
+        },
+        closeEditAffiliateModal() {
+            this.editAffiliateModalOpen = false;
+            this.editingAffiliate = {};
+        },
         openAddFreelanceModal() { this.addFreelanceModalOpen = true; },
         closeAddFreelanceModal() { this.addFreelanceModalOpen = false; },
+        openEditFreelance(user) {
+            console.log('Opening edit freelance modal for:', user);
+            this.editingFreelance = {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                phone: user.phone,
+                phoneClean: user.phone ? user.phone.replace(/^62/, '') : '',
+                province: user.province,
+                city: user.city,
+                address: user.address,
+                referral_code: user.referral_code,
+                ktp_url: user.ktp_url
+            };
+            console.log('Editing freelance data:', this.editingFreelance);
+            if (user.province) this.loadCitiesForEdit(user.province);
+            this.editFreelanceModalOpen = true;
+            console.log('Modal should be open now:', this.editFreelanceModalOpen);
+            
+            // Force Alpine to re-evaluate
+            this.$nextTick(() => {
+                console.log('After nextTick - editFreelanceModalOpen:', this.editFreelanceModalOpen);
+            });
+        },
+        closeEditFreelanceModal() {
+            this.editFreelanceModalOpen = false;
+            this.editingFreelance = {};
+        },
         openAddTravelAgentModal() { this.addTravelAgentModalOpen = true; },
-        closeAddTravelAgentModal() { this.addTravelAgentModalOpen = false; },
+        closeAddTravelAgentModal() { 
+            this.addTravelAgentModalOpen = false;
+            // Reset map state for next opening
+            this.mapAgentInitialized = false;
+            if (this.markerAgent) {
+                this.markerAgent.setMap(null);
+                this.markerAgent = null;
+            }
+            if (this.mapAgentInstance) {
+                this.mapAgentInstance = null;
+            }
+        },
+        openEditTravelAgent(user) {
+            console.log('Opening edit travel agent modal for:', user);
+            this.editingTravelAgent = {
+                id: user.id,
+                full_name: user.name,
+                email: user.email,
+                phone: user.phone,
+                phoneClean: user.phone ? user.phone.replace(/^62/, '') : '',
+                travel_name: user.travel_name,
+                travel_type: user.travel_type,
+                travel_member: user.travel_member,
+                kategori_agent: user.agent_category,
+                province: user.province,
+                city: user.city,
+                address: user.address,
+                latitude: user.latitude || '',
+                longitude: user.longitude || '',
+                logo_url: user.logo,
+                ppiu_url: user.ppiu,
+                monthly_travellers: user.monthly_travellers
+            };
+            console.log('Editing travel agent data:', this.editingTravelAgent);
+            if (user.province) this.loadCitiesForEditAgent(user.province);
+            this.editTravelAgentModalOpen = true;
+            console.log('Modal should be open now:', this.editTravelAgentModalOpen);
+            
+            // Initialize map for edit agent
+            this.$nextTick(() => {
+                this.initMapEditAgent();
+            });
+        },
+        closeEditTravelAgentModal() {
+            this.editTravelAgentModalOpen = false;
+            this.editingTravelAgent = {};
+        },
         openUserDetail(u) { this.selectedUser = u; this.userDetailModalOpen = true; },
         closeUserDetail() { this.userDetailModalOpen = false; },
         
@@ -1052,7 +1205,17 @@ function usersPage() {
         },
         async handleProvinceChange() { this.cities = await this.loadCities(this.newAffiliate.provinsi); },
         async handleProvinceChangeFreelance() { this.citiesFreelance = await this.loadCities(this.newFreelance.provinsi); },
-        async handleProvinceChangeTravelAgent() { this.citiesTravelAgent = await this.loadCities(this.newTravelAgent.province); },
+        async handleProvinceChangeTravelAgent() { 
+            this.citiesTravelAgent = await this.loadCities(this.newTravelAgent.province); 
+            // Reset city when province changes
+            this.newTravelAgent.city = '';
+        },
+        async loadCitiesForEdit(province) {
+            this.cities = await this.loadCities(province);
+        },
+        async loadCitiesForEditAgent(province) {
+            this.citiesTravelAgent = await this.loadCities(province);
+        },
         
         get downlines() {
              return this.users.filter(u => u.role === 'affiliate' || u.role === 'freelance').map(u => ({
@@ -1109,59 +1272,539 @@ function usersPage() {
             this.notificationModalOpen = false;
         },
 
-        // MAP FUNCTIONS (Condensed for safety)
-        async initializeMapAffiliate() { this.initMap('map-affiliate', 'mapAffiliateInstance', 'newAffiliate', 'markerAffiliate'); },
-        async initializeMapFreelance() { this.initMap('map-freelance', 'mapFreelanceInstance', 'newFreelance', 'markerFreelance'); },
-        async initializeMapAgent() { this.initMap('map-agent', 'mapAgentInstance', 'newTravelAgent', 'markerAgent'); },
-        
-        handleCityChangeAffiliate() { this.$nextTick(() => this.initializeMapAffiliate()); },
-        handleCityChangeFreelance() { this.$nextTick(() => this.initializeMapFreelance()); },
-        handleCityChangeTravelAgent() { this.$nextTick(() => this.initializeMapAgent()); },
-        
-        updateMapFromCoordinatesAffiliate() { this.updateMapCoords('newAffiliate', 'mapAffiliateInstance', 'markerAffiliate'); },
-        updateMapFromCoordinatesFreelance() { this.updateMapCoords('newFreelance', 'mapFreelanceInstance', 'markerFreelance'); },
-        updateMapFromCoordinatesAgent() { this.updateMapCoords('newTravelAgent', 'mapAgentInstance', 'markerAgent'); },
-
-        // Generic Map Helpers to save space
-        async initMap(elemId, instanceKey, dataKey, markerKey) {
-            if(this[instanceKey]) return;
-            let lat = -2.5, lng = 118, zoom = 5;
-            // Try geocode city
-            const city = this[dataKey].city || this[dataKey].kab_kota;
-            if(city) {
-                 try {
-                     const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(city + ', Indonesia')}&limit=1`);
-                     const d = await res.json();
-                     if(d.length) { lat = d[0].lat; lng = d[0].lon; zoom = 11; }
-                 } catch(e){}
+        // MAP FUNCTIONS (Google Maps implementation)
+        async initializeMapAgent() {
+            // If map already initialized, skip
+            if(this.mapAgentInstance) {
+                return;
             }
-            this[instanceKey] = L.map(elemId).setView([lat, lng], zoom);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: 'OSM' }).addTo(this[instanceKey]);
             
-            this[instanceKey].on('click', e => {
-                 this[dataKey].latitude = e.latlng.lat;
-                 this[dataKey].longitude = e.latlng.lng;
-                 this.updateMarker(e.latlng.lat, e.latlng.lng, instanceKey, markerKey);
+            // Wait for Google Maps API to load
+            if(typeof google === 'undefined' || !google.maps) {
+                console.log('Waiting for Google Maps API to load...');
+                setTimeout(() => this.initializeMapAgent(), 500);
+                return;
+            }
+            
+            let centerLat = -2.5, centerLng = 118, zoomLevel = 5;
+            
+            // Geocode city if available
+            if (this.newTravelAgent.city) {
+                try {
+                    const searchQuery = `${this.newTravelAgent.city}, ${this.newTravelAgent.province || ''}, Indonesia`;
+                    const geocoder = new google.maps.Geocoder();
+                    const result = await new Promise((resolve, reject) => {
+                        geocoder.geocode({ address: searchQuery }, (results, status) => {
+                            if (status === 'OK' && results[0]) resolve(results[0]);
+                            else reject(new Error('Geocoding failed'));
+                        });
+                    });
+                    centerLat = result.geometry.location.lat();
+                    centerLng = result.geometry.location.lng();
+                    zoomLevel = 11;
+                } catch(e) {
+                    console.log('Geocoding error:', e);
+                }
+            }
+            
+            const mapContainer = document.getElementById('map-agent');
+            if (!mapContainer) {
+                console.error('Map container #map-agent not found');
+                return;
+            }
+            
+            console.log('Initializing Google Maps...');
+            this.mapAgentInstance = new google.maps.Map(mapContainer, {
+                center: { lat: centerLat, lng: centerLng },
+                zoom: zoomLevel,
+                draggable: true,
+                zoomControl: true,
+                scrollwheel: true,
+                disableDoubleClickZoom: false,
+                mapTypeControl: false,
+                streetViewControl: false,
+                fullscreenControl: true,
             });
             
-            // Initial marker
-             if(this[dataKey].latitude && this[dataKey].longitude) {
-                 this.updateMarker(this[dataKey].latitude, this[dataKey].longitude, instanceKey, markerKey);
-             }
-             setTimeout(() => this[instanceKey].invalidateSize(), 200);
+            // Add click listener
+            this.mapAgentInstance.addListener('click', (e) => {
+                const lat = e.latLng.lat();
+                const lng = e.latLng.lng();
+                this.newTravelAgent.latitude = lat;
+                this.newTravelAgent.longitude = lng;
+                this.updateMarkerAgent(lat, lng);
+            });
+            
+            // Add initial marker if coordinates exist
+            if (this.newTravelAgent.latitude && this.newTravelAgent.longitude) {
+                this.updateMarkerAgent(this.newTravelAgent.latitude, this.newTravelAgent.longitude);
+            }
+            
+            // Initialize Places Service for better search
+            if (google.maps.places) {
+                this.placesServiceAgent = new google.maps.places.PlacesService(this.mapAgentInstance);
+                console.log('Places Service initialized');
+            }
+            
+            // Add map-locked class if map is locked by default
+            if (this.mapLocked && mapContainer) {
+                mapContainer.classList.add('map-locked');
+            }
+            
+            this.mapAgentInitialized = true;
+            console.log('Map initialization complete');
         },
         
-        updateMarker(lat, lng, instanceKey, markerKey) {
-             if(this[markerKey]) this[instanceKey].removeLayer(this[markerKey]);
-             this[markerKey] = L.marker([lat, lng]).addTo(this[instanceKey]);
+        updateMarkerAgent(lat, lng) {
+            if (!this.mapAgentInstance || typeof google === 'undefined') return;
+            
+            if (this.markerAgent) this.markerAgent.setMap(null);
+            
+            const position = new google.maps.LatLng(lat, lng);
+            this.markerAgent = new google.maps.Marker({
+                position: position,
+                map: this.mapAgentInstance,
+                draggable: true,
+                animation: google.maps.Animation.DROP
+            });
+            
+            this.markerAgent.addListener('dragend', (e) => {
+                this.newTravelAgent.latitude = e.latLng.lat();
+                this.newTravelAgent.longitude = e.latLng.lng();
+            });
         },
-        updateMapCoords(dataKey, instanceKey, markerKey) {
-             const lat = this[dataKey].latitude, lng = this[dataKey].longitude;
-             if(lat && lng && this[instanceKey]) {
-                 this.updateMarker(lat, lng, instanceKey, markerKey);
-                 this[instanceKey].flyTo([lat, lng], 16);
-             }
+        
+        updateMapFromCoordinatesAgent() {
+            const lat = parseFloat(this.newTravelAgent.latitude);
+            const lng = parseFloat(this.newTravelAgent.longitude);
+            
+            if (!isNaN(lat) && !isNaN(lng) && this.mapAgentInstance && typeof google !== 'undefined') {
+                const position = new google.maps.LatLng(lat, lng);
+                this.updateMarkerAgent(lat, lng);
+                this.mapAgentInstance.panTo(position);
+                this.mapAgentInstance.setZoom(16);
+            }
         },
+        
+        async handleCityChangeTravelAgent() {
+            console.log('City changed to:', this.newTravelAgent.city);
+            
+            this.$nextTick(() => {
+                setTimeout(async () => {
+                    if (!this.mapAgentInitialized && this.newTravelAgent.city) {
+                        console.log('Initializing map for city:', this.newTravelAgent.city);
+                        await this.initializeMapAgent();
+                    } else if (this.mapAgentInitialized && this.newTravelAgent.city) {
+                        console.log('Re-centering map to city:', this.newTravelAgent.city);
+                        await this.recenterMapToCityAgent();
+                    }
+                }, 300);
+            });
+        },
+        
+        async recenterMapToCityAgent() {
+            if (!this.mapAgentInstance || !this.newTravelAgent.city) return;
+
+            try {
+                const searchQuery = this.newTravelAgent.province
+                    ? `${this.newTravelAgent.city}, ${this.newTravelAgent.province}, Indonesia`
+                    : `${this.newTravelAgent.city}, Indonesia`;
+                
+                console.log('Geocoding city:', searchQuery);
+                
+                const geocoder = new google.maps.Geocoder();
+                geocoder.geocode({ address: searchQuery }, (results, status) => {
+                    if (status === 'OK' && results[0]) {
+                        const location = results[0].geometry.location;
+                        
+                        this.mapAgentInstance.panTo(location);
+                        this.mapAgentInstance.setZoom(11);
+                        
+                        console.log('Map re-centered to:', this.newTravelAgent.city, 'at', location.lat(), location.lng());
+                    } else {
+                        console.warn('Geocoding failed:', status);
+                    }
+                });
+            } catch (error) {
+                console.warn('Failed to re-center map:', error);
+            }
+        },
+        
+        async initializeMapAffiliate() { 
+            // Affiliate tidak perlu map lagi
+            return;
+        },
+        async initializeMapFreelance() { 
+            // Freelance tidak perlu map lagi
+            return;
+        },
+        
+        handleCityChangeAffiliate() { 
+            // Tidak perlu map untuk affiliate
+        },
+        handleCityChangeFreelance() { 
+            // Tidak perlu map untuk freelance
+        },
+        
+        updateMapFromCoordinatesAffiliate() { 
+            // Tidak perlu map untuk affiliate
+        },
+        updateMapFromCoordinatesFreelance() { 
+            // Tidak perlu map untuk freelance
+        },
+        updateMapFromCoordinatesAgent() {
+            const lat = parseFloat(this.newTravelAgent.latitude);
+            const lng = parseFloat(this.newTravelAgent.longitude);
+            
+            if (!isNaN(lat) && !isNaN(lng) && this.mapAgentInstance && typeof google !== 'undefined') {
+                const position = new google.maps.LatLng(lat, lng);
+                this.updateMarkerAgent(lat, lng);
+                this.mapAgentInstance.panTo(position);
+                this.mapAgentInstance.setZoom(16);
+            }
+        },
+        
+        toggleMapLock() {
+            this.mapLocked = !this.mapLocked;
+            
+            if (this.mapAgentInstance) {
+                const mapContainer = document.getElementById('map-agent');
+                
+                if (this.mapLocked) {
+                    this.mapAgentInstance.setOptions({ 
+                        draggable: false,
+                        zoomControl: false,
+                        scrollwheel: false,
+                        disableDoubleClickZoom: true
+                    });
+                    if (mapContainer) mapContainer.classList.add('map-locked');
+                    
+                    this.showNotification('Peta dikunci. Lokasi Anda aman!', 'success');
+                } else {
+                    this.mapAgentInstance.setOptions({ 
+                        draggable: true,
+                        zoomControl: true,
+                        scrollwheel: true,
+                        disableDoubleClickZoom: false
+                    });
+                    if (mapContainer) mapContainer.classList.remove('map-locked');
+                    
+                    this.showNotification('Peta aktif. Sekarang Anda bisa memilih lokasi.', 'success');
+                }
+            }
+        },
+        
+        handleMapSearch() {
+            if (!this.mapSearchQuery || this.mapSearchQuery.length < 3) {
+                this.mapSearchResults = [];
+                return;
+            }
+
+            if (this.mapSearchDebounce) clearTimeout(this.mapSearchDebounce);
+
+            this.mapSearchDebounce = setTimeout(() => {
+                if (typeof google === 'undefined' || !google.maps) return;
+                if (!this.mapAgentInstance) {
+                    setTimeout(() => this.handleMapSearch(), 500);
+                    return;
+                }
+                
+                this.isSearchingMap = true;
+                
+                let searchQuery = this.mapSearchQuery;
+                if (this.newTravelAgent.city) searchQuery += `, ${this.newTravelAgent.city}`;
+                if (this.newTravelAgent.province) searchQuery += `, ${this.newTravelAgent.province}`;
+                searchQuery += ', Indonesia';
+                
+                console.log('Searching for:', searchQuery);
+                
+                // Use Places Service if available for better results
+                if (this.placesServiceAgent) {
+                    const request = {
+                        query: searchQuery,
+                        fields: ['name', 'geometry', 'formatted_address', 'place_id']
+                    };
+                    
+                    this.placesServiceAgent.textSearch(request, (results, status) => {
+                        this.isSearchingMap = false;
+                        if (status === google.maps.places.PlacesServiceStatus.OK && results) {
+                            this.mapSearchResults = results.slice(0, 10).map(place => ({
+                                lat: place.geometry.location.lat(),
+                                lng: place.geometry.location.lng(),
+                                name: place.name,
+                                display_name: place.formatted_address,
+                                description: place.formatted_address,
+                                place_id: place.place_id
+                            }));
+                            console.log('Places results:', this.mapSearchResults.length);
+                        } else {
+                            console.log('No places results, fallback to geocoding');
+                            this.fallbackToGeocoding(searchQuery);
+                        }
+                    });
+                } else {
+                    this.fallbackToGeocoding(searchQuery);
+                }
+            }, 500);
+        },
+        
+        fallbackToGeocoding(searchQuery) {
+            const geocoder = new google.maps.Geocoder();
+            geocoder.geocode({ address: searchQuery, region: 'id' }, (results, status) => {
+                this.isSearchingMap = false;
+                if (status === 'OK' && results && results.length > 0) {
+                    this.mapSearchResults = results.slice(0, 10).map(r => ({
+                        lat: r.geometry.location.lat(),
+                        lng: r.geometry.location.lng(),
+                        display_name: r.formatted_address,
+                        description: r.formatted_address
+                    }));
+                } else {
+                    this.mapSearchResults = [];
+                }
+            });
+        },
+        
+        selectMapLocation(result) {
+            if (typeof google === 'undefined' || !google.maps) return;
+
+            const lat = result.lat;
+            const lng = result.lng;
+
+            this.newTravelAgent.latitude = lat;
+            this.newTravelAgent.longitude = lng;
+
+            const position = new google.maps.LatLng(lat, lng);
+            this.mapAgentInstance.panTo(position);
+            this.mapAgentInstance.setZoom(16);
+            this.updateMarkerAgent(lat, lng);
+
+            this.mapSearchResults = [];
+            this.mapSearchQuery = result.display_name || result.description;
+        },
+
+        // Map functions for Edit Travel Agent
+        async initMapEditAgent() {
+            if (typeof google === 'undefined' || !google.maps) {
+                console.error('Google Maps not loaded yet');
+                setTimeout(() => this.initMapEditAgent(), 500);
+                return;
+            }
+            
+            if (this.mapEditAgentInitialized) {
+                console.log('Map already initialized, updating marker...');
+                if (this.editingTravelAgent.latitude && this.editingTravelAgent.longitude) {
+                    this.updateMarkerEditAgent(
+                        parseFloat(this.editingTravelAgent.latitude),
+                        parseFloat(this.editingTravelAgent.longitude)
+                    );
+                }
+                return;
+            }
+
+            let centerLat = -6.2088;
+            let centerLng = 106.8456;
+            let zoomLevel = 10;
+
+            if (this.editingTravelAgent.latitude && this.editingTravelAgent.longitude) {
+                centerLat = parseFloat(this.editingTravelAgent.latitude);
+                centerLng = parseFloat(this.editingTravelAgent.longitude);
+                zoomLevel = 16;
+            } else if (this.editingTravelAgent.city) {
+                try {
+                    const searchQuery = `${this.editingTravelAgent.city}, ${this.editingTravelAgent.province}, Indonesia`;
+                    const geocoder = new google.maps.Geocoder();
+                    await new Promise((resolve) => {
+                        geocoder.geocode({ address: searchQuery }, (results, status) => {
+                            if (status === 'OK' && results[0]) {
+                                centerLat = results[0].geometry.location.lat();
+                                centerLng = results[0].geometry.location.lng();
+                                zoomLevel = 11;
+                            }
+                            resolve();
+                        });
+                    });
+                } catch(e) {
+                    console.log('Geocoding error:', e);
+                }
+            }
+            
+            const mapContainer = document.getElementById('map-edit-agent');
+            if (!mapContainer) {
+                console.error('Map container #map-edit-agent not found');
+                return;
+            }
+            
+            console.log('Initializing Edit Agent Map...');
+            this.mapEditAgentInstance = new google.maps.Map(mapContainer, {
+                center: { lat: centerLat, lng: centerLng },
+                zoom: zoomLevel,
+                draggable: true,
+                zoomControl: true,
+                scrollwheel: true,
+                disableDoubleClickZoom: false,
+                mapTypeControl: false,
+                streetViewControl: false,
+                fullscreenControl: true,
+            });
+            
+            this.mapEditAgentInstance.addListener('click', (e) => {
+                const lat = e.latLng.lat();
+                const lng = e.latLng.lng();
+                this.editingTravelAgent.latitude = lat;
+                this.editingTravelAgent.longitude = lng;
+                this.updateMarkerEditAgent(lat, lng);
+            });
+            
+            if (this.editingTravelAgent.latitude && this.editingTravelAgent.longitude) {
+                this.updateMarkerEditAgent(
+                    parseFloat(this.editingTravelAgent.latitude),
+                    parseFloat(this.editingTravelAgent.longitude)
+                );
+            }
+            
+            if (google.maps.places) {
+                this.placesServiceEditAgent = new google.maps.places.PlacesService(this.mapEditAgentInstance);
+            }
+            
+            if (this.mapLockedEditAgent && mapContainer) {
+                mapContainer.classList.add('map-locked');
+            }
+            
+            this.mapEditAgentInitialized = true;
+            console.log('Edit Agent Map initialization complete');
+        },
+
+        updateMarkerEditAgent(lat, lng) {
+            if (!this.mapEditAgentInstance || typeof google === 'undefined') return;
+            
+            if (this.markerEditAgent) this.markerEditAgent.setMap(null);
+            
+            const position = new google.maps.LatLng(lat, lng);
+            this.markerEditAgent = new google.maps.Marker({
+                position: position,
+                map: this.mapEditAgentInstance,
+                draggable: true,
+                animation: google.maps.Animation.DROP
+            });
+            
+            this.markerEditAgent.addListener('dragend', (e) => {
+                this.editingTravelAgent.latitude = e.latLng.lat();
+                this.editingTravelAgent.longitude = e.latLng.lng();
+            });
+        },
+
+        toggleMapLockEditAgent() {
+            this.mapLockedEditAgent = !this.mapLockedEditAgent;
+            
+            if (this.mapEditAgentInstance) {
+                const mapContainer = document.getElementById('map-edit-agent');
+                
+                if (this.mapLockedEditAgent) {
+                    this.mapEditAgentInstance.setOptions({ 
+                        draggable: false,
+                        zoomControl: false,
+                        scrollwheel: false,
+                        disableDoubleClickZoom: true
+                    });
+                    if (mapContainer) mapContainer.classList.add('map-locked');
+                } else {
+                    this.mapEditAgentInstance.setOptions({ 
+                        draggable: true,
+                        zoomControl: true,
+                        scrollwheel: true,
+                        disableDoubleClickZoom: false
+                    });
+                    if (mapContainer) mapContainer.classList.remove('map-locked');
+                }
+            }
+        },
+
+        handleMapSearchEditAgent() {
+            if (!this.mapSearchQueryEditAgent || this.mapSearchQueryEditAgent.length < 3) {
+                this.mapSearchResultsEditAgent = [];
+                return;
+            }
+
+            if (this.mapSearchDebounceEditAgent) clearTimeout(this.mapSearchDebounceEditAgent);
+
+            this.mapSearchDebounceEditAgent = setTimeout(() => {
+                if (typeof google === 'undefined' || !google.maps) return;
+                if (!this.mapEditAgentInstance) {
+                    setTimeout(() => this.handleMapSearchEditAgent(), 500);
+                    return;
+                }
+                
+                this.isSearchingMapEditAgent = true;
+                
+                let searchQuery = this.mapSearchQueryEditAgent;
+                if (this.editingTravelAgent.city) searchQuery += `, ${this.editingTravelAgent.city}`;
+                if (this.editingTravelAgent.province) searchQuery += `, ${this.editingTravelAgent.province}`;
+                searchQuery += ', Indonesia';
+                
+                if (this.placesServiceEditAgent) {
+                    const request = {
+                        query: searchQuery,
+                        fields: ['name', 'geometry', 'formatted_address', 'place_id']
+                    };
+                    
+                    this.placesServiceEditAgent.textSearch(request, (results, status) => {
+                        this.isSearchingMapEditAgent = false;
+                        if (status === google.maps.places.PlacesServiceStatus.OK && results) {
+                            this.mapSearchResultsEditAgent = results.slice(0, 10).map(place => ({
+                                lat: place.geometry.location.lat(),
+                                lng: place.geometry.location.lng(),
+                                name: place.name,
+                                display_name: place.formatted_address,
+                                description: place.formatted_address,
+                                place_id: place.place_id
+                            }));
+                        } else {
+                            this.fallbackToGeocodingEditAgent(searchQuery);
+                        }
+                    });
+                } else {
+                    this.fallbackToGeocodingEditAgent(searchQuery);
+                }
+            }, 500);
+        },
+
+        fallbackToGeocodingEditAgent(searchQuery) {
+            const geocoder = new google.maps.Geocoder();
+            geocoder.geocode({ address: searchQuery, region: 'id' }, (results, status) => {
+                this.isSearchingMapEditAgent = false;
+                if (status === 'OK' && results && results.length > 0) {
+                    this.mapSearchResultsEditAgent = results.slice(0, 10).map(r => ({
+                        lat: r.geometry.location.lat(),
+                        lng: r.geometry.location.lng(),
+                        display_name: r.formatted_address,
+                        description: r.formatted_address
+                    }));
+                } else {
+                    this.mapSearchResultsEditAgent = [];
+                }
+            });
+        },
+
+        selectMapLocationEditAgent(result) {
+            if (typeof google === 'undefined' || !google.maps) return;
+
+            const lat = result.lat;
+            const lng = result.lng;
+
+            this.editingTravelAgent.latitude = lat;
+            this.editingTravelAgent.longitude = lng;
+
+            const position = new google.maps.LatLng(lat, lng);
+            this.mapEditAgentInstance.panTo(position);
+            this.mapEditAgentInstance.setZoom(16);
+            this.updateMarkerEditAgent(lat, lng);
+
+            this.mapSearchResultsEditAgent = [];
+            this.mapSearchQueryEditAgent = result.display_name || result.description;
+        },
+
+        // Generic Map Helpers - Removed (tidak digunakan lagi)
 
 
 
