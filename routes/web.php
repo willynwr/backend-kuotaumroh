@@ -27,6 +27,11 @@ Route::get('/agent', function () {
     return view('auth.login');
 })->name('login');
 
+// Admin login on /maha
+Route::get('/maha', function () {
+    return view('auth.admin.login');
+})->name('admin.login');
+
 // Agent Signup tanpa Referral (default affiliate_id = 1)
 Route::get('/signup', [App\Http\Controllers\AgentController::class, 'signup'])->name('signup');
 
@@ -116,6 +121,14 @@ Route::get('/umroh/payment', function () {
 Route::get('/admin/login', function () {
     return view('auth.admin.login');
 })->name('admin.login');
+
+// Admin Dashboard Route
+Route::get('/admin/dashboard', function () {
+    // Get admin ID from localStorage (passed via JS)
+    // We'll pass it via query parameter or use session
+    return view('admin.dashboard');
+})->name('admin.dashboard');
+
 // Dashboard Unique Routes untuk Affiliate & Freelance & Agent
 Route::prefix('dash')->name('dash.')->middleware('web')->group(function () {
     Route::get('/{link_referral}', [DashboardController::class, 'show'])->name('show');
@@ -192,6 +205,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
     // User management
     Route::post('/users/{id}/toggle-status', [App\Http\Controllers\Admin\AdminController::class, 'toggleUserStatus'])->name('users.toggle-status');
+    
+    // Admin management
+    Route::post('/store-admin', [App\Http\Controllers\Admin\AdminController::class, 'storeAdmin'])->name('store-admin');
+    Route::delete('/admins/{id}', [App\Http\Controllers\Admin\AdminController::class, 'deleteAdmin'])->name('admins.delete');
 
     // Affiliate Management
     Route::prefix('affiliate')->name('affiliate.')->group(function () {
