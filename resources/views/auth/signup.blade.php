@@ -59,22 +59,26 @@
 
   <script src="{{ asset('frontend/shared/utils.js') }}"></script>
 
-  <!-- Leaflet.js CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-
-  <!-- Leaflet.js JavaScript -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- Google Maps JavaScript API -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCF6kUFR066-rJx_dK8LvbX5-bwMCnxjyI&libraries=places&callback=initGoogleMaps" async defer></script>
+  
+  <script>
+    // Google Maps callback
+    function initGoogleMaps() {
+      console.log('Google Maps API loaded');
+      window.googleMapsLoaded = true;
+    }
+  </script>
 
   <!-- Custom Styles for Map Lock -->
   <style>
     /* Prevent map interaction when locked */
-    .leaflet-container.map-locked {
+    #map.map-locked {
       cursor: default !important;
+      pointer-events: none;
     }
     
-    .leaflet-container.map-locked * {
+    #map.map-locked * {
       cursor: default !important;
     }
 
@@ -290,7 +294,7 @@
                         </svg>
                       </button>
                       <div x-show="travelTypeOpen" x-transition
-                        class="absolute z-50 mt-1 w-full rounded-md border border-input bg-white shadow-lg"
+                        class="absolute z-40 mt-1 w-full rounded-md border border-input bg-white shadow-lg"
                         style="display: none;">
                         <div class="py-1">
                           <button type="button" @click="formData.travel_type = 'UMROH'; travelTypeOpen = false"
@@ -359,7 +363,7 @@
 
                     <!-- Dropdown Panel -->
                     <div x-show="provinceDropdownOpen" x-transition
-                      class="absolute z-50 mt-1 w-full rounded-md border border-input bg-white shadow-lg">
+                      class="absolute z-40 mt-1 w-full rounded-md border border-input bg-white shadow-lg">
                       <!-- Search Input -->
                       <div class="p-2 border-b">
                         <input type="text" x-ref="provinceSearchInput" x-model="provinceSearch" @click.stop
@@ -410,7 +414,7 @@
 
                     <!-- Dropdown Panel -->
                     <div x-show="cityDropdownOpen" x-transition
-                      class="absolute z-50 mt-1 w-full rounded-md border border-input bg-white shadow-lg">
+                      class="absolute z-40 mt-1 w-full rounded-md border border-input bg-white shadow-lg">
                       <!-- Search Input -->
                       <div class="p-2 border-b">
                         <input type="text" x-ref="citySearchInput" x-model="citySearch" @click.stop
@@ -511,24 +515,45 @@
 
                   <!-- Search Results Dropdown -->
                   <div x-show="mapSearchResults.length > 0" @click.away="mapSearchResults = []"
-                    class="absolute z-10 w-full mt-1 bg-popover text-popover-foreground rounded-md border shadow-md max-h-60 overflow-y-auto"
+                    class="absolute z-40 w-full mt-1 bg-white rounded-lg border border-gray-200 shadow-xl max-h-80 overflow-y-auto"
                     style="display: none;">
-                    <ul>
+                    <div class="py-1">
                       <template x-for="(result, index) in mapSearchResults" :key="index">
-                        <li @click="selectMapLocation(result)"
-                          class="px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer border-b last:border-0">
-                          <div class="font-medium" x-text="result.display_name.split(',')[0]"></div>
-                          <div class="text-xs text-muted-foreground truncate" x-text="result.display_name"></div>
-                        </li>
+                        <button type="button" @click="selectMapLocation(result)"
+                          class="w-full text-left px-4 py-3 hover:bg-green-50 transition-colors border-b border-gray-100 last:border-0 group">
+                          <div class="flex items-start gap-3">
+                            <!-- Location Icon -->
+                            <div class="flex-shrink-0 mt-0.5">
+                              <svg class="h-5 w-5 text-green-600 group-hover:text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                            </div>
+                            <!-- Text Content -->
+                            <div class="flex-1 min-w-0">
+                              <div class="font-medium text-gray-900 group-hover:text-green-700 mb-0.5" 
+                                x-text="result.name || (result.description ? result.description.split(',')[0] : result.display_name)"></div>
+                              <div class="text-xs text-gray-500 truncate leading-relaxed" 
+                                x-text="result.description || result.display_name"></div>
+                            </div>
+                            <!-- Arrow Icon -->
+                            <div class="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <svg class="h-4 w-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                              </svg>
+                            </div>
+                          </div>
+                        </button>
                       </template>
-                    </ul>
+                    </div>
                   </div>
                 </div>
 
                 <!-- Map Container with Overlay -->
                 <div class="relative">
-                  <div id="map" class="w-full h-80 rounded-md border border-input overflow-hidden"
-                    x-init="$nextTick(() => { if (formData.city && !mapInitialized) initializeMap(); })"></div>
+                  <div id="map" class="w-full h-80 rounded-md border border-input overflow-hidden bg-gray-100"></div>
                   
                   <!-- Locked Overlay -->
                   <div x-show="mapLocked" 
@@ -573,8 +598,14 @@
                     <p class="text-xs text-muted-foreground">Format: PNG, JPG, GIF. Maksimal 2MB</p>
 
                     <!-- Logo Preview -->
-                    <div x-show="logoPreview" class="mt-2">
-                      <img :src="logoPreview" alt="Logo preview" class="h-24 w-24 object-contain border rounded-md">
+                    <div x-show="logoPreview" class="mt-2 relative inline-block">
+                      <img :src="logoPreview" alt="Logo preview" class="h-24 w-auto object-contain border rounded-md shadow-sm">
+                      <button type="button" @click="logoPreview = null; logoFile = null; $el.closest('.space-y-2').querySelector('input[type=file]').value = ''"
+                        class="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-1.5 hover:bg-destructive/90 transition-colors shadow-md">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
                     </div>
                   </div>
 
@@ -592,26 +623,49 @@
                     <p class="text-xs text-muted-foreground">Format: PDF, PNG, JPG. Maksimal 5MB</p>
 
                     <!-- File Preview -->
-                    <div x-show="cooperationLetterFile" class="mt-2 p-3 border rounded-md bg-muted/30">
-                      <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                          <svg class="h-6 w-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    <div x-show="cooperationLetterFile" class="mt-3">
+                      <!-- Image Preview -->
+                      <div x-show="cooperationLetterType && cooperationLetterType.startsWith('image/')" 
+                        class="relative inline-block">
+                        <img :src="cooperationLetterPreview" alt="Preview surat PPIU" 
+                          class="h-32 w-auto object-contain border rounded-md shadow-sm">
+                        <button type="button" @click="removeCooperationLetter()"
+                          class="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-1.5 hover:bg-destructive/90 transition-colors shadow-md">
+                          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                           </svg>
-                          <div class="overflow-hidden">
-                            <p class="text-sm font-medium truncate" x-text="cooperationLetterFile?.name"></p>
-                            <p class="text-xs text-muted-foreground"
+                        </button>
+                      </div>
+
+                      <!-- PDF Preview -->
+                      <div x-show="cooperationLetterType === 'application/pdf'" 
+                        class="flex items-start gap-3 p-3 border rounded-lg bg-white hover:bg-gray-50 transition-colors">
+                        <div class="flex items-center gap-3 flex-1 min-w-0">
+                          <div class="flex items-center gap-4">
+                          <!-- PDF Icon -->
+                          <div class="flex-shrink-0 bg-red-100 rounded p-2">
+                            <svg class="h-8 w-8 text-red-600" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+                              <path d="M14 2v6h6" fill="none" stroke="currentColor" stroke-width="2"/>
+                            </svg>
+                          </div>
+                          <!-- File Info -->
+                          <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-900 truncate" 
+                              x-text="cooperationLetterFile?.name"></p>
+                            <p class="text-xs text-gray-500 mt-0.5" 
                               x-text="formatFileSize(cooperationLetterFile?.size)"></p>
                           </div>
                         </div>
+                        
+                        <!-- Delete Button -->
                         <button type="button" @click="removeCooperationLetter()"
-                          class="text-destructive hover:text-destructive/80 transition-colors">
+                          class="flex-shrink-0 text-gray-400 hover:text-red-600 transition-colors">
                           <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M6 18L18 6M6 6l12 12" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                           </svg>
                         </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -729,6 +783,8 @@
 
         // Cooperation letter upload
         cooperationLetterFile: null,
+        cooperationLetterPreview: null,
+        cooperationLetterType: null,
 
         // UI state
         isSubmitting: false,
@@ -748,6 +804,7 @@
         marker: null,
         mapInitialized: false,
         mapLocked: true, // Lock map by default to prevent accidental scrolling
+        placesService: null, // Places Service instance
 
         // Map Search
         mapSearchQuery: '',
@@ -895,14 +952,21 @@
         },
 
         async handleCityChange() {
+          console.log('City changed to:', this.formData.city);
+          
           // Initialize map if not already initialized
-          this.$nextTick(async () => {
-            if (!this.mapInitialized) {
-              await this.initializeMap();
-            } else if (this.formData.city) {
-              // If map is already initialized, re-center to new city
-              await this.recenterMapToCity();
-            }
+          this.$nextTick(() => {
+            // Wait a bit for the x-show to render the map container
+            setTimeout(async () => {
+              if (!this.mapInitialized) {
+                console.log('Initializing map for city:', this.formData.city);
+                await this.initializeMap();
+              } else if (this.formData.city) {
+                // If map is already initialized, re-center to new city
+                console.log('Re-centering map to city:', this.formData.city);
+                await this.recenterMapToCity();
+              }
+            }, 300); // Give time for x-show to render
           });
         },
 
@@ -914,17 +978,23 @@
             
             if (this.mapLocked) {
               // Lock the map
-              this.mapInstance.dragging.disable();
-              this.mapInstance.touchZoom.disable();
-              this.mapInstance.scrollWheelZoom.disable();
+              this.mapInstance.setOptions({ 
+                draggable: false,
+                zoomControl: false,
+                scrollwheel: false,
+                disableDoubleClickZoom: true
+              });
               if (mapContainer) mapContainer.classList.add('map-locked');
               
               this.showToast('Peta Dikunci', 'Peta tidak akan bergerak saat Anda scroll. Lokasi Anda aman!');
             } else {
               // Unlock the map
-              this.mapInstance.dragging.enable();
-              this.mapInstance.touchZoom.enable();
-              this.mapInstance.scrollWheelZoom.enable();
+              this.mapInstance.setOptions({ 
+                draggable: true,
+                zoomControl: true,
+                scrollwheel: true,
+                disableDoubleClickZoom: false
+              });
               if (mapContainer) mapContainer.classList.remove('map-locked');
               
               this.showToast('Peta Aktif', 'Sekarang Anda bisa menggeser dan zoom peta untuk memilih lokasi.');
@@ -936,26 +1006,23 @@
           if (!this.mapInstance || !this.formData.city) return;
 
           try {
-            // Use Nominatim API to geocode the city with province for better accuracy
+            // Use Google Maps Geocoding API
             const searchQuery = this.formData.province
               ? `${this.formData.city}, ${this.formData.province}, Indonesia`
               : `${this.formData.city}, Indonesia`;
-            const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`;
-
-            const response = await fetch(geocodeUrl);
-            const data = await response.json();
-
-            if (data && data.length > 0) {
-              const centerLat = parseFloat(data[0].lat);
-              const centerLng = parseFloat(data[0].lon);
-
-              // Fly to the new city location
-              this.mapInstance.flyTo([centerLat, centerLng], 11, {
-                duration: 1.5 // Animation duration in seconds
-              });
-
-              console.log('Map re-centered to:', this.formData.city, 'at', centerLat, centerLng);
-            }
+            
+            const geocoder = new google.maps.Geocoder();
+            geocoder.geocode({ address: searchQuery }, (results, status) => {
+              if (status === 'OK' && results[0]) {
+                const location = results[0].geometry.location;
+                
+                // Pan and zoom to the new city location
+                this.mapInstance.panTo(location);
+                this.mapInstance.setZoom(11);
+                
+                console.log('Map re-centered to:', this.formData.city, 'at', location.lat(), location.lng());
+              }
+            });
           } catch (error) {
             console.warn('Failed to re-center map:', error);
           }
@@ -963,7 +1030,21 @@
 
         async initializeMap() {
           // Prevent multiple initializations
-          if (this.mapInitialized) return;
+          if (this.mapInitialized) {
+            console.log('Map already initialized');
+            return;
+          }
+
+          console.log('Starting map initialization...');
+
+          // Wait for Google Maps API to load
+          if (typeof google === 'undefined' || !google.maps) {
+            console.log('Waiting for Google Maps API to load...');
+            setTimeout(() => this.initializeMap(), 500);
+            return;
+          }
+
+          console.log('Google Maps API loaded, creating map...');
 
           // Default center: Indonesia (approximate center)
           let centerLat = -2.5;
@@ -974,42 +1055,55 @@
             // If we have a selected city, geocode it to get coordinates
             if (this.formData.city) {
               try {
-                // Use Nominatim API to geocode the city with province for better accuracy
                 const searchQuery = this.formData.province
                   ? `${this.formData.city}, ${this.formData.province}, Indonesia`
                   : `${this.formData.city}, Indonesia`;
-                const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`;
+                
+                console.log('Geocoding city:', searchQuery);
+                
+                const geocoder = new google.maps.Geocoder();
+                const result = await new Promise((resolve, reject) => {
+                  geocoder.geocode({ address: searchQuery }, (results, status) => {
+                    if (status === 'OK' && results[0]) {
+                      resolve(results[0]);
+                    } else {
+                      reject(new Error('Geocoding failed: ' + status));
+                    }
+                  });
+                });
 
-                const response = await fetch(geocodeUrl);
-                const data = await response.json();
-
-                if (data && data.length > 0) {
-                  centerLat = parseFloat(data[0].lat);
-                  centerLng = parseFloat(data[0].lon);
-                  zoomLevel = 11; // Zoom to city level
-                  console.log('Geocoded city:', this.formData.city, 'to', centerLat, centerLng);
-                }
+                centerLat = result.geometry.location.lat();
+                centerLng = result.geometry.location.lng();
+                zoomLevel = 11;
+                console.log('Geocoded city:', this.formData.city, 'to', centerLat, centerLng);
               } catch (geocodeError) {
                 console.warn('Geocoding failed, using default center:', geocodeError);
               }
             }
 
-            // Initialize the map with scroll disabled by default
-            this.mapInstance = L.map('map', {
-              scrollWheelZoom: false,
-              dragging: !this.mapLocked,
-              touchZoom: false,
-              doubleClickZoom: true,
-              boxZoom: true,
-              keyboard: true,
-              tap: false
-            }).setView([centerLat, centerLng], zoomLevel);
+            // Get map container
+            const mapContainer = document.getElementById('map');
+            if (!mapContainer) {
+              console.error('Map container not found!');
+              return;
+            }
 
-            // Add OpenStreetMap tile layer
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-              attribution: '© OpenStreetMap contributors',
-              maxZoom: 19
-            }).addTo(this.mapInstance);
+            console.log('Creating Google Map instance...');
+
+            // Initialize the map
+            this.mapInstance = new google.maps.Map(mapContainer, {
+              center: { lat: centerLat, lng: centerLng },
+              zoom: zoomLevel,
+              draggable: !this.mapLocked,
+              zoomControl: !this.mapLocked,
+              scrollwheel: false,
+              disableDoubleClickZoom: this.mapLocked,
+              mapTypeControl: false,
+              streetViewControl: false,
+              fullscreenControl: true,
+            });
+
+            console.log('Map instance created successfully');
 
             // Add initial marker if coordinates exist
             if (this.formData.latitude && this.formData.longitude) {
@@ -1017,27 +1111,32 @@
             }
 
             // Add click event handler
-            this.mapInstance.on('click', (e) => {
-              const { lat, lng } = e.latlng;
+            this.mapInstance.addListener('click', (e) => {
+              const lat = e.latLng.lat();
+              const lng = e.latLng.lng();
+              console.log('Map clicked at:', lat, lng);
               this.updateMarker(lat, lng);
             });
 
             this.mapInitialized = true;
+            console.log('Map initialization complete');
+            
+            // Initialize Places Service once map is ready
+            if (google.maps.places) {
+              this.placesService = new google.maps.places.PlacesService(this.mapInstance);
+              console.log('Places Service initialized successfully');
+            } else {
+              console.warn('Places library not available - search will use Geocoding only');
+            }
 
             // Add map-locked class if map is locked by default
-            const mapContainer = document.getElementById('map');
             if (this.mapLocked && mapContainer) {
               mapContainer.classList.add('map-locked');
             }
 
-            // Fix map size check after render
-            setTimeout(() => {
-              this.mapInstance.invalidateSize();
-            }, 100);
-
           } catch (error) {
             console.error('Error initializing map:', error);
-            this.showToast('Error', 'Gagal memuat peta');
+            this.showToast('Error', 'Gagal memuat peta: ' + error.message);
           }
         },
 
@@ -1050,22 +1149,133 @@
           // Debounce search
           if (this.mapSearchDebounce) clearTimeout(this.mapSearchDebounce);
 
-          this.mapSearchDebounce = setTimeout(async () => {
-            this.isSearchingMap = true;
-            try {
-              // Search predominantly within Indonesia
-              const query = `${this.mapSearchQuery}, Indonesia`;
-              const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`);
-
-              if (response.ok) {
-                this.mapSearchResults = await response.json();
-              }
-            } catch (error) {
-              console.error('Map search error:', error);
-            } finally {
-              this.isSearchingMap = false;
+          this.mapSearchDebounce = setTimeout(() => {
+            if (typeof google === 'undefined' || !google.maps) {
+              console.error('Google Maps not loaded');
+              return;
             }
-          }, 500); // 500ms debounce
+            
+            // Wait for map to be initialized
+            if (!this.mapInstance) {
+              console.warn('Map not initialized yet, waiting...');
+              setTimeout(() => this.handleMapSearch(), 500);
+              return;
+            }
+            
+            this.isSearchingMap = true;
+            
+            // Build search query with city and province context
+            let searchQuery = this.mapSearchQuery;
+            if (this.formData.city) {
+              searchQuery += `, ${this.formData.city}`;
+            }
+            if (this.formData.province) {
+              searchQuery += `, ${this.formData.province}`;
+            }
+            searchQuery += ', Indonesia';
+            
+            console.log('Searching for:', searchQuery);
+            
+            // Use Places Service if available
+            if (this.placesService) {
+              console.log('Using Places API');
+              
+              const request = {
+                query: searchQuery,
+                fields: ['name', 'formatted_address', 'geometry', 'place_id']
+              };
+              
+              this.placesService.findPlaceFromQuery(request, (results, status) => {
+                console.log('findPlaceFromQuery status:', status);
+                
+                if (status === google.maps.places.PlacesServiceStatus.OK && results && results.length > 0) {
+                  // Success with Places API!
+                  this.mapSearchResults = results.map(r => ({
+                    place_id: r.place_id,
+                    description: r.formatted_address,
+                    display_name: r.formatted_address,
+                    geometry: r.geometry,
+                    name: r.name || r.formatted_address.split(',')[0]
+                  }));
+                  console.log('Places API success:', this.mapSearchResults.length, 'results');
+                  this.isSearchingMap = false;
+                } else if (status === google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
+                  // Try textSearch for broader results
+                  console.log('findPlaceFromQuery zero results, trying textSearch');
+                  this.placesService.textSearch(request, (results, status) => {
+                    if (status === google.maps.places.PlacesServiceStatus.OK && results && results.length > 0) {
+                      this.mapSearchResults = results.slice(0, 10).map(r => ({
+                        place_id: r.place_id,
+                        description: r.formatted_address,
+                        display_name: r.formatted_address,
+                        geometry: r.geometry,
+                        name: r.name || r.formatted_address.split(',')[0]
+                      }));
+                      console.log('textSearch success:', this.mapSearchResults.length);
+                      this.isSearchingMap = false;
+                    } else {
+                      console.log('textSearch failed, using Geocoding');
+                      this.useGeocodingSearch(searchQuery);
+                    }
+                  });
+                } else {
+                  console.log('Places API error:', status, '- using Geocoding fallback');
+                  this.useGeocodingSearch(searchQuery);
+                }
+              });
+            } else {
+              // Places Service not available
+              console.log('Places Service not initialized, using Geocoding API');
+              this.useGeocodingSearch(searchQuery);
+            }
+          }, 500);
+        },
+        
+        useGeocodingSearch(searchQuery) {
+          const geocoder = new google.maps.Geocoder();
+          
+          geocoder.geocode({ 
+            address: searchQuery,
+            region: 'id'
+          }, (results, status) => {
+            console.log('Geocoding status:', status, 'Results:', results?.length || 0);
+            this.isSearchingMap = false;
+            
+            if (status === 'OK' && results && results.length > 0) {
+              this.mapSearchResults = results.slice(0, 10).map(r => {
+                // Extract better name from address components
+                let name = '';
+                
+                // Try to get POI, premise, or street address as name
+                const nameComponent = r.address_components?.find(c => 
+                  c.types.includes('point_of_interest') ||
+                  c.types.includes('premise') ||
+                  c.types.includes('street_address') ||
+                  c.types.includes('route')
+                );
+                
+                if (nameComponent) {
+                  name = nameComponent.long_name;
+                } else {
+                  // Fallback: use first part of formatted address
+                  name = r.formatted_address.split(',')[0];
+                }
+                
+                return {
+                  place_id: r.place_id,
+                  description: r.formatted_address,
+                  display_name: r.formatted_address,
+                  geometry: r.geometry,
+                  name: name
+                };
+              });
+              
+              console.log('Geocoding results:', this.mapSearchResults.length);
+            } else {
+              console.log('No geocoding results');
+              this.mapSearchResults = [];
+            }
+          });
         },
 
         async handleMapEnter() {
@@ -1077,86 +1287,133 @@
 
           // If no results yet, perform immediate search and select first result
           if (!this.mapSearchQuery || this.mapSearchQuery.length < 3) return;
+          if (typeof google === 'undefined' || !google.maps) return;
 
           if (this.mapSearchDebounce) clearTimeout(this.mapSearchDebounce);
           this.isSearchingMap = true;
 
           try {
-            const query = `${this.mapSearchQuery}, Indonesia`;
-            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&addressdetails=1`);
-
-            if (response.ok) {
-              const data = await response.json();
-              if (data && data.length > 0) {
-                // Select the first result immediately
-                this.selectMapLocation(data[0]);
+            const geocoder = new google.maps.Geocoder();
+            const searchQuery = `${this.mapSearchQuery}, Indonesia`;
+            
+            geocoder.geocode({ 
+              address: searchQuery,
+              componentRestrictions: { country: 'ID' }
+            }, (results, status) => {
+              this.isSearchingMap = false;
+              if (status === 'OK' && results && results.length > 0) {
+                const result = {
+                  place_id: results[0].place_id,
+                  description: results[0].formatted_address,
+                  display_name: results[0].formatted_address,
+                  geometry: results[0].geometry
+                };
+                this.selectMapLocation(result);
               } else {
                 this.showToast('Info', 'Lokasi tidak ditemukan');
               }
-            }
+            });
           } catch (error) {
             console.error('Instant search error:', error);
-          } finally {
             this.isSearchingMap = false;
           }
         },
 
         selectMapLocation(result) {
-          const lat = parseFloat(result.lat);
-          const lon = parseFloat(result.lon);
+          if (typeof google === 'undefined' || !google.maps) return;
 
-          // Update Form Data
-          this.formData.latitude = lat;
-          this.formData.longitude = lon;
+          // Check if we have geometry directly (from Geocoder results)
+          if (result.geometry && result.geometry.location) {
+            const location = result.geometry.location;
+            const lat = typeof location.lat === 'function' ? location.lat() : location.lat;
+            const lng = typeof location.lng === 'function' ? location.lng() : location.lng;
 
-          // Update Address field if empty or user wants to replace
-          // Ideally, we might append or confirm, but for now let's auto-fill if empty
-          // or just append street name if available
-          if (result.address && (result.address.road || result.address.village)) {
-            const street = result.address.road || result.address.village || result.display_name.split(',')[0];
-            if (!this.formData.address) {
-              this.formData.address = street;
-            }
+            // Update Form Data
+            this.formData.latitude = lat;
+            this.formData.longitude = lng;
+
+            // Update Map View
+            const position = new google.maps.LatLng(lat, lng);
+            this.mapInstance.panTo(position);
+            this.mapInstance.setZoom(16);
+            this.updateMarker(lat, lng);
+
+            // Clear Search
+            this.mapSearchResults = [];
+            this.mapSearchQuery = result.display_name || result.description;
+            return;
           }
 
-          // Update Map View
-          this.mapInstance.flyTo([lat, lon], 16);
-          this.updateMarker(lat, lon);
+          // Fallback: Use Geocoder to get lat/lng from place_id
+          const geocoder = new google.maps.Geocoder();
+          geocoder.geocode({ placeId: result.place_id }, (results, status) => {
+            if (status === 'OK' && results[0]) {
+              const location = results[0].geometry.location;
+              const lat = location.lat();
+              const lng = location.lng();
 
-          // Clear Search
-          this.mapSearchResults = [];
-          this.mapSearchQuery = result.display_name;
+              // Update Form Data
+              this.formData.latitude = lat;
+              this.formData.longitude = lng;
+
+              // Update Address field if empty
+              if (!this.formData.address && results[0].address_components) {
+                // Try to extract street address
+                const streetNumber = results[0].address_components.find(c => c.types.includes('street_number'));
+                const route = results[0].address_components.find(c => c.types.includes('route'));
+                
+                if (route) {
+                  this.formData.address = streetNumber 
+                    ? `${route.long_name} ${streetNumber.long_name}` 
+                    : route.long_name;
+                }
+              }
+
+              // Update Map View
+              this.mapInstance.panTo(location);
+              this.mapInstance.setZoom(16);
+              this.updateMarker(lat, lng);
+
+              // Clear Search
+              this.mapSearchResults = [];
+              this.mapSearchQuery = result.display_name || result.description;
+            }
+          });
         },
 
         async geocodeAddress() {
           if (!this.formData.address || this.formData.address.length < 5) return;
+          if (typeof google === 'undefined') return;
 
           this.isGeocodingAddress = true;
 
           // Construct query with full hierarchy for better accuracy
           let queryItems = [this.formData.address];
-
           if (this.formData.city) queryItems.push(this.formData.city);
           if (this.formData.province) queryItems.push(this.formData.province);
+          queryItems.push('Indonesia');
 
           const query = queryItems.join(', ');
 
           try {
-            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
-            const data = await response.json();
+            const geocoder = new google.maps.Geocoder();
+            geocoder.geocode({ address: query }, (results, status) => {
+              this.isGeocodingAddress = false;
+              
+              if (status === 'OK' && results[0]) {
+                const location = results[0].geometry.location;
+                const lat = location.lat();
+                const lng = location.lng();
 
-            if (data && data.length > 0) {
-              const lat = parseFloat(data[0].lat);
-              const lon = parseFloat(data[0].lon);
-
-              // Fly to location
-              this.mapInstance.flyTo([lat, lon], 18); // Higher zoom for specific address
-              this.updateMarker(lat, lon);
-              console.log('Map updated from address:', query);
-            }
+                // Pan and zoom to location
+                this.mapInstance.panTo(location);
+                this.mapInstance.setZoom(18); // Higher zoom for specific address
+                this.updateMarker(lat, lng);
+                console.log('Map updated from address:', query);
+              }
+            });
           } catch (error) {
             console.error('Address geocoding failed:', error);
-          } finally {
             this.isGeocodingAddress = false;
           }
         },
@@ -1165,45 +1422,57 @@
           const lat = parseFloat(this.formData.latitude);
           const lng = parseFloat(this.formData.longitude);
 
-          if (!isNaN(lat) && !isNaN(lng) && this.mapInstance) {
+          if (!isNaN(lat) && !isNaN(lng) && this.mapInstance && typeof google !== 'undefined') {
+            const position = new google.maps.LatLng(lat, lng);
+            
             // Remove existing marker
             if (this.marker) {
-              this.mapInstance.removeLayer(this.marker);
+              this.marker.setMap(null);
             }
 
-            // Define custom green icon
-            const greenIcon = L.icon({
-              iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-              shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-              iconSize: [25, 41],
-              iconAnchor: [12, 41],
-              popupAnchor: [1, -34],
-              shadowSize: [41, 41]
+            // Add new marker
+            this.marker = new google.maps.Marker({
+              position: position,
+              map: this.mapInstance,
+              draggable: true,
+              animation: google.maps.Animation.DROP
             });
 
-            this.marker = L.marker([lat, lng], { icon: greenIcon }).addTo(this.mapInstance);
-            this.mapInstance.flyTo([lat, lng], 16);
+            // Update coordinates when marker is dragged
+            this.marker.addListener('dragend', (e) => {
+              this.formData.latitude = e.latLng.lat();
+              this.formData.longitude = e.latLng.lng();
+            });
+
+            // Pan and zoom to marker
+            this.mapInstance.panTo(position);
+            this.mapInstance.setZoom(16);
           }
         },
 
         updateMarker(lat, lng) {
+          if (typeof google === 'undefined') return;
+
           // Remove existing marker
           if (this.marker) {
-            this.mapInstance.removeLayer(this.marker);
+            this.marker.setMap(null);
           }
 
-          // Define custom green icon
-          const greenIcon = L.icon({
-            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-            iconSize: [25, 41],
-            iconAnchor: [12, 41],
-            popupAnchor: [1, -34],
-            shadowSize: [41, 41]
-          });
+          const position = new google.maps.LatLng(lat, lng);
 
           // Add new marker
-          this.marker = L.marker([lat, lng], { icon: greenIcon }).addTo(this.mapInstance);
+          this.marker = new google.maps.Marker({
+            position: position,
+            map: this.mapInstance,
+            draggable: true,
+            animation: google.maps.Animation.DROP
+          });
+
+          // Update coordinates when marker is dragged
+          this.marker.addListener('dragend', (e) => {
+            this.formData.latitude = e.latLng.lat();
+            this.formData.longitude = e.latLng.lng();
+          });
 
           // Update form data
           this.formData.latitude = lat;
@@ -1215,9 +1484,12 @@
           if (!this.mapLocked) {
             setTimeout(() => {
               this.mapLocked = true;
-              this.mapInstance.dragging.disable();
-              this.mapInstance.touchZoom.disable();
-              this.mapInstance.scrollWheelZoom.disable();
+              this.mapInstance.setOptions({ 
+                draggable: false,
+                zoomControl: false,
+                scrollwheel: false,
+                disableDoubleClickZoom: true
+              });
               const mapContainer = document.getElementById('map');
               if (mapContainer) mapContainer.classList.add('map-locked');
             }, 1000); // Lock after 1 second
@@ -1273,11 +1545,27 @@
           }
 
           this.cooperationLetterFile = file;
-          console.log('Cooperation letter uploaded:', file.name);
+          this.cooperationLetterType = file.type;
+          
+          // Create preview for images
+          if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              this.cooperationLetterPreview = e.target.result;
+            };
+            reader.readAsDataURL(file);
+          } else {
+            // For PDF, just store the filename
+            this.cooperationLetterPreview = null;
+          }
+          
+          console.log('Cooperation letter uploaded:', file.name, file.type);
         },
 
         removeCooperationLetter() {
           this.cooperationLetterFile = null;
+          this.cooperationLetterPreview = null;
+          this.cooperationLetterType = null;
           // Reset the file input
           const fileInput = document.querySelector('input[type="file"][accept*="application/pdf"]');
           if (fileInput) fileInput.value = '';
@@ -1305,8 +1593,14 @@
           if (!this.formData.phone || this.formData.phone.trim() === '') {
             this.errors.no_hp = 'Nomor HP wajib diisi';
             hasError = true;
-          } else if (this.formData.phone.length < 9) {
-            this.errors.no_hp = 'Nomor HP minimal 9 digit';
+          } else if (!/^8/.test(this.formData.phone)) {
+            this.errors.no_hp = 'Nomor HP harus dimulai dengan angka 8 (contoh: 81234567890)';
+            hasError = true;
+          } else if (this.formData.phone.length < 9 || this.formData.phone.length > 13) {
+            this.errors.no_hp = 'Nomor HP harus 9-13 digit (contoh: 81234567890)';
+            hasError = true;
+          } else if (!/^\d+$/.test(this.formData.phone)) {
+            this.errors.no_hp = 'Nomor HP hanya boleh berisi angka';
             hasError = true;
           }
           

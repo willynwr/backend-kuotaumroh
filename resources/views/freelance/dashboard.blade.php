@@ -303,15 +303,31 @@
                 this.showToast('Tersalin!', 'Link referral berhasil disalin');
             },
 
-            downloadQR(url, filename) {
-                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(url)}`;
-                const link = document.createElement('a');
-                link.href = qrUrl;
-                link.download = `${filename}.png`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                this.showToast('Download Berhasil!', 'QR Code berhasil diunduh');
+            async downloadQR(url, filename) {
+                try {
+                    this.showToast('Mengunduh...', 'Sedang memproses QR Code');
+                    // Tambahkan timestamp untuk menghindari cache
+                    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&format=png&data=${encodeURIComponent(url)}`;
+                    
+                    const response = await fetch(qrUrl);
+                    if (!response.ok) throw new Error('Gagal mengambil gambar QR');
+                    
+                    const blob = await response.blob();
+                    const downloadUrl = window.URL.createObjectURL(blob);
+                    
+                    const link = document.createElement('a');
+                    link.href = downloadUrl;
+                    link.download = `${filename}.png`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(downloadUrl);
+                    
+                    this.showToast('Download Berhasil!', 'QR Code berhasil diunduh');
+                } catch (error) {
+                    console.error('Download failed:', error);
+                    this.showToast('Gagal', 'Gagal mengunduh QR Code. Silakan coba lagi.');
+                }
             },
 
             logout() {
