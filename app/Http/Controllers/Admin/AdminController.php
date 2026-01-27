@@ -9,6 +9,8 @@ use App\Models\Affiliate;
 use App\Models\Freelance;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class AdminController extends Controller
@@ -90,6 +92,7 @@ class AdminController extends Controller
                 'province' => $affiliate->provinsi,
                 'city' => $affiliate->kab_kota,
                 'address' => $affiliate->alamat_lengkap,
+                'ktp_url' => $affiliate->ktp ? asset('storage/' . $affiliate->ktp) : null,
             ];
         });
 
@@ -134,6 +137,7 @@ class AdminController extends Controller
                 'province' => $freelance->provinsi,
                 'city' => $freelance->kab_kota,
                 'address' => $freelance->alamat_lengkap,
+                'ktp_url' => $freelance->ktp ? asset('storage/' . $freelance->ktp) : null,
             ];
         });
 
@@ -699,6 +703,12 @@ class AdminController extends Controller
      */
     public function storeAffiliate(Request $request)
     {
+        \Log::info('=== ADMIN AFFILIATE STORE START ===', [
+            'all_data' => $request->all(),
+            'has_ktp' => $request->hasFile('ktp'),
+            'all_files' => $request->allFiles(),
+        ]);
+
         $request->merge([
             'no_wa' => $this->normalizeIndonesianMsisdn((string) $request->input('no_wa', '')),
         ]);
@@ -706,19 +716,46 @@ class AdminController extends Controller
         $validator = Validator::make($request->all(), [
             'nama' => 'required|string|max:255',
             'email' => 'required|email|unique:affiliate,email',
-            'no_wa' => 'required|string|unique:affiliate,no_wa',
+            'no_wa' => [
+                'required',
+                'string',
+                function ($attribute, $value, $fail) {
+                    $exists = DB::table('agent')->where('no_hp', $value)->exists()
+                        || DB::table('affiliate')->where('no_wa', $value)->exists()
+                        || DB::table('freelance')->where('no_wa', $value)->exists();
+                    if ($exists) {
+                        $fail('Nomor WhatsApp sudah terdaftar.');
+                    }
+                },
+            ],
             'provinsi' => 'required|string',
             'kab_kota' => 'required|string',
             'alamat_lengkap' => 'required|string',
-            'link_referral' => 'required|string|alpha_dash:ascii|unique:affiliate,link_referral',
+            'link_referral' => [
+                'required',
+                'string',
+                'alpha_dash:ascii',
+                function ($attribute, $value, $fail) {
+                    $exists = DB::table('agent')->where('link_referal', $value)->exists()
+                        || DB::table('affiliate')->where('link_referral', $value)->exists()
+                        || DB::table('freelance')->where('link_referral', $value)->exists();
+                    if ($exists) {
+                        $fail('Link referral sudah digunakan.');
+                    }
+                },
+            ],
+            'ktp' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
         ]);
 
         if ($validator->fails()) {
+            \Log::info('=== ADMIN AFFILIATE VALIDATION FAILED ===', [
+                'errors' => $validator->errors()->toArray()
+            ]);
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
         try {
-            Affiliate::create([
+            $data = [
                 'nama' => $request->nama,
                 'email' => $request->email,
                 'no_wa' => $request->no_wa,
@@ -728,10 +765,33 @@ class AdminController extends Controller
                 'link_referral' => $request->link_referral,
                 'date_register' => now()->format('Y-m-d'),
                 'is_active' => true,
+            ];
+
+            // Handle KTP upload
+            if ($request->hasFile('ktp')) {
+                \Log::info('=== KTP FILE DETECTED ===', [
+                    'original_name' => $request->file('ktp')->getClientOriginalName(),
+                    'size' => $request->file('ktp')->getSize(),
+                    'mime_type' => $request->file('ktp')->getMimeType(),
+                ]);
+                $ktpPath = $request->file('ktp')->store('affiliate_ktp', 'public');
+                $data['ktp'] = $ktpPath;
+                \Log::info('=== KTP STORED ===', ['path' => $ktpPath]);
+            }
+
+            $affiliate = Affiliate::create($data);
+
+            \Log::info('=== ADMIN AFFILIATE CREATED ===', [
+                'id' => $affiliate->id,
+                'ktp' => $affiliate->ktp
             ]);
 
             return $this->redirectBackTo('admin.affiliate.index', $request)->with('success', 'Affiliate berhasil ditambahkan');
         } catch (\Exception $e) {
+            \Log::error('=== ADMIN AFFILIATE CREATE ERROR ===', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
         }
     }
@@ -761,15 +821,43 @@ class AdminController extends Controller
     {
         $affiliate = Affiliate::findOrFail($id);
 
+        $request->merge([
+            'no_wa' => $this->normalizeIndonesianMsisdn((string) $request->input('no_wa', '')),
+        ]);
+
         $validator = Validator::make($request->all(), [
             'nama' => 'required|string|max:255',
             'email' => 'required|email|unique:affiliate,email,' . $id,
-            'no_wa' => 'required|string|unique:affiliate,no_wa,' . $id,
+            'no_wa' => [
+                'required',
+                'string',
+                function ($attribute, $value, $fail) use ($id) {
+                    $exists = DB::table('agent')->where('no_hp', $value)->exists()
+                        || DB::table('affiliate')->where('no_wa', $value)->where('id', '!=', $id)->exists()
+                        || DB::table('freelance')->where('no_wa', $value)->exists();
+                    if ($exists) {
+                        $fail('Nomor WhatsApp sudah terdaftar.');
+                    }
+                },
+            ],
             'provinsi' => 'required|string',
             'kab_kota' => 'required|string',
             'alamat_lengkap' => 'required|string',
-            'link_referral' => 'required|string|alpha_dash:ascii|unique:affiliate,link_referral,' . $id,
+            'link_referral' => [
+                'required',
+                'string',
+                'alpha_dash:ascii',
+                function ($attribute, $value, $fail) use ($id) {
+                    $exists = DB::table('agent')->where('link_referal', $value)->exists()
+                        || DB::table('affiliate')->where('link_referral', $value)->where('id', '!=', $id)->exists()
+                        || DB::table('freelance')->where('link_referral', $value)->exists();
+                    if ($exists) {
+                        $fail('Link referral sudah digunakan.');
+                    }
+                },
+            ],
             'is_active' => 'boolean',
+            'ktp' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
         ]);
 
         if ($validator->fails()) {
@@ -777,7 +865,23 @@ class AdminController extends Controller
         }
 
         try {
-            $affiliate->update($request->all());
+            $data = $request->except(['ktp', '_token', '_method', 'redirect_to']);
+            
+            // Handle KTP upload
+            if ($request->hasFile('ktp')) {
+                // Delete old KTP if exists
+                if ($affiliate->ktp && \Storage::disk('public')->exists($affiliate->ktp)) {
+                    \Storage::disk('public')->delete($affiliate->ktp);
+                }
+                $data['ktp'] = $request->file('ktp')->store('affiliate_ktp', 'public');
+            }
+
+            $affiliate->update($data);
+            
+            $redirectTo = $request->input('redirect_to');
+            if ($redirectTo && str_starts_with($redirectTo, '/admin/users')) {
+                return redirect($redirectTo)->with('success', 'Affiliate berhasil diperbarui');
+            }
             return redirect()->route('admin.affiliate.index')->with('success', 'Affiliate berhasil diperbarui');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
@@ -862,6 +966,12 @@ class AdminController extends Controller
      */
     public function storeFreelance(Request $request)
     {
+        \Log::info('=== ADMIN FREELANCE STORE START ===', [
+            'all_data' => $request->all(),
+            'has_ktp' => $request->hasFile('ktp'),
+            'all_files' => $request->allFiles(),
+        ]);
+
         $request->merge([
             'no_wa' => $this->normalizeIndonesianMsisdn((string) $request->input('no_wa', '')),
         ]);
@@ -869,19 +979,46 @@ class AdminController extends Controller
         $validator = Validator::make($request->all(), [
             'nama' => 'required|string|max:255',
             'email' => 'required|email|unique:freelance,email',
-            'no_wa' => 'required|string|unique:freelance,no_wa',
+            'no_wa' => [
+                'required',
+                'string',
+                function ($attribute, $value, $fail) {
+                    $exists = DB::table('agent')->where('no_hp', $value)->exists()
+                        || DB::table('affiliate')->where('no_wa', $value)->exists()
+                        || DB::table('freelance')->where('no_wa', $value)->exists();
+                    if ($exists) {
+                        $fail('Nomor WhatsApp sudah terdaftar.');
+                    }
+                },
+            ],
             'provinsi' => 'required|string',
             'kab_kota' => 'required|string',
             'alamat_lengkap' => 'required|string',
-            'link_referral' => 'required|string|alpha_dash:ascii|unique:freelance,link_referral',
+            'link_referral' => [
+                'required',
+                'string',
+                'alpha_dash:ascii',
+                function ($attribute, $value, $fail) {
+                    $exists = DB::table('agent')->where('link_referal', $value)->exists()
+                        || DB::table('affiliate')->where('link_referral', $value)->exists()
+                        || DB::table('freelance')->where('link_referral', $value)->exists();
+                    if ($exists) {
+                        $fail('Link referral sudah digunakan.');
+                    }
+                },
+            ],
+            'ktp' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
         ]);
 
         if ($validator->fails()) {
+            \Log::info('=== ADMIN FREELANCE VALIDATION FAILED ===', [
+                'errors' => $validator->errors()->toArray()
+            ]);
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
         try {
-            Freelance::create([
+            $data = [
                 'nama' => $request->nama,
                 'email' => $request->email,
                 'no_wa' => $request->no_wa,
@@ -891,10 +1028,33 @@ class AdminController extends Controller
                 'link_referral' => $request->link_referral,
                 'date_register' => now()->format('Y-m-d'),
                 'is_active' => true,
+            ];
+
+            // Handle KTP upload
+            if ($request->hasFile('ktp')) {
+                \Log::info('=== KTP FILE DETECTED ===', [
+                    'original_name' => $request->file('ktp')->getClientOriginalName(),
+                    'size' => $request->file('ktp')->getSize(),
+                    'mime_type' => $request->file('ktp')->getMimeType(),
+                ]);
+                $ktpPath = $request->file('ktp')->store('freelance_ktp', 'public');
+                $data['ktp'] = $ktpPath;
+                \Log::info('=== KTP STORED ===', ['path' => $ktpPath]);
+            }
+
+            $freelance = Freelance::create($data);
+
+            \Log::info('=== ADMIN FREELANCE CREATED ===', [
+                'id' => $freelance->id,
+                'ktp' => $freelance->ktp
             ]);
 
             return $this->redirectBackTo('admin.freelance.index', $request)->with('success', 'Freelance berhasil ditambahkan');
         } catch (\Exception $e) {
+            \Log::error('=== ADMIN FREELANCE CREATE ERROR ===', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
         }
     }
@@ -924,15 +1084,43 @@ class AdminController extends Controller
     {
         $freelance = Freelance::findOrFail($id);
 
+        $request->merge([
+            'no_wa' => $this->normalizeIndonesianMsisdn((string) $request->input('no_wa', '')),
+        ]);
+
         $validator = Validator::make($request->all(), [
             'nama' => 'required|string|max:255',
             'email' => 'required|email|unique:freelance,email,' . $id,
-            'no_wa' => 'required|string|unique:freelance,no_wa,' . $id,
+            'no_wa' => [
+                'required',
+                'string',
+                function ($attribute, $value, $fail) use ($id) {
+                    $exists = DB::table('agent')->where('no_hp', $value)->exists()
+                        || DB::table('affiliate')->where('no_wa', $value)->exists()
+                        || DB::table('freelance')->where('no_wa', $value)->where('id', '!=', $id)->exists();
+                    if ($exists) {
+                        $fail('Nomor WhatsApp sudah terdaftar.');
+                    }
+                },
+            ],
             'provinsi' => 'required|string',
             'kab_kota' => 'required|string',
             'alamat_lengkap' => 'required|string',
-            'link_referral' => 'required|string|alpha_dash:ascii|unique:freelance,link_referral,' . $id,
+            'link_referral' => [
+                'required',
+                'string',
+                'alpha_dash:ascii',
+                function ($attribute, $value, $fail) use ($id) {
+                    $exists = DB::table('agent')->where('link_referal', $value)->exists()
+                        || DB::table('affiliate')->where('link_referral', $value)->exists()
+                        || DB::table('freelance')->where('link_referral', $value)->where('id', '!=', $id)->exists();
+                    if ($exists) {
+                        $fail('Link referral sudah digunakan.');
+                    }
+                },
+            ],
             'is_active' => 'boolean',
+            'ktp' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
         ]);
 
         if ($validator->fails()) {
@@ -940,7 +1128,23 @@ class AdminController extends Controller
         }
 
         try {
-            $freelance->update($request->all());
+            $data = $request->except(['ktp', '_token', '_method', 'redirect_to']);
+            
+            // Handle KTP upload
+            if ($request->hasFile('ktp')) {
+                // Delete old KTP if exists
+                if ($freelance->ktp && \Storage::disk('public')->exists($freelance->ktp)) {
+                    \Storage::disk('public')->delete($freelance->ktp);
+                }
+                $data['ktp'] = $request->file('ktp')->store('freelance_ktp', 'public');
+            }
+
+            $freelance->update($data);
+            
+            $redirectTo = $request->input('redirect_to');
+            if ($redirectTo && str_starts_with($redirectTo, '/admin/users')) {
+                return redirect($redirectTo)->with('success', 'Freelance berhasil diperbarui');
+            }
             return redirect()->route('admin.freelance.index')->with('success', 'Freelance berhasil diperbarui');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();

@@ -27,19 +27,29 @@ class AffiliateController extends Controller
      */
     public function store(Request $request)
     {
+        \Log::info('=== AFFILIATE STORE START ===');
+        \Log::info('Request all data:', $request->all());
+        \Log::info('Request has file ktp:', [$request->hasFile('ktp')]);
+        \Log::info('Request files:', $request->allFiles());
+        
         $validator = Validator::make($request->all(), [
             'nama' => 'required|string|max:255',
             'email' => 'required|email|unique:affiliate,email|unique:agent,email|unique:freelance,email',
-            'no_wa' => 'required|string|unique:affiliate,no_wa',
+            'no_wa' => 'required|string|unique:affiliate,no_wa|unique:agent,no_hp|unique:freelance,no_wa',
             'provinsi' => 'required|string',
             'kab_kota' => 'required|string',
             'alamat_lengkap' => 'required|string',
+            'ktp' => 'nullable|file|mimes:pdf,png,jpg,jpeg|max:5120',
             'logo' => 'nullable|file|mimes:png,jpg,jpeg,gif|max:2048',
             'surat_ppiu' => 'nullable|file|mimes:pdf,png,jpg,jpeg|max:2048',
             'date_register' => 'nullable|date',
             'is_active' => 'nullable|boolean',
-            'link_referral' => 'required|string|alpha_dash:ascii|unique:affiliate,link_referral',
+            'link_referral' => 'required|string|alpha_dash:ascii|unique:affiliate,link_referral|unique:agent,link_referal|unique:freelance,link_referral',
         ], [
+            'no_wa.unique' => 'Nomor WhatsApp sudah terdaftar dalam sistem',
+            'link_referral.unique' => 'Link referral sudah digunakan',
+            'ktp.max' => 'Ukuran file KTP maksimal 5 MB',
+            'ktp.mimes' => 'Format file KTP harus PDF, PNG, JPG, atau JPEG',
             'logo.max' => 'Ukuran file logo maksimal 2 MB',
             'logo.mimes' => 'Format file logo harus PNG, JPG, JPEG, atau GIF',
             'surat_ppiu.max' => 'Ukuran file Surat PPIU maksimal 2 MB',
@@ -47,13 +57,26 @@ class AffiliateController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Validasi gagal',
-                'errors' => $validator->errors()
-            ], 422);
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'message' => 'Validasi gagal',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+            return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        $data = $request->except(['logo', 'surat_ppiu']);
+        $data = $request->except(['logo', 'surat_ppiu', 'ktp']);
+
+        // Handle KTP upload
+        if ($request->hasFile('ktp')) {
+            \Log::info('KTP file detected in request');
+            $ktpPath = $request->file('ktp')->store('affiliate_ktp', 'public');
+            $data['ktp'] = $ktpPath;
+            \Log::info('KTP uploaded to: ' . $ktpPath);
+        } else {
+            \Log::warning('No KTP file in request');
+        }
 
         // Handle logo upload
         if ($request->hasFile('logo')) {
@@ -78,10 +101,18 @@ class AffiliateController extends Controller
 
         $affiliate = Affiliate::create($data);
 
-        return response()->json([
-            'message' => 'Affiliate successfully created',
-            'data' => $affiliate
-        ], 201);
+        \Log::info('Affiliate created successfully', ['id' => $affiliate->id, 'ktp' => $affiliate->ktp]);
+
+        // Check if request is from web form or API
+        if ($request->expectsJson() || $request->is('api/*')) {
+            return response()->json([
+                'message' => 'Affiliate successfully created',
+                'data' => $affiliate
+            ], 201);
+        }
+
+        // For web form submission
+        return redirect('/admin/users?tab=affiliate')->with('success', 'Affiliate berhasil ditambahkan');
     }
 
     /**

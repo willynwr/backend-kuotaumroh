@@ -60,7 +60,7 @@
   <script src="{{ asset('frontend/shared/utils.js') }}"></script>
 
   <!-- Google Maps JavaScript API -->
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCF6kUFR066-rJx_dK8LvbX5-bwMCnxjyI&libraries=places&callback=initGoogleMaps" async defer></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key={{ config('services.google_maps.api_key') }}&libraries=places&callback=initGoogleMaps" async defer></script>
   
   <script>
     // Google Maps callback
