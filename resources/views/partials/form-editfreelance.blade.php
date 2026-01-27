@@ -1,4 +1,4 @@
-<div :style="editFreelanceModalOpen ? 'display: flex' : 'display: none'" class="fixed inset-0 z-50 items-center justify-center">
+<div x-show="editFreelanceModalOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center">
   <div class="absolute inset-0 bg-black/40" @click="closeEditFreelanceModal()"></div>
   <div class="relative z-10 w-full max-w-4xl rounded-lg bg-white shadow-lg max-h-[90vh] overflow-y-auto">
     
