@@ -320,7 +320,7 @@ class AgentController extends Controller
             $totalCommission = \App\Models\Pesanan::where('kategori_channel', 'agent')
                 ->where('channel_id', $user->id)
                 ->whereHas('pembayaran', function($query) {
-                    $query->whereIn('status_pembayaran', ['selesai', 'berhasil']);
+                    $query->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS']);
                 })
                 ->sum('profit');
                 
@@ -346,7 +346,7 @@ class AgentController extends Controller
                 ->map(function($pesanan) {
                     $status = 'batal';
                     if ($pesanan->pembayaran) {
-                        if (in_array($pesanan->pembayaran->status_pembayaran, ['selesai', 'berhasil'])) {
+                        if (in_array($pesanan->pembayaran->status_pembayaran, ['selesai', 'berhasil', 'SUCCESS'])) {
                             $status = 'sukses';
                         } elseif ($pesanan->pembayaran->status_pembayaran === 'pending') {
                             $status = 'proses';
@@ -420,7 +420,7 @@ class AgentController extends Controller
             $monthlyHistory = \App\Models\Pesanan::where('kategori_channel', 'agent')
                 ->where('channel_id', $user->id)
                 ->whereHas('pembayaran', function($query) {
-                    $query->whereIn('status_pembayaran', ['selesai', 'berhasil']);
+                    $query->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS']);
                 })
                 ->selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month, SUM(profit) as total_profit, COUNT(*) as total_transactions')
                 ->groupBy('month')
@@ -434,7 +434,7 @@ class AgentController extends Controller
                 $details = \App\Models\Pesanan::where('kategori_channel', 'agent')
                     ->where('channel_id', $user->id)
                     ->whereHas('pembayaran', function($query) {
-                        $query->whereIn('status_pembayaran', ['selesai', 'berhasil']);
+                        $query->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS']);
                     })
                     ->with('produk:id,nama_paket')
                     ->whereRaw('DATE_FORMAT(created_at, "%Y-%m") = ?', [$monthData->month])
@@ -463,7 +463,7 @@ class AgentController extends Controller
             $profitData['yearly_history'] = \App\Models\Pesanan::where('kategori_channel', 'agent')
                 ->where('channel_id', $user->id)
                 ->whereHas('pembayaran', function($query) {
-                    $query->whereIn('status_pembayaran', ['selesai', 'berhasil']);
+                    $query->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS']);
                 })
                 ->selectRaw('YEAR(created_at) as year, SUM(profit) as total_profit, COUNT(*) as total_transactions')
                 ->groupBy('year')
@@ -502,7 +502,7 @@ class AgentController extends Controller
             $monthlyHistory = \App\Models\Pesanan::where('kategori_channel', 'agent')
                 ->where('channel_id', $user->id)
                 ->whereHas('pembayaran', function($query) {
-                    $query->whereIn('status_pembayaran', ['selesai', 'berhasil']);
+                    $query->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS']);
                 })
                 ->selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month, SUM(profit) as total_profit, COUNT(*) as total_transactions')
                 ->groupBy('month')
@@ -516,7 +516,7 @@ class AgentController extends Controller
                 $details = \App\Models\Pesanan::where('kategori_channel', 'agent')
                     ->where('channel_id', $user->id)
                     ->whereHas('pembayaran', function($query) {
-                        $query->whereIn('status_pembayaran', ['selesai', 'berhasil']);
+                        $query->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS']);
                     })
                     ->with('produk:id,nama_paket')
                     ->whereRaw('DATE_FORMAT(created_at, "%Y-%m") = ?', [$monthData->month])
