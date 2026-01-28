@@ -16,6 +16,10 @@ class Kernel extends ConsoleKernel
         // Jalankan verifikasi pembayaran setiap menit
         // Polling otomatis untuk mencocokkan mutasi QRIS
         $schedule->job(new VerifyWaitingPaymentsJob)->everyMinute();
+        
+        // Sync status pembayaran dari Tokodigi API setiap 15 menit
+        // Cek status INJECT/SUCCESS untuk pembayaran yang berhasil
+        $schedule->command('payment:sync-status')->everyFifteenMinutes();
     }
 
     /**

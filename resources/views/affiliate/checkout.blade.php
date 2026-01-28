@@ -293,10 +293,96 @@
         </div>
     </main>
 
+    <!-- Error Modal -->
+    <div x-show="errorModalVisible" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0">
+        
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full overflow-hidden"
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+            x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+            x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+            x-transition:leave-end="opacity-0 scale-95 translate-y-4">
+            
+            <div class="p-4 border-b flex items-center gap-3 bg-red-50">
+                <div class="bg-red-100 p-2 rounded-full">
+                    <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                </div>
+                <h3 class="font-bold text-lg text-red-900" x-text="errorModalTitle"></h3>
+            </div>
+            
+            <div class="p-6">
+                <p class="text-gray-700 break-words" x-text="errorModalMessage"></p>
+            </div>
+            
+            <div class="p-4 bg-gray-50 flex justify-end">
+                <button @click="errorModalVisible = false" 
+                    class="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast -->
     <div x-show="toastVisible" x-transition class="toast">
         <div class="font-semibold mb-1" x-text="toastTitle"></div>
         <div class="text-sm text-muted-foreground" x-text="toastMessage"></div>
+    </div>
+
+    <!-- Error Modal -->
+    <div x-show="errorModalVisible" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 overflow-y-auto" 
+         style="display: none;"
+         @click.self="errorModalVisible = false">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <!-- Background overlay -->
+            <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" aria-hidden="true"></div>
+            
+            <!-- Modal panel -->
+            <div x-show="errorModalVisible"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                 x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                 class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+                <div class="sm:flex sm:items-start">
+                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                        <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900" x-text="errorModalTitle"></h3>
+                        <div class="mt-2">
+                            <p class="text-sm text-gray-500" x-text="errorModalMessage"></p>
+                            <p class="text-xs text-gray-400 mt-2">Kembali ke halaman order dalam <span x-text="errorModalCountdown"></span> detik...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+                    <button @click="errorModalVisible = false" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 @endsection
@@ -311,6 +397,7 @@ function checkoutApp() {
         orderData: { items: [], total: 0, platformFee: 0, uniqueCode: 0, paymentUnique: 0, paymentMethod: 'qris', refCode: null },
         paymentId: null, batchId: null, qrCodeUrl: null, qrisString: null, qrisStaticString: null, useStaticQris: false, paymentAmount: 0,
         toastVisible: false, toastTitle: '', toastMessage: '',
+        errorModalVisible: false, errorModalTitle: '', errorModalMessage: '', errorModalCountdown: 5,
         timerInterval: null, paymentCheckInterval: null,
 
         async init() {
@@ -406,7 +493,7 @@ function checkoutApp() {
                     const s = localStorage.getItem('pendingOrder'); if (s) { const o = JSON.parse(s); o.paymentId = this.paymentId; o.batchId = this.batchId; localStorage.setItem('pendingOrder', JSON.stringify(o)); }
                     await this.fetchQrisData();
                 } else throw new Error(r.message || 'Gagal');
-            } catch(e) { console.error(e); this.showToast('Error', e.message); this.isLoading = false; }
+            } catch(e) { console.error(e); this.showErrorModal('Error', e.message); this.isLoading = false; }
         },
 
         startPaymentPolling() {
@@ -430,7 +517,7 @@ function checkoutApp() {
         handleCopyAmount() { navigator.clipboard.writeText(this.totalAmount.toString()); this.showToast('Tersalin', 'Nominal disalin'); },
 
         async handleCheckPayment() {
-            if (!this.paymentId) { this.showToast('Error', 'Payment ID tidak ada'); return; }
+            if (!this.paymentId) { this.showErrorModal('Error', 'Payment ID tidak ditemukan'); return; }
             if (this.paymentStatus === 'pending') this.paymentStatus = 'verifying';
             this.showToast('Memeriksa', 'Sedang memeriksa...');
             try {
@@ -443,11 +530,11 @@ function checkoutApp() {
                 else if (['pending','unpaid'].includes(st)) this.showToast('Menunggu', 'Pembayaran belum diterima');
                 else if (['expired','failed'].includes(st)) { this.paymentStatus = 'expired'; clearInterval(this.timerInterval); clearInterval(this.paymentCheckInterval); localStorage.removeItem('pendingOrder'); }
                 else this.showToast('Status', 'Status: ' + (d?.status || 'checking'));
-            } catch(e) { console.error(e); this.showToast('Error', 'Gagal memeriksa'); }
+            } catch(e) { console.error(e); this.showErrorModal('Error', 'Gagal memeriksa status pembayaran. Silakan coba lagi.'); }
         },
 
         async handleViewInvoice() {
-            if (!this.paymentId) { this.showToast('Error', 'Payment ID tidak ada'); return; }
+            if (!this.paymentId) { this.showErrorModal('Error', 'Payment ID tidak ditemukan. Silakan refresh halaman.'); return; }
             if (!this.canAccessInvoice) { this.showToast('Info', 'Memeriksa...'); await this.handleCheckPayment(); if (!this.canAccessInvoice) { this.showToast('Menunggu', 'Selesaikan pembayaran dulu'); return; } }
             window.open(`/invoice/${this.paymentId}`, '_blank');
         },
@@ -461,6 +548,21 @@ function checkoutApp() {
         },
 
         showToast(t, m) { this.toastTitle = t; this.toastMessage = m; this.toastVisible = true; setTimeout(() => this.toastVisible = false, 3000); },
+        showErrorModal(t, m) { 
+            this.errorModalTitle = t; 
+            this.errorModalMessage = m; 
+            this.errorModalVisible = true; 
+            this.errorModalCountdown = 5;
+            const countdownInterval = setInterval(() => { 
+                this.errorModalCountdown--; 
+                if (this.errorModalCountdown <= 0) { 
+                    clearInterval(countdownInterval); 
+                    this.errorModalVisible = false; 
+                    setTimeout(() => { window.location.href = '{{ route("affiliate.order") }}'; }, 300); 
+                } 
+            }, 1000);
+        },
+        showErrorModal(t, m) { this.errorModalTitle = t; this.errorModalMessage = m; this.errorModalVisible = true; },
         formatNumber(n) { return n ? new Intl.NumberFormat('id-ID').format(n) : '0'; }
     }
 }
