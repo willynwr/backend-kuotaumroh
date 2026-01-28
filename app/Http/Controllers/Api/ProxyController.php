@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Api\UmrohPaymentController;
 
 /**
  * Proxy Controller
@@ -75,6 +76,28 @@ class ProxyController extends Controller
     public function proxyPost(Request $request, $path = '')
     {
         try {
+            // Special handling untuk umroh/bulkpayment - use local controller with DB storage
+            if ($path === 'umroh/bulkpayment') {
+                Log::info('🔀 Redirecting bulkpayment to UmrohPaymentController for local DB storage', [
+                    'path' => $path,
+                    'body' => $request->all(),
+                ]);
+                
+                $controller = app(UmrohPaymentController::class);
+                return $controller->createBulkPayment($request);
+            }
+            
+            // Special handling untuk umroh/payment (individual) - use local controller with DB storage
+            if ($path === 'umroh/payment') {
+                Log::info('🔀 Redirecting individual payment to UmrohPaymentController for local DB storage', [
+                    'path' => $path,
+                    'body' => $request->all(),
+                ]);
+                
+                $controller = app(UmrohPaymentController::class);
+                return $controller->createIndividualPayment($request);
+            }
+            
             $url = $this->externalApiUrl . '/' . $path;
             
             // Ambil body dari request

@@ -75,6 +75,10 @@ Route::prefix('umroh')->group(function () {
     // 2. POST Order Bulk Payment
     // POST /api/umroh/bulkpayment
     Route::post('/bulkpayment', [UmrohPaymentController::class, 'createBulkPayment']);
+    
+    // 3. POST Order Individual Payment (untuk homepage / public user)
+    // POST /api/umroh/payment
+    Route::post('/payment', [UmrohPaymentController::class, 'createIndividualPayment']);
 
     // 4. GET Order Bulk History
     // GET /api/umroh/bulkpayment?agent_id=600001

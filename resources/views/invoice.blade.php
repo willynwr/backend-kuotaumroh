@@ -580,8 +580,8 @@
                             <div>
                                 <h4 class="font-semibold text-gray-700 mb-2">Hubungi Kami</h4>
                                 <div class="space-y-1 text-sm text-gray-600">
-                                    <p>📧 support@kuotaumroh.id</p>
-                                    <p>📱 +62 812-3456-7890</p>
+                                    <p>📧 info@digilabsmitrasolusi.com</p>
+                                    <p>📱 +62 8112-994-499</p>
                                     <p>🌐 www.kuotaumroh.id</p>
                                 </div>
                             </div>
@@ -903,9 +903,11 @@
                     console.log('🔍 mapStatus input:', status, '| lowercase:', statusLower);
                     
                     // Check if status contains any success keyword FIRST (most important)
+                    // INJECT = paket sudah diaktifkan = sukses
                     if (statusLower.includes('sukses') || statusLower.includes('success') || 
                         statusLower.includes('berhasil') || statusLower.includes('completed') ||
-                        statusLower.includes('paid') || statusLower.includes('lunas')) {
+                        statusLower.includes('paid') || statusLower.includes('lunas') ||
+                        statusLower.includes('inject') || statusLower.includes('aktif')) {
                         console.log('✅ mapStatus matched success keyword');
                         return 'paid';
                     }
@@ -915,13 +917,16 @@
                         'unpaid': 'pending',
                         'pending': 'pending',
                         'verify': 'pending',
+                        'waiting': 'pending',
                         'expired': 'expired',
                         'failed': 'expired',
                         'success': 'paid',
                         'sukses': 'paid',
                         'berhasil': 'paid',
                         'completed': 'paid',
-                        'lunas': 'paid'
+                        'lunas': 'paid',
+                        'inject': 'paid',
+                        'aktif': 'paid'
                     };
                     
                     const result = statusMap[statusLower] || 'pending';
