@@ -22,7 +22,7 @@ class BulkPaymentService
     /**
      * Base URL untuk external API
      */
-    protected string $externalApiUrl = 'https://kuotaumroh.id/api';
+    protected string $externalApiUrl = 'https://tokodigi.id/api';
 
     /**
      * Base URL untuk tokodigi payment API
@@ -331,47 +331,212 @@ class BulkPaymentService
     protected function storeLocalPaymentRecord(array $request, array $response): void
     {
         try {
+            Log::info('🔍 storeLocalPaymentRecord - Starting', [
+                'response_keys' => array_keys($response),
+                'request_keys' => array_keys($request),
+            ]);
+            
             // Ambil external payment ID
             $externalPaymentId = $response['id'] ?? $response['payment_id'] ?? null;
             
             if (!$externalPaymentId) {
-                Log::warning('No external payment ID found in response');
+                Log::warning('⚠️ No external payment ID found in response');
                 return;
             }
+            
+            Log::info('✓ External payment ID found', ['id' => $externalPaymentId]);
             
             // Extract QRIS data dari response
             $qrisData = $response['qris'] ?? [];
             $qrisString = $qrisData['qris_string'] ?? $qrisData['string'] ?? null;
             $qrisNmid = $qrisData['nmid'] ?? null;
             
-            // Simpan ke database lokal
-            $payment = Pembayaran::create([
+            // Enrich detail pesanan dengan nama paket dari database
+            $msisdns = $request['msisdn'] ?? [];
+            $packageIds = $request['package_id'] ?? [];
+            $enrichedItems = [];
+            
+            Log::info('📦 Enriching items', [
+                'msisdn_count' => count($msisdns),
+                'package_id_count' => count($packageIds),
+            ]);
+            
+            // Loop through each msisdn and get package info
+            // Note: package_id dari external API (tokodigi) seperti 'R1-TSEL-000' 
+            // tidak ada mapping langsung ke tabel produk lokal
+            foreach ($msisdns as $index => $msisdn) {
+                $packageId = $packageIds[$index] ?? null;
+                
+                // Simpan info dasar tanpa query ke tabel produk
+                // karena external package_id tidak ada di database lokal
+                $enrichedItems[] = [
+                    'msisdn' => $msisdn,
+                    'package_id' => $packageId,
+                    'package_name' => $packageId, // Gunakan package_id sebagai nama
+                ];
+            }
+            
+            Log::info('✓ Items enriched', ['count' => count($enrichedItems)]);
+            
+            // Prepare data untuk create - sesuaikan dengan kolom tabel pembayaran
+            // Kolom: id, external_payment_id, batch_id, batch_name, agent_id, produk_id, 
+            //        msisdn, nama_paket, tipe_paket, harga_modal, harga_jual, profit, 
+            //        metode_pembayaran, qris_string, qris_nmid, qris_rrn, total_pembayaran, 
+            //        status_pembayaran, detail_pesanan, created_at, updated_at
+            $externalStatusRaw = $response['payment_status'] ?? $response['status'] ?? null;
+            $statusMap = [
+                'INJECT' => Pembayaran::STATUS_SUCCESS,
+                'SUCCESS' => Pembayaran::STATUS_SUCCESS,
+                'BERHASIL' => Pembayaran::STATUS_SUCCESS,
+                'AKTIF' => Pembayaran::STATUS_SUCCESS,
+                'VERIFY' => Pembayaran::STATUS_VERIFY,
+                'WAITING' => Pembayaran::STATUS_WAITING,
+                'PENDING' => Pembayaran::STATUS_WAITING,
+                'FAILED' => Pembayaran::STATUS_FAILED,
+                'EXPIRED' => Pembayaran::STATUS_EXPIRED,
+                'CANCEL' => Pembayaran::STATUS_FAILED,
+            ];
+            $localStatus = $statusMap[strtoupper($externalStatusRaw ?? '')] ?? Pembayaran::STATUS_WAITING;
+
+            $createData = [
                 'external_payment_id' => (string) $externalPaymentId,
                 'batch_id' => $request['batch_id'] ?? null,
                 'batch_name' => $request['batch_name'] ?? null,
                 'agent_id' => $request['ref_code'] ?? null,
+                'produk_id' => json_encode($request['package_id'] ?? []), // Simpan array package_id
+                'msisdn' => json_encode($request['msisdn'] ?? []),
+                'nama_paket' => $response['package_name'] ?? $request['batch_name'] ?? null,
                 'metode_pembayaran' => $request['payment_method'] ?? 'QRIS',
                 'qris_string' => $qrisString,
                 'qris_nmid' => $qrisNmid,
-                'status_pembayaran' => Pembayaran::STATUS_WAITING,
+                'total_pembayaran' => (int) ($response['payment_amount'] ?? 0),
+                'status_pembayaran' => $localStatus,
                 'detail_pesanan' => json_encode([
                     'msisdn' => $request['msisdn'] ?? [],
                     'package_id' => $request['package_id'] ?? [],
                     'detail' => $request['detail'] ?? null,
+                    'items' => $enrichedItems,
+                    'payment_expired' => $response['payment_expired'] ?? null,
+                    'payment_unique' => $response['payment_unique'] ?? null,
+                    'external_status' => $externalStatusRaw,
                 ]),
-                'total_pembayaran' => $response['total'] ?? $response['total_harga'] ?? 0,
+            ];
+            
+            Log::info('💾 Creating payment record', [
+                'external_payment_id' => $createData['external_payment_id'],
+                'batch_id' => $createData['batch_id'],
+                'agent_id' => $createData['agent_id'],
             ]);
             
-            Log::info('✅ Payment record stored in local database', [
+            // Simpan ke database lokal
+            $payment = Pembayaran::create($createData);
+            
+            Log::info('✅ Payment record stored successfully', [
                 'local_id' => $payment->id,
                 'external_payment_id' => $externalPaymentId,
-                'batch_id' => $request['batch_id'] ?? null,
             ]);
         } catch (\Exception $e) {
             // Don't fail if local storage fails
-            Log::warning('Failed to store local payment record: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
+            Log::error('❌ FAILED to store local payment record', [
+                'error_message' => $e->getMessage(),
+                'error_code' => $e->getCode(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
             ]);
+        }
+    }
+
+    /**
+     * Create individual payment order via external API
+     * 
+     * Proxies request ke tokodigi.id untuk individual payment
+     * 
+     * @param array $data Request data
+     * @return array Response dengan payment info
+     */
+    public function createIndividualPayment(array $data): array
+    {
+        $paymentMethod = strtoupper($data['payment_method'] ?? 'QRIS');
+        $detail = $data['detail'] ?? null;
+        $refCode = $data['ref_code'] ?? '0';
+        $msisdn = $data['msisdn'] ?? null; // STRING untuk individual
+        $packageId = $data['package_id'] ?? null; // STRING untuk individual
+
+        // Validasi
+        if (!$msisdn || !$packageId) {
+            throw new \InvalidArgumentException('msisdn dan package_id harus diisi');
+        }
+
+        // Format msisdn ke 628xxx
+        $formattedMsisdn = $this->formatMsisdn($msisdn);
+
+        if (!$formattedMsisdn) {
+            throw new \InvalidArgumentException('Format nomor telepon tidak valid');
+        }
+
+        // Prepare request body untuk external API
+        $requestBody = [
+            'payment_method' => $paymentMethod,
+            'detail' => $detail,
+            'ref_code' => $refCode,
+            'msisdn' => $formattedMsisdn,
+            'package_id' => $packageId,
+        ];
+
+        Log::info('Creating individual payment via external API', [
+            'request' => $requestBody,
+            'url' => "{$this->externalApiUrl}/umroh/payment",
+        ]);
+
+        try {
+            // Call external API
+            $response = Http::timeout(60)
+                ->asForm()
+                ->post("{$this->externalApiUrl}/umroh/payment", $requestBody);
+
+            Log::info('External API response (individual)', [
+                'status' => $response->status(),
+                'body' => $response->json(),
+            ]);
+
+            if ($response->successful()) {
+                $result = $response->json();
+                
+                Log::info('✅ Individual payment created successfully', [
+                    'payment_id' => $result['payment_id'] ?? $result['id'] ?? 'unknown',
+                    'has_qris' => isset($result['qris']),
+                ]);
+                
+                // Store local record for tracking (convert to array format)
+                $this->storeLocalPaymentRecord([
+                    'payment_method' => $paymentMethod,
+                    'detail' => $detail,
+                    'ref_code' => $refCode,
+                    'msisdn' => [$formattedMsisdn], // Convert to array for consistency
+                    'package_id' => [$packageId], // Convert to array for consistency
+                    'batch_id' => null, // Individual tidak punya batch
+                    'batch_name' => 'Individual Order',
+                ], $result);
+                
+                // Return response as-is dari external API
+                return [
+                    'success' => true,
+                    'message' => 'Individual payment berhasil dibuat',
+                    'data' => $result,
+                ];
+            }
+
+            // Handle error response from external API
+            $error = $response->json();
+            throw new \Exception($error['message'] ?? 'Gagal membuat pembayaran: ' . $response->status());
+
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            Log::error('Connection error to external API: ' . $e->getMessage());
+            throw new \Exception('Tidak dapat terhubung ke server pembayaran. Silakan coba lagi.');
+        } catch (\Exception $e) {
+            Log::error('Error creating individual payment: ' . $e->getMessage());
+            throw $e;
         }
     }
 
@@ -728,6 +893,24 @@ class BulkPaymentService
             throw new \InvalidArgumentException('Pembayaran tidak ditemukan');
         }
 
+        // Jika status masih WAITING atau VERIFY, cek status terbaru dari external API
+        if (in_array($payment->status_pembayaran, [Pembayaran::STATUS_WAITING, Pembayaran::STATUS_VERIFY])) {
+            $externalId = $payment->external_payment_id ?? $paymentId;
+            $externalStatus = $this->checkExternalPaymentStatus($externalId);
+            
+            if ($externalStatus && $externalStatus !== $payment->status_pembayaran) {
+                // Update status di local DB
+                $payment->status_pembayaran = $externalStatus;
+                $payment->save();
+                
+                Log::info('📊 Payment status updated from external API', [
+                    'payment_id' => $externalId,
+                    'old_status' => $payment->getOriginal('status_pembayaran'),
+                    'new_status' => $externalStatus,
+                ]);
+            }
+        }
+
         // Parse detail_pesanan jika berupa JSON string
         $detailPesanan = $payment->detail_pesanan;
         if (is_string($detailPesanan)) {
@@ -760,5 +943,64 @@ class BulkPaymentService
                 'qr_code' => $payment->qris_string, // Alias for compatibility
             ],
         ];
+    }
+
+    /**
+     * Check payment status from external API (tokodigi)
+     * Maps external status to local status
+     * 
+     * @param string|int $externalPaymentId
+     * @return string|null - Mapped status or null if failed
+     */
+    protected function checkExternalPaymentStatus(string|int $externalPaymentId): ?string
+    {
+        try {
+            // API endpoint: GET /api/umroh/payment?id={payment_id}
+            // Response: Array langsung [{...}], bukan {data: {...}}
+            $response = Http::timeout(10)->get("{$this->tokodigiApiUrl}/api/umroh/payment", [
+                'id' => $externalPaymentId,
+            ]);
+
+            if (!$response->successful()) {
+                return null;
+            }
+
+            $payload = $response->json();
+            
+            // Response adalah array, ambil item pertama
+            if (!is_array($payload) || empty($payload)) {
+                return null;
+            }
+
+            $data = $payload[0] ?? [];
+            $externalStatus = $data['payment_status'] ?? null;
+
+            if (!$externalStatus) {
+                return null;
+            }
+
+            // Map external status to local status
+            // INJECT = paket sudah diaktifkan = SUCCESS
+            $statusMap = [
+                'INJECT' => Pembayaran::STATUS_SUCCESS,
+                'SUCCESS' => Pembayaran::STATUS_SUCCESS,
+                'BERHASIL' => Pembayaran::STATUS_SUCCESS,
+                'AKTIF' => Pembayaran::STATUS_SUCCESS,
+                'VERIFY' => Pembayaran::STATUS_VERIFY,
+                'WAITING' => Pembayaran::STATUS_WAITING,
+                'PENDING' => Pembayaran::STATUS_WAITING,
+                'FAILED' => Pembayaran::STATUS_FAILED,
+                'EXPIRED' => Pembayaran::STATUS_EXPIRED,
+                'CANCEL' => Pembayaran::STATUS_FAILED,
+            ];
+
+            return $statusMap[strtoupper($externalStatus)] ?? $externalStatus;
+        } catch (\Exception $e) {
+            Log::warning('Failed to check external payment status', [
+                'payment_id' => $externalPaymentId,
+                'error' => $e->getMessage(),
+            ]);
+            return null;
+        }
     }
 }
