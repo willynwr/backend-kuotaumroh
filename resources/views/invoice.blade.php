@@ -167,7 +167,23 @@
 
         <!-- Main Content -->
         <main class="container mx-auto py-8 px-4">
-            <div class="max-w-4xl mx-auto">
+            <div class="max-w-6xl mx-auto">
+                <div class="flex flex-col lg:flex-row gap-6 items-start justify-center">
+                    
+                    <!-- Back Button (Left Side) -->
+                    <div class="mb-6 lg:mb-0 lg:w-auto lg:flex-shrink-0 lg:sticky lg:top-24 no-print">
+                        <button @click="handleBack()" class="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors group">
+                            <div class="p-1 rounded-full group-hover:bg-gray-100 transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                                </svg>
+                            </div>
+                            <span class="font-medium">Kembali</span>
+                        </button>
+                    </div>
+
+                    <!-- Invoice Content -->
+                    <div class="w-full max-w-4xl">
 
                 <!-- Loading State -->
                 <div x-show="loading" class="bg-white rounded-xl shadow-lg p-12 text-center">
@@ -606,6 +622,8 @@
                         Kembali ke Halaman Checkout
                     </a>
                 </div>
+                    </div>
+                </div>
             </div>
         </main>
 
@@ -695,6 +713,22 @@
                     if (name.includes('SMARTFREN') || name.includes('SFREN')) return 'Smartfren';
                     if (name.includes('BY.U') || name.includes('BYU')) return 'by.U';
                     return 'Lainnya';
+                },
+
+                // Handle Back Button
+                handleBack() {
+                    // Jika dibuka di tab baru (via window.open), tutup tab
+                    if (window.opener && !window.opener.closed) {
+                        window.close();
+                    } 
+                    // Jika ada history sebelumnya, kembali
+                    else if (window.history.length > 1) {
+                        window.history.back();
+                    } 
+                    // Fallback ke halaman checkout default
+                    else {
+                        window.location.href = '{{ route("checkout") }}';
+                    }
                 },
 
                 // Init

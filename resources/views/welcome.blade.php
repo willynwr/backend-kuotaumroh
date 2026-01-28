@@ -1096,13 +1096,6 @@
                             </div>
                         </div>
                         <div>
-                            <h3 class="font-bold text-lg mb-2">Alamat</h3>
-                            <p class="text-primary-foreground/90 leading-relaxed">
-                                Griya Candramas 3 Blok is nomor 31, <br>
-                                Desa/Kelurahan Pepe, Kec. Sedati,<br>
-                                Kab. Sidoarjo, Provinsi Jawa Timur,<br>
-                                Kode Pos: 61253
-                            </p>
                         </div>
                     </div>
             </div>
