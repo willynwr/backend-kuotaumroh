@@ -776,8 +776,14 @@ function checkoutApp() {
                 if (this.timeRemaining <= 1) {
                     clearInterval(this.timerInterval);
                     clearInterval(this.paymentCheckInterval);
-                    this.paymentStatus = 'expired';
-                    this.timeRemaining = 0;
+                    
+                    if (this.paymentStatus === 'activated') {
+                        localStorage.removeItem('pendingOrder');
+                    } else {
+                        this.paymentStatus = 'expired';
+                        this.timeRemaining = 0;
+                        localStorage.removeItem('pendingOrder');
+                    }
                 } else {
                     this.timeRemaining--;
                 }
@@ -962,14 +968,9 @@ function checkoutApp() {
             
             this.showToast('Paket Aktif! 🎉', 'Pembayaran berhasil! Silakan lihat invoice.');
             
-            clearInterval(this.timerInterval);
-            clearInterval(this.paymentCheckInterval);
-            
-            // Clear localStorage after 5 minutes delay
-            setTimeout(() => {
-                localStorage.removeItem('pendingOrder');
-                console.log('🗑️ pendingOrder removed after delay');
-            }, 5 * 60 * 1000);
+            // Keep timer running
+            // clearInterval(this.timerInterval);
+            if (this.paymentCheckInterval) clearInterval(this.paymentCheckInterval);
         },
 
         showToast(title, message) {

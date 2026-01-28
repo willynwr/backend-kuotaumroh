@@ -204,6 +204,20 @@ function orderApp() {
 
     // Lifecycle
     init() {
+      // Clear previous completed order if exists
+      const savedOrder = localStorage.getItem('pendingOrder');
+      if (savedOrder) {
+        try {
+          const parsed = JSON.parse(savedOrder);
+          if (parsed.paymentStatus === 'activated' || parsed.paymentStatus === 'expired') {
+            console.log('🧹 Clearing completed/expired order from storage');
+            localStorage.removeItem('pendingOrder');
+          }
+        } catch (e) {
+          localStorage.removeItem('pendingOrder');
+        }
+      }
+
       // Load packages from API when component initializes
       // this.loadPackages();
     },

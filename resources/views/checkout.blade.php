@@ -916,8 +916,17 @@
                         if (this.timeRemaining <= 1) {
                             clearInterval(this.timerInterval);
                             clearInterval(this.paymentCheckInterval);
-                            this.paymentStatus = 'expired';
-                            this.timeRemaining = 0;
+                            
+                            // Jika status sudah activated, jangan ubah jadi expired
+                            // Cukup hapus localStorage agar jika direfresh kembali ke home
+                            if (this.paymentStatus === 'activated') {
+                                localStorage.removeItem('pendingOrder');
+                                console.log('🗑️ Time up for activated order. Storage cleared.');
+                            } else {
+                                this.paymentStatus = 'expired';
+                                this.timeRemaining = 0;
+                                localStorage.removeItem('pendingOrder');
+                            }
                         } else {
                             this.timeRemaining--;
                         }
@@ -1294,17 +1303,15 @@
                     );
                     
                     // Clean up intervals
-                    clearInterval(this.timerInterval);
+                    // NOTE: Timer interval tidak di-clear agar tetap berjalan sampai habis (untuk cleanup localStorage)
+                    // clearInterval(this.timerInterval); 
+                    
                     if (this.paymentCheckInterval) {
                         clearInterval(this.paymentCheckInterval);
                     }
                     
-                    // Clear localStorage setelah 5 menit (user sudah punya waktu untuk lihat invoice)
-                    // Ini untuk mencegah localStorage menumpuk
-                    setTimeout(() => {
-                        localStorage.removeItem('pendingOrder');
-                        console.log('🗑️ pendingOrder removed from localStorage after delay');
-                    }, 5 * 60 * 1000); // 5 menit
+                    // REMOVED: Clear localStorage timeout.
+                    // Biarkan timer yang handle cleanup saat waktu habis (agar user bisa refresh selama masih ada waktu)
                 },
 
                 showToast(title, message) {
