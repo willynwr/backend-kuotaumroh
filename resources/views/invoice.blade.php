@@ -167,7 +167,23 @@
 
         <!-- Main Content -->
         <main class="container mx-auto py-8 px-4">
-            <div class="max-w-4xl mx-auto">
+            <div class="max-w-6xl mx-auto">
+                <div class="flex flex-col lg:flex-row gap-6 items-start justify-center">
+                    
+                    <!-- Back Button (Left Side) -->
+                    <div class="mb-6 lg:mb-0 lg:w-auto lg:flex-shrink-0 lg:sticky lg:top-24 no-print">
+                        <button @click="handleBack()" class="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors group">
+                            <div class="p-1 rounded-full group-hover:bg-gray-100 transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                                </svg>
+                            </div>
+                            <span class="font-medium">Kembali</span>
+                        </button>
+                    </div>
+
+                    <!-- Invoice Content -->
+                    <div class="w-full max-w-4xl">
 
                 <!-- Loading State -->
                 <div x-show="loading" class="bg-white rounded-xl shadow-lg p-12 text-center">
@@ -270,7 +286,7 @@
                     </div>
 
                     <!-- Agent, Customer & Payment Info -->
-                    <div class="px-8 py-6 grid sm:grid-cols-3 gap-6 border-b">
+                    <div class="px-8 py-6 grid sm:grid-cols-2 gap-6 border-b">
                         <!-- Agent Info -->
                         <div>
                             <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Travel Agent</h3>
@@ -291,30 +307,11 @@
                             </div>
                         </div>
 
-                        <!-- Affiliate/Freelance Info -->
-                        <div>
-                            <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Affiliate/Freelance</h3>
-                            <div class="space-y-2">
-                                <p class="font-semibold text-lg" x-text="invoice.orderedBy.name"></p>
-                                <div class="flex items-center gap-2 text-gray-600 text-sm">
-                                    <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium" 
-                                        :class="invoice.orderedBy.type === 'affiliate' ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700'"
-                                        x-text="invoice.orderedBy.type === 'affiliate' ? 'Affiliate' : 'Freelance'"></span>
-                                </div>
-                                <div class="flex items-center gap-2 text-gray-600 text-sm">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-                                    </svg>
-                                    <span x-text="invoice.orderedBy.phone"></span>
-                                </div>
-                            </div>
-                        </div>
-
                         <!-- Payment Info -->
                         <div>
-                            <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Pembayaran</h3>
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 text-right">Pembayaran</h3>
                             <div class="space-y-2 text-sm">
-                                <div class="flex justify-between">
+                                <div class="flex justify-end gap-8">
                                     <span class="text-gray-600">Metode Bayar</span>
                                     <span class="font-semibold" x-text="invoice.paymentMethod"></span>
                                 </div>
@@ -353,9 +350,6 @@
                                         <div class="border rounded-lg p-4 bg-gray-50 space-y-2">
                                             <div class="flex justify-between items-start mb-2">
                                                 <span class="text-xs font-medium text-gray-500">Item <span x-text="index + 1"></span></span>
-                                                <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium"
-                                                    :class="getStatusClass(item.status)"
-                                                    x-text="getStatusLabel(item.status)"></span>
                                             </div>
                                             <div class="space-y-1.5 text-sm">
                                                 <div class="flex justify-between">
@@ -373,14 +367,6 @@
                                                 <div class="flex justify-between">
                                                     <span class="text-gray-600">Kuota</span>
                                                     <span x-text="item.quota"></span>
-                                                </div>
-                                                <div class="flex justify-between">
-                                                    <span class="text-gray-600">Masa Aktif</span>
-                                                    <span x-text="item.validity"></span>
-                                                </div>
-                                                <div class="flex justify-between" x-show="item.scheduledAt">
-                                                    <span class="text-gray-600">Jadwal</span>
-                                                    <span class="text-xs" x-text="item.scheduledAt"></span>
                                                 </div>
                                                 <div class="flex justify-between pt-2 border-t border-gray-200">
                                                     <span class="font-semibold">Harga</span>
@@ -403,9 +389,7 @@
                                             <th class="py-3 text-left font-semibold text-gray-700">No</th>
                                             <th class="py-3 text-left font-semibold text-gray-700">Paket</th>
                                             <th class="py-3 text-center font-semibold text-gray-700">Tipe</th>
-                                            <th class="py-3 text-center font-semibold text-gray-700">Kuota</th>
-                                            <th class="py-3 text-center font-semibold text-gray-700">Masa Aktif</th>
-                                            <th class="py-3 text-center font-semibold text-gray-700">Status</th>
+                                            <th class="py-3 text-center font-semibold text-gray-700">TRX</th>
                                             <th class="py-3 text-right font-semibold text-gray-700">Harga</th>
                                         </tr>
                                     </thead>
@@ -414,16 +398,12 @@
                                             <tr class="border-b border-gray-100 hover:bg-gray-50">
                                                 <td class="py-4 text-gray-600" x-text="index + 1"></td>
                                                 <td class="py-4">
-                                                    <span class="font-medium" x-text="group.count + ' Paket ' + group.provider"></span>
+                                                    <span class="font-medium" x-text="group.packageName || group.packageId"></span>
                                                 </td>
                                                 <td class="py-4 text-center">
                                                     <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">BULK</span>
                                                 </td>
-                                                <td class="py-4 text-center text-gray-600">-</td>
-                                                <td class="py-4 text-center text-gray-600">-</td>
-                                                <td class="py-4 text-center">
-                                                    <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Berhasil</span>
-                                                </td>
+                                                <td class="py-4 text-center text-gray-600" x-text="group.count"></td>
                                                 <td class="py-4 text-right font-semibold" x-text="formatRupiah(group.total)"></td>
                                             </tr>
                                         </template>
@@ -441,9 +421,6 @@
                                             <th class="py-3 text-left font-semibold text-gray-700">Paket</th>
                                             <th class="py-3 text-left font-semibold text-gray-700">Tipe</th>
                                             <th class="py-3 text-left font-semibold text-gray-700">Kuota</th>
-                                            <th class="py-3 text-left font-semibold text-gray-700">Masa Aktif</th>
-                                            <th class="py-3 text-left font-semibold text-gray-700">Jadwal Aktivasi</th>
-                                            <th class="py-3 text-center font-semibold text-gray-700">Status</th>
                                             <th class="py-3 text-right font-semibold text-gray-700">Harga</th>
                                         </tr>
                                     </thead>
@@ -460,13 +437,6 @@
                                                 <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary" x-text="item.packageType"></span>
                                             </td>
                                             <td class="py-4 text-gray-600" x-text="item.quota"></td>
-                                            <td class="py-4 text-gray-600" x-text="item.validity"></td>
-                                            <td class="py-4 text-gray-600 text-xs" x-text="item.scheduledAt"></td>
-                                            <td class="py-4 text-center">
-                                                <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium"
-                                                    :class="getStatusClass(item.status)"
-                                                    x-text="getStatusLabel(item.status)"></span>
-                                            </td>
                                             <td class="py-4 text-right font-semibold" x-text="formatRupiah(item.price)"></td>
                                         </tr>
                                     </template>
@@ -492,13 +462,6 @@
                                                     <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary" x-text="item.packageType"></span>
                                                 </td>
                                                 <td class="py-4 text-gray-600" x-text="item.quota"></td>
-                                                <td class="py-4 text-gray-600" x-text="item.validity"></td>
-                                                <td class="py-4 text-gray-600 text-xs" x-text="item.scheduledAt"></td>
-                                                <td class="py-4 text-center">
-                                                    <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium"
-                                                        :class="getStatusClass(item.status)"
-                                                        x-text="getStatusLabel(item.status)"></span>
-                                                </td>
                                                 <td class="py-4 text-right font-semibold" x-text="formatRupiah(item.price)"></td>
                                             </tr>
                                         </template>
@@ -551,9 +514,9 @@
                                     <span class="font-medium" x-text="formatRupiah(invoice.subtotal)"></span>
                                 </div>
                                 <div class="flex justify-between text-sm">
-                                    <span class="text-gray-600">Biaya Platform</span>
-                                    <span class="font-medium" x-text="formatRupiah(invoice.platformFee)"></span>
-                                </div>
+                                        <span class="text-gray-600">Kode Unik</span>
+                                        <span class="font-medium" x-text="formatRupiah(invoice.platformFee)"></span>
+                                    </div>
                                 <template x-if="invoice.discount > 0">
                                     <div class="flex justify-between text-sm text-green-600">
                                         <span>Diskon</span>
@@ -605,6 +568,8 @@
                         </svg>
                         Kembali ke Halaman Checkout
                     </a>
+                </div>
+                    </div>
                 </div>
             </div>
         </main>
@@ -667,21 +632,33 @@
                     
                     const grouped = {};
                     this.invoice.items.forEach(item => {
-                        const provider = this.extractProvider(item.packageName || '');
-                        if (!grouped[provider]) {
-                            grouped[provider] = { count: 0, total: 0, items: [] };
+                        // Group by Package ID (Product) instead of just Provider
+                        const key = item.packageId || item.packageName;
+                        
+                        if (!grouped[key]) {
+                            grouped[key] = { 
+                                count: 0, 
+                                total: 0, 
+                                items: [],
+                                provider: item.provider,
+                                packageId: item.packageId,
+                                packageName: item.packageName
+                            };
                         }
-                        grouped[provider].count++;
-                        grouped[provider].total += parseInt(item.price || 0);
-                        grouped[provider].items.push(item);
+                        grouped[key].count++;
+                        grouped[key].total += parseInt(item.price || 0);
+                        grouped[key].items.push(item);
                     });
                     
                     // Convert to array for iteration
-                    return Object.entries(grouped).map(([provider, data]) => ({
-                        provider,
+                    return Object.entries(grouped).map(([key, data]) => ({
+                        key,
                         count: data.count,
                         total: data.total,
-                        items: data.items
+                        items: data.items,
+                        provider: data.provider,
+                        packageId: data.packageId,
+                        packageName: data.packageName
                     }));
                 },
 
@@ -695,6 +672,31 @@
                     if (name.includes('SMARTFREN') || name.includes('SFREN')) return 'Smartfren';
                     if (name.includes('BY.U') || name.includes('BYU')) return 'by.U';
                     return 'Lainnya';
+                },
+
+                getProviderCode(provider) {
+                    const p = (provider || '').toUpperCase();
+                    if (p === 'TELKOMSEL') return 'TSEL';
+                    if (p === 'INDOSAT') return 'ISAT';
+                    if (p === 'SMARTFREN') return 'SMAR';
+                    if (p === 'BY.U') return 'BYU';
+                    return p.substring(0, 4);
+                },
+
+                // Handle Back Button
+                handleBack() {
+                    // Jika dibuka di tab baru (via window.open), tutup tab
+                    if (window.opener && !window.opener.closed) {
+                        window.close();
+                    } 
+                    // Jika ada history sebelumnya, kembali
+                    else if (window.history.length > 1) {
+                        window.history.back();
+                    } 
+                    // Fallback ke halaman checkout default
+                    else {
+                        window.location.href = '{{ route("checkout") }}';
+                    }
                 },
 
                 // Init
@@ -797,19 +799,31 @@
                     // Parse items
                     this.invoice.items = items.map(item => ({
                         msisdn: item.msisdn || '',
+                        packageId: item.product_id || item.package_id || item.id || '0', // Prioritaskan product_id
                         packageName: item.package_name || item.name || '',
                         packageType: item.package_type || 'UMROH',
                         quota: item.quota || '',
                         validity: item.days ? `${item.days} Hari` : '',
                         scheduledAt: item.schedule_date ? this.formatDate(item.schedule_date) : '',
                         status: item.status || 'pending',
-                        price: parseInt(item.price || item.payment_amount || 0)
+                        price: parseInt(item.price || item.payment_amount || 0),
+                        // Extract provider for consistent naming in bulk view
+                        provider: this.extractProvider(item.package_name || item.name || '')
                     }));
 
                     // Calculate totals
+                    // Handle unique code for bulk as well
+                    const uniqueCode = parseInt(firstItem.payment_unique || firstItem.unique_code || 0);
+                    
+                    // Subtotal adalah total harga semua paket (harga satuan * jumlah)
+                    // Note: di backend harga satuan (item.price) sudah harga modal/jual
                     this.invoice.subtotal = this.invoice.items.reduce((sum, item) => sum + item.price, 0);
-                    this.invoice.platformFee = parseInt(firstItem.platform_fee || 0);
-                    this.invoice.total = parseInt(firstItem.total_payment || firstItem.payment_amount || this.invoice.subtotal);
+                    
+                    // Gunakan field platformFee untuk menampilkan Kode Unik
+                    this.invoice.platformFee = uniqueCode;
+                    
+                    // Total = Subtotal + Kode Unik
+                    this.invoice.total = this.invoice.subtotal + uniqueCode;
                     
                     // Agent info (Original was overwriting, now handled above)
                     // this.invoice.agent.name = firstItem.agent_name || ''; 
@@ -818,8 +832,46 @@
 
                 // Parse Individual Invoice Data
                 parseIndividualInvoiceData(data) {
-                    // data is single object or array with one item
-                    const item = Array.isArray(data) ? data[0] : data;
+                    // Normalize data structure
+                    let item = data;
+                    let items = [];
+
+                    // Case 1: Local DB structure (has detail.items)
+                    if (data.detail && data.detail.items && Array.isArray(data.detail.items)) {
+                        console.log('📦 Detect Local DB structure');
+                        // Map local DB items
+                        items = data.detail.items.map(i => ({
+                            msisdn: i.msisdn,
+                            packageName: i.package_name || i.package_id || 'Umroh Package',
+                            packageType: 'UMROH',
+                            quota: '-', // Data kuota tidak tersimpan di local detail
+                            price: parseInt(i.price || data.total_amount || 0)
+                        }));
+                        
+                        // Use the main data for metadata
+                        item = data;
+                    } 
+                    // Case 2: Array (External API)
+                    else if (Array.isArray(data)) {
+                        item = data[0];
+                        items = [{
+                            msisdn: item.msisdn || '',
+                            packageName: item.package_name || item.name || '',
+                            packageType: item.package_type || 'UMROH',
+                            quota: item.quota || '',
+                            price: parseInt(item.price || item.payment_amount || 0)
+                        }];
+                    }
+                    // Case 3: Single Object (External API)
+                    else {
+                        items = [{
+                            msisdn: item.msisdn || '',
+                            packageName: item.package_name || item.name || '',
+                            packageType: item.package_type || 'UMROH',
+                            quota: item.quota || '',
+                            price: parseInt(item.price || item.payment_amount || 0)
+                        }];
+                    }
                     
                     if (!item) {
                         this.error = 'Data invoice tidak ditemukan';
@@ -831,34 +883,25 @@
                     // Set invoice metadata
                     this.invoice.paymentId = item.payment_id || item.id || this.paymentId;
                     this.invoice.date = item.created_at ? this.formatDate(item.created_at) : new Date().toISOString();
-                    this.invoice.status = this.mapStatus(item.status);
+                    this.invoice.status = this.mapStatus(item.status || item.status_pembayaran);
 
-                    this.invoice.paymentMethod = item.payment_method || 'QRIS';
+                    this.invoice.paymentMethod = item.payment_method || item.metode_pembayaran || 'QRIS';
                     
-                    // Agent info from travel data
+                    // Agent info
                     this.invoice.agent.name = item.agent_name || 'Kuotaumroh.id';
-                    this.invoice.agent.pic = 'Kuotaumroh.id'; // PIC diisi nama travel
-                    this.invoice.agent.phone = item.agent_phone || '+62 812-3456-7890'; // Telp travel agent
+                    this.invoice.agent.pic = 'Kuotaumroh.id'; 
+                    this.invoice.agent.phone = item.agent_phone || '+62 812-3456-7890';
                     
                     // Ordered by info
                     this.invoice.orderedBy.name = item.customer_name || item.name || 'Customer';
                     this.invoice.orderedBy.type = 'Individual';
-                    this.invoice.orderedBy.phone = item.msisdn || '';
+                    this.invoice.orderedBy.phone = items.length > 0 ? items[0].msisdn : (item.msisdn || '');
 
-                    // Single item
-                    this.invoice.items = [{
-                        msisdn: item.msisdn || '',
-                        packageName: item.package_name || item.name || '',
-                        packageType: item.package_type || 'UMROH',
-                        quota: item.quota || '',
-                        validity: item.days ? `${item.days} Hari` : '',
-                        scheduledAt: item.schedule_date ? this.formatDate(item.schedule_date) : '',
-                        status: this.mapStatus(item.status),
-                        price: parseInt(item.price || item.payment_amount || 0)
-                    }];
+                    // Set items
+                    this.invoice.items = items;
 
                     // Totals
-                    this.invoice.total = parseInt(item.payment_amount || item.total_payment || 0);
+                    this.invoice.total = parseInt(item.payment_amount || item.total_payment || item.total_amount || 0);
                     this.invoice.subtotal = this.invoice.total;
                     this.invoice.platformFee = 0;
                     this.invoice.notes = 'Terima kasih telah menggunakan layanan Kuotaumroh.id';
