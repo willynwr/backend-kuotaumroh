@@ -640,6 +640,7 @@ function usersPage() {
         confirmAddModalOpen: false,
         confirmAddFreelanceModalOpen: false,
         confirmAddTravelAgentModalOpen: false,
+        confirmEditTravelAgentModalOpen: false,
         userDetailModalOpen: false,
         fileModalOpen: false,
         notificationModalOpen: false,
@@ -697,6 +698,7 @@ function usersPage() {
         citiesFreelance: [],
         citiesTravelAgent: [],
         selectedDownline: null,
+        selectedDownlineEdit: null,
 
         init() {
             console.log('Alpine.js initialized for usersPage');
@@ -735,7 +737,15 @@ function usersPage() {
 
             // Re-open modals on validation errors
             @if($errors->any())
-              if(@json(old('nama_travel'))) {
+              const formType = @json(old('_form'));
+              
+              if(formType === 'edit_agent') {
+                  // Edit agent form error - need to find and reopen the agent
+                  this.changeTab('agent');
+                  // Note: We cannot automatically reopen edit modal without agent data
+                  // Show error notification instead
+                  this.showNotification('Terjadi kesalahan saat update agent. Silakan coba lagi.', 'error');
+              } else if(@json(old('nama_travel'))) {
                   this.changeTab('agent');
                   this.$nextTick(() => {
                       this.openAddUserModal();
@@ -996,7 +1006,7 @@ function usersPage() {
                 phoneClean: user.phone ? user.phone.replace(/^62/, '') : '',
                 travel_name: user.travel_name,
                 travel_type: user.travel_type,
-                travel_member: user.travel_member,
+                travel_member: user.monthly_travellers,
                 kategori_agent: user.agent_category,
                 province: user.province,
                 city: user.city,
@@ -1007,7 +1017,20 @@ function usersPage() {
                 ppiu_url: user.ppiu,
                 monthly_travellers: user.monthly_travellers
             };
+            
+            // Set selectedDownlineEdit based on current affiliate/freelance
+            if (user.affiliate_id) {
+                const affiliate = this.downlines.find(d => d.type === 'Affiliate' && d.id === user.affiliate_id);
+                this.selectedDownlineEdit = affiliate || null;
+            } else if (user.freelance_id) {
+                const freelance = this.downlines.find(d => d.type === 'Freelance' && d.id === user.freelance_id);
+                this.selectedDownlineEdit = freelance || null;
+            } else {
+                this.selectedDownlineEdit = null;
+            }
+            
             console.log('Editing travel agent data:', this.editingTravelAgent);
+            console.log('Selected downline:', this.selectedDownlineEdit);
             if (user.province) this.loadCitiesForEditAgent(user.province);
             this.editTravelAgentModalOpen = true;
             console.log('Modal should be open now:', this.editTravelAgentModalOpen);
@@ -1020,6 +1043,7 @@ function usersPage() {
         closeEditTravelAgentModal() {
             this.editTravelAgentModalOpen = false;
             this.editingTravelAgent = {};
+            this.selectedDownlineEdit = null;
         },
         openUserDetail(u) { this.selectedUser = u; this.userDetailModalOpen = true; },
         closeUserDetail() { this.userDetailModalOpen = false; },
@@ -1224,6 +1248,7 @@ function usersPage() {
              }));
         },
         selectDownline(d) { this.selectedDownline = d; },
+        selectDownlineEdit(d) { this.selectedDownlineEdit = d; },
         
         // Affiliate Modal Functions
         openConfirmAddModal() {
@@ -1256,6 +1281,20 @@ function usersPage() {
         },
         confirmAddTravelAgent() {
             this.$refs.addTravelAgentForm.submit();
+        },
+        openConfirmEditTravelAgentModal() {
+            this.confirmEditTravelAgentModalOpen = true;
+        },
+        closeConfirmEditTravelAgentModal() {
+            this.confirmEditTravelAgentModalOpen = false;
+        },
+        confirmEditTravelAgent() {
+            console.log('Submitting edit form for agent:', this.editingTravelAgent.id);
+            const form = this.$refs.editTravelAgentForm;
+            const actionUrl = `/admin/agent/${this.editingTravelAgent.id}`;
+            console.log('Setting form action to:', actionUrl);
+            form.action = actionUrl;
+            form.submit();
         },
         
         // Notification Functions

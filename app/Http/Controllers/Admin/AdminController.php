@@ -118,6 +118,8 @@ class AdminController extends Controller
                 'logo' => $agent->logo,
                 'ppiu' => $agent->surat_ppiu,
                 'monthly_travellers' => $agent->total_traveller,
+                'affiliate_id' => $agent->affiliate_id,
+                'freelance_id' => $agent->freelance_id,
                 'parent_type' => $agent->affiliate_id ? 'affiliate' : 'freelance',
                 'parent_id' => $agent->affiliate_id ?? $agent->freelance_id,
             ];
@@ -1249,6 +1251,7 @@ class AdminController extends Controller
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'surat_ppiu' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
         ]);
 
         if ($validator->fails()) {
@@ -1281,8 +1284,14 @@ class AdminController extends Controller
 
             // Handle logo upload
             if ($request->hasFile('logo')) {
-                $logoPath = $request->file('logo')->store('agent_logos', 'public');
+                $logoPath = $request->file('logo')->store('agent/logos', 'public');
                 $data['logo'] = $logoPath;
+            }
+
+            // Handle PPIU upload
+            if ($request->hasFile('surat_ppiu')) {
+                $ppiuPath = $request->file('surat_ppiu')->store('agent/ppiu', 'public');
+                $data['surat_ppiu'] = $ppiuPath;
             }
 
             Agent::create($data);
@@ -1329,32 +1338,84 @@ class AdminController extends Controller
             'provinsi' => 'required|string|max:100',
             'kabupaten_kota' => 'required|string|max:100',
             'alamat_lengkap' => 'required|string',
-            'status' => 'required|in:pending,approve,reject',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'surat_ppiu' => 'nullable|mimes:jpeg,png,jpg,pdf|max:2048',
+            'affiliate_id' => 'nullable|exists:affiliate,id',
+            'freelance_id' => 'nullable|exists:freelance,id',
         ]);
 
         if ($validator->fails()) {
-            return redirect()->back()->withErrors($validator)->withInput();
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput()
+                ->with('old', ['_form' => 'edit_agent']);
         }
 
         try {
-            $payload = $request->only([
-                'email',
-                'nama_pic',
-                'no_hp',
-                'nama_travel',
-                'jenis_travel',
-                'total_traveller',
-                'kategori_agent',
-                'provinsi',
-                'kabupaten_kota',
-                'alamat_lengkap',
-                'status',
-            ]);
-            $payload['no_hp'] = $this->normalizeIndonesianMsisdn((string) $payload['no_hp']);
+            $payload = [
+                'email' => $request->email,
+                'nama_pic' => $request->nama_pic,
+                'no_hp' => $this->normalizeIndonesianMsisdn((string) $request->no_hp),
+                'nama_travel' => $request->nama_travel,
+                'jenis_travel' => $request->jenis_travel,
+                'total_traveller' => $request->total_traveller,
+                'kategori_agent' => $request->kategori_agent,
+                'provinsi' => $request->provinsi,
+                'kabupaten_kota' => $request->kabupaten_kota,
+                'alamat_lengkap' => $request->alamat_lengkap,
+                'latitude' => $request->latitude,
+                'longitude' => $request->longitude,
+            ];
+
+            // Handle logo upload
+            if ($request->hasFile('logo')) {
+                // Delete old logo if exists
+                if ($agent->logo && Storage::disk('public')->exists($agent->logo)) {
+                    Storage::disk('public')->delete($agent->logo);
+                }
+                $logoPath = $request->file('logo')->store('agent/logos', 'public');
+                $payload['logo'] = $logoPath;
+            }
+
+            // Handle surat PPIU upload
+            if ($request->hasFile('surat_ppiu')) {
+                // Delete old PPIU if exists
+                if ($agent->surat_ppiu && Storage::disk('public')->exists($agent->surat_ppiu)) {
+                    Storage::disk('public')->delete($agent->surat_ppiu);
+                }
+                $ppiuPath = $request->file('surat_ppiu')->store('agent/ppiu', 'public');
+                $payload['surat_ppiu'] = $ppiuPath;
+            }
+
+            // Handle downline (affiliate or freelance)
+            if ($request->filled('affiliate_id')) {
+                $payload['affiliate_id'] = $request->affiliate_id;
+                $payload['freelance_id'] = null; // Clear freelance if affiliate is set
+            } elseif ($request->filled('freelance_id')) {
+                $payload['freelance_id'] = $request->freelance_id;
+                $payload['affiliate_id'] = null; // Clear affiliate if freelance is set
+            } else {
+                // Clear both if none selected
+                $payload['affiliate_id'] = null;
+                $payload['freelance_id'] = null;
+            }
+
             $agent->update($payload);
-            return redirect()->route('admin.agent.index')->with('success', 'Agent berhasil diperbarui');
+
+            $redirectTo = $request->input('redirect_to');
+            if ($redirectTo && str_starts_with($redirectTo, '/admin/users')) {
+                return redirect($redirectTo)->with('success', 'Agent berhasil diperbarui');
+            }
+            // Fallback to admin users tab agent instead of separate agent index
+            return redirect()->route('admin.users', ['tab' => 'agent'])->with('success', 'Agent berhasil diperbarui');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
+            \Log::error('Update agent error: ' . $e->getMessage());
+            return redirect()->back()
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage())
+                ->withInput()
+                ->with('old', ['_form' => 'edit_agent']);
         }
     }
 

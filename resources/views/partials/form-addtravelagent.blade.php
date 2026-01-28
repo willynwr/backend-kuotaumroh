@@ -132,23 +132,7 @@
                 class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
             </div>
 
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1">Logo Travel</label>
-              <div class="space-y-2">
-                <input type="file" name="logo" accept="image/*" 
-                  @change="logoFile = $event.target.files[0]"
-                  class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20">
-                <p class="text-xs text-muted-foreground">Format: JPG, PNG, GIF, SVG (Max: 2MB)</p>
-                <template x-if="logoFile">
-                  <div class="mt-2 p-2 bg-gray-50 rounded border flex items-center gap-2">
-                    <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                    <span class="text-sm text-gray-700" x-text="logoFile.name"></span>
-                  </div>
-                </template>
-              </div>
-            </div>
+
           </div>
         </div>
       </div>
@@ -360,6 +344,106 @@
               <input type="number" step="any" x-model.number="newTravelAgent.longitude"
                 @input="updateMapFromCoordinatesAgent()" placeholder="106.xxxxx"
                 class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- File Uploads -->
+      <div class="space-y-4 border-t pt-6">
+        <h4 class="font-semibold text-slate-900 border-b pb-2 flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+          </svg>
+          Dokumen
+        </h4>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Logo -->
+          <div x-data="{ logoPreview: null }">
+              <label class="block text-sm font-medium text-slate-700 mb-1">Logo Travel</label>
+              <div class="space-y-2">
+                <input type="file" name="logo" accept="image/*" 
+                  @change="
+                    const file = $event.target.files[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (e) => { logoPreview = e.target.result; };
+                      reader.readAsDataURL(file);
+                    }
+                  "
+                  class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 file:cursor-pointer cursor-pointer">
+                <p class="text-xs text-muted-foreground">Format: JPG, PNG, GIF, SVG (Max: 2MB)</p>
+                
+                <!-- Preview -->
+                <div x-show="logoPreview" class="mt-3">
+                  <p class="text-xs text-green-600 font-medium mb-2">Preview logo:</p>
+                  <div class="relative inline-block">
+                    <img :src="logoPreview" alt="Preview Logo" class="h-24 w-auto object-contain border border-green-500 rounded-md shadow-sm bg-white p-2">
+                    <button type="button" @click="logoPreview = null; $el.closest('div[x-data]').querySelector('input[type=file]').value = ''"
+                      class="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-1.5 hover:bg-destructive/90 transition-colors shadow-md">
+                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+          </div>
+
+          <!-- PPIU -->
+          <div class="space-y-2" x-data="{ ppiuPreview: null, ppiuType: null }">
+            <label class="block text-sm font-medium text-slate-700 mb-1">Surat PPIU (Opsional)</label>
+            <input type="file" name="surat_ppiu" accept="image/*,application/pdf"
+              @change="
+                const file = $event.target.files[0];
+                if (file) {
+                  ppiuType = file.type;
+                  if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => { ppiuPreview = e.target.result; };
+                    reader.readAsDataURL(file);
+                  } else {
+                    ppiuPreview = 'pdf';
+                  }
+                }
+              "
+              class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium file:cursor-pointer hover:file:text-primary">
+            <p class="text-xs text-muted-foreground">Format: PNG, JPG, PDF (Max: 2MB)</p>
+            
+            <!-- Preview -->
+            <div x-show="ppiuPreview" class="mt-2">
+              <p class="text-xs text-green-600 font-medium mb-2">File terpilih:</p>
+              
+              <!-- Image Preview -->
+              <div x-show="ppiuType && ppiuType.startsWith('image/')" class="relative inline-block">
+                <img :src="ppiuPreview" alt="Preview PPIU" class="h-24 w-auto object-contain border border-green-500 rounded-md shadow-sm bg-white p-2">
+                <button type="button" @click="ppiuPreview = null; ppiuType = null; $el.closest('.space-y-2').querySelector('input[type=file]').value = ''"
+                  class="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-1.5 hover:bg-destructive/90 transition-colors shadow-md">
+                  <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <!-- PDF Preview -->
+              <div x-show="ppiuType === 'application/pdf'" class="relative inline-block">
+                <div class="flex items-center gap-2 p-2 border border-green-500 rounded-md bg-green-50">
+                  <svg class="h-10 w-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                  <div class="flex-1">
+                    <p class="text-xs font-medium text-gray-900">File PDF Terpilih</p>
+                  </div>
+                  <button type="button" @click="ppiuPreview = null; ppiuType = null; $el.closest('.space-y-2').querySelector('input[type=file]').value = ''"
+                    class="bg-destructive text-white rounded-full p-1.5 hover:bg-destructive/90 transition-colors">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
             </div>
           </div>
         </div>

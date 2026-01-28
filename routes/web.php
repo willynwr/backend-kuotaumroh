@@ -143,6 +143,7 @@ Route::prefix('dash')->name('dash.')->middleware('web')->group(function () {
     Route::get('/{link_referral}/order', [DashboardController::class, 'order'])->name('order');
     Route::get('/{link_referral}/checkout', [DashboardController::class, 'checkout'])->name('checkout');
     Route::get('/{link_referral}/history', [DashboardController::class, 'history'])->name('history');
+    Route::get('/{link_referral}/transactions', [DashboardController::class, 'transactions'])->name('transactions');
     Route::get('/{link_referral}/wallet', [DashboardController::class, 'wallet'])->name('wallet');
     Route::get('/{link_referral}/history-profit', [DashboardController::class, 'historyProfit'])->name('history-profit');
     Route::get('/{link_referral}/history-profit/{month}', [DashboardController::class, 'historyProfitDetail'])->name('history-profit.detail');
@@ -349,9 +350,6 @@ Route::prefix('affiliate')->group(function () {
         return view('affiliate.rewards');
     })->name('affiliate.rewards');
 });
-
-// Order page for affiliate and freelance (uses same route pattern as dashboard)
-Route::get('/dash/{linkReferral}/order', [DashboardController::class, 'order'])->name('dash.order');
 
 // freelance routes
 Route::prefix('freelance')->group(function () {

@@ -150,9 +150,22 @@
         
         init() {
           console.log('historyProfitApp initialized');
+          // Start watcher to ensure we have a valid year selected
+          this.$watch('monthlyHistory', (value) => {
+             if (this.availableYears.length > 0 && !this.availableYears.includes(this.selectedYear)) {
+                this.selectedYear = this.availableYears[0];
+             }
+          });
+          
+          // Initial check
+          if (this.availableYears.length > 0 && !this.availableYears.includes(this.selectedYear)) {
+             this.selectedYear = this.availableYears[0];
+          }
         },
         
         get availableYears() {
+          if (!this.monthlyHistory || this.monthlyHistory.length === 0) return [new Date().getFullYear()];
+          
           const years = [...new Set(this.monthlyHistory.map(item => {
             const [year] = item.month.split('-');
             return parseInt(year);
