@@ -2,6 +2,18 @@
 
 @section('title', 'Dashboard Freelance - Kuotaumroh.id')
 
+@push('styles')
+<style>
+    @keyframes bounce-gentle {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+    .animate-bounce-gentle {
+      animation: bounce-gentle 2s ease-in-out infinite;
+    }
+</style>
+@endpush
+
 @section('content')
 <!-- Alpine.js App -->
 <div x-data="freelanceDashboard()">
@@ -10,8 +22,53 @@
     <!-- Main Content -->
     <main class="container mx-auto py-10 animate-fade-in px-4">
         <!-- Stats Grid -->
-        <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-12">
-            <!-- Points Card (Primary) -->
+        <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-2 mb-12">
+            <!-- Total Komisi Card -->
+            <div>
+                <div class="relative overflow-hidden rounded-2xl border-slate-200 bg-white shadow-sm h-full">
+                    <!-- Background Decoration -->
+                    <div class="pointer-events-none absolute right-0 top-0 h-32 w-32 -translate-y-1/3 translate-x-1/3 rounded-full bg-primary/5"></div>
+
+                    <!-- Header -->
+                    <div class="relative z-10 flex flex-row items-center justify-between p-4 pb-3">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                            Total Komisi
+                        </h3>
+                        <div class="rounded-lg p-2 bg-primary/10 text-primary">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- Content -->
+                    <div class="relative z-10 p-4 pt-0">
+                        <!-- MTD Section -->
+                        <div class="mb-4">
+                            <p class="text-xs font-bold uppercase text-slate-400" x-text="'Komisi MTD (' + stats.currentMonth + ')'"></p>
+                            <p class="text-2xl font-extrabold text-primary tracking-tight" x-text="'Rp ' + (stats.commissionMTD || 0).toLocaleString('id-ID')"></p>
+                        </div>
+
+                        <!-- YTD Section -->
+                        <div class="flex items-center justify-between border-t border-slate-100 pt-3">
+                            <div>
+                                <p class="text-xs font-bold uppercase text-slate-400" x-text="'Komisi YTD (' + stats.currentYear + ')'"></p>
+                                <p class="text-lg font-extrabold text-primary" x-text="'Rp ' + (stats.commissionYTD || 0).toLocaleString('id-ID')"></p>
+                            </div>
+                            <!-- Mini Chart -->
+                            <div class="flex items-end gap-1 opacity-70">
+                                <div class="h-3 w-2 rounded-t-sm bg-primary/20"></div>
+                                <div class="h-5 w-2 rounded-t-sm bg-primary/30"></div>
+                                <div class="h-4 w-2 rounded-t-sm bg-primary/40"></div>
+                                <div class="h-7 w-2 rounded-t-sm bg-primary/60"></div>
+                                <div class="h-8 w-2 rounded-t-sm bg-primary/80"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Saldo Fee Card -->
             <div>
                 <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary/90 shadow-lg hover:shadow-xl transition-all duration-300 h-full group">
                     <!-- Animated Background Decoration -->
@@ -94,10 +151,49 @@
                 </div>
             </div>
 
+            <!-- Downlines Card -->
+            <div>
+                <div class="rounded-2xl border-slate-200 bg-white shadow-sm h-full">
+                    <!-- Header -->
+                    <div class="flex flex-row items-center justify-between p-4 pb-3">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">
+                            Total Agen
+                        </h3>
+                        <div class="rounded-lg p-1.5 bg-primary/10 text-primary">
+                            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- Content -->
+                    <div class="p-4 pt-0">
+                        <div class="flex items-center gap-3">
+                            <div class="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                <svg class="h-5 w-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                            </div>
+                            <div class="text-2xl font-bold text-slate-900 tracking-tight" x-text="stats.totalDownlines + ' Agen'"></div>
+                        </div>
+
+                        <div class="mt-3 text-xs font-medium text-slate-500">
+                            Agen Aktif Bulan Ini
+                        </div>
+                        <div class="text-lg font-bold text-slate-900" x-text="stats.activeAgentsThisMonth + ' Aktif'"></div>
+                        <div class="mt-2 text-xs font-medium text-slate-500">
+                            Agen Baru Bulan Ini
+                        </div>
+                        <div class="text-lg font-bold text-slate-900" x-text="stats.newAgentsThisMonth + ' Bergabung'"></div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Referral Card -->
             <div>
                 <div class="rounded-2xl border-slate-200 bg-white shadow-sm h-full">
-                    <div class="flex flex-row items-center justify-between p-6 pb-4">
+                    <div class="flex flex-row items-center justify-between p-4 pb-3">
                         <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">
                             Link Referral
                         </h3>
@@ -127,46 +223,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Downlines Card -->
-            <div>
-                <div class="rounded-2xl border-slate-200 bg-white shadow-sm h-full">
-                    <!-- Header -->
-                    <div class="flex flex-row items-center justify-between p-4 pb-3">
-                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">
-                            Total Agen
-                        </h3>
-                        <div class="rounded-lg p-1.5 bg-primary/10 text-primary">
-                            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                            </svg>
-                        </div>
-                    </div>
-
-                    <!-- Content -->
-                    <div class="p-4 pt-0">
-                        <!-- Total Agen -->
-                        <div class="mb-3">
-                            <div class="text-2xl font-extrabold text-primary tracking-tight" x-text="stats.totalDownlines"></div>
-                            <div class="text-[10px] font-medium text-slate-500 mt-0.5">Total Agen</div>
-                        </div>
-
-                        <!-- Stats Grid -->
-                        <div class="flex items-center justify-between border-t border-slate-100 pt-3">
-                            <div>
-                                <p class="text-[10px] font-bold uppercase text-slate-400">Aktif</p>
-                                <p class="text-base font-extrabold text-primary" x-text="stats.activeAgentsThisMonth"></p>
-                            </div>
-                            <div class="h-6 w-px bg-slate-200"></div>
-                            <div>
-                                <p class="text-[10px] font-bold uppercase text-slate-400">Baru</p>
-                                <p class="text-base font-extrabold text-primary" x-text="stats.newAgentsThisMonth"></p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <!-- Menu Grid -->
@@ -176,7 +232,7 @@
                 <div class="h-px flex-1 bg-slate-200"></div>
             </div>
 
-            <div class="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-3">
+            <div class="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-4">
                 <template x-for="item in menuItems" :key="item.id">
                     <a :href="item.href">
                         <div class="group flex h-48 cursor-pointer items-start justify-start rounded-2xl border shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
@@ -191,6 +247,12 @@
                                 <img x-show="item.id === 'rewards'" src="{{ asset('images/hadiah.png') }}" alt="Hadiah"
                                     class="h-24 w-24 object-contain transition-transform group-hover:scale-110">
                                 <img x-show="item.id === 'history'" src="{{ asset('images/point.png') }}" alt="Poin"
+                                    class="h-24 w-24 object-contain transition-transform group-hover:scale-110">
+                                <img x-show="item.id === 'transactions'" src="{{ asset('images/transaction.png') }}" alt="Transaksi"
+                                    class="h-24 w-24 object-contain transition-transform group-hover:scale-110">
+                                <img x-show="item.id === 'wallet'" src="{{ asset('images/wallet.png') }}" alt="Dompet"
+                                    class="h-24 w-24 object-contain transition-transform group-hover:scale-110">
+                                <img x-show="item.id === 'withdraw'" src="{{ asset('images/withdraw.png') }}" alt="Tarik Saldo"
                                     class="h-24 w-24 object-contain transition-transform group-hover:scale-110">
                                 <h3 class="text-xs font-bold uppercase tracking-wide leading-tight"
                                     :class="item.variant === 'primary' ? 'text-primary-foreground' : 'text-slate-700'"
@@ -233,7 +295,11 @@
                 activeAgentsThisMonth: {{ $stats['activeAgentsThisMonth'] ?? 0 }},
                 newAgentsThisMonth: {{ $stats['newAgentsThisMonth'] ?? 0 }},
                 nextRewardPoints: 10000,
-                nextRewardName: 'Voucher Pulsa 50K'
+                nextRewardName: 'Voucher Pulsa 50K',
+                commissionMTD: {{ $stats['commissionMTD'] ?? 0 }},
+                commissionYTD: {{ $stats['commissionYTD'] ?? 0 }},
+                currentMonth: '',
+                currentYear: ''
             },
             portalType: '{{ $portalType ?? "freelance" }}',
             freelanceId: '{{ $user->id ?? "" }}',
@@ -266,6 +332,27 @@
                     href: '{{ !empty($linkReferral) ? url("/dash/" . $linkReferral . "/points-history") : "#" }}',
                     variant: 'default',
                     iconSvg: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />'
+                },
+                {
+                    id: 'transactions',
+                    title: 'Riwayat Transaksi',
+                    href: '{{ url('/dash/' . $linkReferral . '/transactions') }}',
+                    variant: 'default',
+                    iconSvg: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />'
+                },
+                {
+                    id: 'wallet',
+                    title: 'Dompet',
+                    href: '{{ url('/dash/' . $linkReferral . '/wallet') }}',
+                    variant: 'default',
+                    iconSvg: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />'
+                },
+                {
+                    id: 'withdraw',
+                    title: 'Tarik Saldo',
+                    href: '{{ url('/dash/' . $linkReferral . '/withdraw') }}',
+                    variant: 'default',
+                    iconSvg: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12" />'
                 }
             ],
             toastVisible: false,
@@ -392,7 +479,11 @@
                     this.user.initials = this.getInitials(this.user.name);
                 }
 
-                renderHeader('dashboard');
+                // Get current month and year for display
+                const now = new Date();
+                const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                this.stats.currentMonth = monthNames[now.getMonth()] + ' ' + now.getFullYear();
+                this.stats.currentYear = now.getFullYear().toString();
 
                 setInterval(() => {
                     this.rewardsHighlightVisible = false;
