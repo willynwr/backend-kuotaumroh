@@ -410,8 +410,8 @@
                                         <div class="h-48 bg-cover bg-center" style="background-image: url('{{ asset('images/Telkomsel.png') }}');"></div>
                                     </div>
                                     <div class="flex flex-col h-full">
-                                        <div class="p-4 pb-0 flex-grow">
-                                            <p class="text-xs font-bold text-emerald-600 mb-1 uppercase tracking-wider">TELKOMSEL</p>
+                                        <div class="p-4 flex-grow">
+                                            <p class="text-xs text-gray-500 mb-1 uppercase tracking-wider">TELKOMSEL</p>
                                             <h3 class="font-bold text-base text-gray-900 mb-3 min-h-[3rem] leading-snug">Kuota 50GB - 12 Hari</h3>
                                             
                                             <div class="space-y-2 mb-4">
@@ -423,22 +423,16 @@
                                                 </div>
                                                 <div class="flex items-start gap-2.5">
                                                     <svg class="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                                     </svg>
                                                     <span class="text-sm text-gray-600 font-medium">12 Hari Masa Aktif</span>
                                                 </div>
                                             </div>
-                                        </div>
 
-                                        <div class="bg-gray-50 p-4 mt-auto border-t border-gray-100">
-                                             <div class="flex items-center gap-2 mb-1">
-                                                <span class="text-xs text-gray-400 line-through">Rp 410.000</span>
-                                                <span class="text-xs font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded border border-red-100">Hemat Rp 9.400</span>
-                                            </div>
-                                            <p class="text-xl font-extrabold text-gray-900 mb-3">Rp 400.600</p>
-                                            
-                                            <div class="block w-full text-center bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold py-3 px-4 rounded-xl shadow-sm hover:shadow-md transition-all active:scale-95">
-                                                AMBIL PAKET
+                                            <div class="border-t border-gray-100 pt-3 mt-auto">
+                                                <p class="text-sm text-gray-400 line-through mb-1">Rp 410.000</p>
+                                                <p class="text-2xl font-bold text-emerald-600 mb-2">Rp 400.600</p>
+                                                <p class="text-xs text-red-600 bg-red-50 px-3 py-1.5 rounded inline-block">Hemat Rp 9.400</p>
                                             </div>
                                         </div>
                                     </div>
@@ -451,8 +445,8 @@
                                         <div class="h-48 bg-cover bg-center" style="background-image: url('{{ asset('images/XL.png') }}');"></div>
                                     </div>
                                     <div class="flex flex-col h-full">
-                                        <div class="p-4 pb-0 flex-grow">
-                                            <p class="text-xs font-bold text-emerald-600 mb-1 uppercase tracking-wider">XL AXIATA</p>
+                                        <div class="p-4 flex-grow">
+                                            <p class="text-xs text-gray-500 mb-1 uppercase tracking-wider">XL AXIATA</p>
                                             <h3 class="font-bold text-base text-gray-900 mb-3 min-h-[3rem] leading-snug">Kuota 70GB - 17 Hari</h3>
                                             
                                             <div class="space-y-2 mb-4">
@@ -464,22 +458,16 @@
                                                 </div>
                                                 <div class="flex items-start gap-2.5">
                                                     <svg class="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                                     </svg>
                                                     <span class="text-sm text-gray-600 font-medium">17 Hari Masa Aktif</span>
                                                 </div>
                                             </div>
-                                        </div>
 
-                                        <div class="bg-gray-50 p-4 mt-auto border-t border-gray-100">
-                                             <div class="flex items-center gap-2 mb-1">
-                                                <span class="text-xs text-gray-400 line-through">Rp 510.000</span>
-                                                <span class="text-xs font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded border border-red-100">Hemat Rp 11.400</span>
-                                            </div>
-                                            <p class="text-xl font-extrabold text-gray-900 mb-3">Rp 498.600</p>
-                                            
-                                            <div class="block w-full text-center bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold py-3 px-4 rounded-xl shadow-sm hover:shadow-md transition-all active:scale-95">
-                                                AMBIL PAKET
+                                            <div class="border-t border-gray-100 pt-3 mt-auto">
+                                                <p class="text-sm text-gray-400 line-through mb-1">Rp 510.000</p>
+                                                <p class="text-2xl font-bold text-emerald-600 mb-2">Rp 498.600</p>
+                                                <p class="text-xs text-red-600 bg-red-50 px-3 py-1.5 rounded inline-block">Hemat Rp 11.400</p>
                                             </div>
                                         </div>
                                     </div>
@@ -493,8 +481,8 @@
                                         <div class="h-48 bg-cover bg-center" style="background-image: url('{{ asset('images/Indosat.png') }}');"></div>
                                     </div>
                                     <div class="flex flex-col h-full">
-                                        <div class="p-4 pb-0 flex-grow">
-                                            <p class="text-xs font-bold text-emerald-600 mb-1 uppercase tracking-wider">INDOSAT OOREDOO</p>
+                                        <div class="p-4 flex-grow">
+                                            <p class="text-xs text-gray-500 mb-1 uppercase tracking-wider">INDOSAT OOREDOO</p>
                                             <h3 class="font-bold text-base text-gray-900 mb-3 min-h-[3rem] leading-snug">Kuota 60GB - 15 Hari</h3>
                                             
                                             <div class="space-y-2 mb-4">
@@ -502,26 +490,20 @@
                                                     <svg class="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
                                                     </svg>
-                                                    <span class="text-sm text-gray-600 font-medium">58 GB Kuota Arab</span>
+                                                    <span class="text-sm text-gray-600 font-medium">50 GB Kuota Arab</span>
                                                 </div>
                                                 <div class="flex items-start gap-2.5">
                                                     <svg class="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                                     </svg>
                                                     <span class="text-sm text-gray-600 font-medium">15 Hari Masa Aktif</span>
                                                 </div>
                                             </div>
-                                        </div>
 
-                                        <div class="bg-gray-50 p-4 mt-auto border-t border-gray-100">
-                                             <div class="flex items-center gap-2 mb-1">
-                                                <span class="text-xs text-gray-400 line-through">Rp 450.000</span>
-                                                <span class="text-xs font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded border border-red-100">Hemat Rp 15.000</span>
-                                            </div>
-                                            <p class="text-xl font-extrabold text-gray-900 mb-3">Rp 435.000</p>
-                                            
-                                            <div class="block w-full text-center bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold py-3 px-4 rounded-xl shadow-sm hover:shadow-md transition-all active:scale-95">
-                                                AMBIL PAKET
+                                            <div class="border-t border-gray-100 pt-3 mt-auto">
+                                                <p class="text-sm text-gray-400 line-through mb-1">Rp 450.000</p>
+                                                <p class="text-2xl font-bold text-emerald-600 mb-2">Rp 435.000</p>
+                                                <p class="text-xs text-red-600 bg-red-50 px-3 py-1.5 rounded inline-block">Hemat Rp 15.000</p>
                                             </div>
                                         </div>
                                     </div>
@@ -535,8 +517,8 @@
                                         <div class="h-48 bg-cover bg-center" style="background-image: url('{{ asset('images/AXIS.png') }}');"></div>
                                     </div>
                                     <div class="flex flex-col h-full">
-                                        <div class="p-4 pb-0 flex-grow">
-                                            <p class="text-xs font-bold text-emerald-600 mb-1 uppercase tracking-wider">AXIS</p>
+                                        <div class="p-4 flex-grow">
+                                            <p class="text-xs text-gray-500 mb-1 uppercase tracking-wider">AXIS</p>
                                             <h3 class="font-bold text-base text-gray-900 mb-3 min-h-[3rem] leading-snug">Kuota 45GB - 10 Hari</h3>
                                             
                                             <div class="space-y-2 mb-4">
@@ -544,26 +526,20 @@
                                                     <svg class="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
                                                     </svg>
-                                                    <span class="text-sm text-gray-600 font-medium">44 GB Kuota Arab</span>
+                                                    <span class="text-sm text-gray-600 font-medium">45 GB Kuota Arab</span>
                                                 </div>
                                                 <div class="flex items-start gap-2.5">
                                                     <svg class="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                                     </svg>
                                                     <span class="text-sm text-gray-600 font-medium">10 Hari Masa Aktif</span>
                                                 </div>
                                             </div>
-                                        </div>
 
-                                        <div class="bg-gray-50 p-4 mt-auto border-t border-gray-100">
-                                             <div class="flex items-center gap-2 mb-1">
-                                                <span class="text-xs text-gray-400 line-through">Rp 380.000</span>
-                                                <span class="text-xs font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded border border-red-100">Hemat Rp 15.000</span>
-                                            </div>
-                                            <p class="text-xl font-extrabold text-gray-900 mb-3">Rp 365.000</p>
-                                            
-                                            <div class="block w-full text-center bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold py-3 px-4 rounded-xl shadow-sm hover:shadow-md transition-all active:scale-95">
-                                                AMBIL PAKET
+                                            <div class="border-t border-gray-100 pt-3 mt-auto">
+                                                <p class="text-sm text-gray-400 line-through mb-1">Rp 380.000</p>
+                                                <p class="text-2xl font-bold text-emerald-600 mb-2">Rp 365.000</p>
+                                                <p class="text-xs text-red-600 bg-red-50 px-3 py-1.5 rounded inline-block">Hemat Rp 15.000</p>
                                             </div>
                                         </div>
                                     </div>
