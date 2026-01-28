@@ -662,7 +662,7 @@ class DashboardController extends Controller
             $monthlyHistory = \App\Models\Pesanan::where('kategori_channel', 'agent')
                 ->where('channel_id', $user->id)
                 ->whereHas('pembayaran', function($query) {
-                    $query->whereIn('status_pembayaran', ['selesai', 'berhasil']);
+                    $query->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS']);
                 })
                 ->selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month, SUM(profit) as total_profit, COUNT(*) as total_transactions')
                 ->groupBy('month')
@@ -676,7 +676,7 @@ class DashboardController extends Controller
                 $details = \App\Models\Pesanan::where('kategori_channel', 'agent')
                     ->where('channel_id', $user->id)
                     ->whereHas('pembayaran', function($query) {
-                        $query->whereIn('status_pembayaran', ['selesai', 'berhasil']);
+                        $query->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS']);
                     })
                     ->with('produk:id,nama_paket')
                     ->whereRaw('DATE_FORMAT(created_at, "%Y-%m") = ?', [$monthData->month])
@@ -705,7 +705,7 @@ class DashboardController extends Controller
             $profitData['yearly_history'] = \App\Models\Pesanan::where('kategori_channel', 'agent')
                 ->where('channel_id', $user->id)
                 ->whereHas('pembayaran', function($query) {
-                    $query->whereIn('status_pembayaran', ['selesai', 'berhasil']);
+                    $query->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS']);
                 })
                 ->selectRaw('YEAR(created_at) as year, SUM(profit) as total_profit, COUNT(*) as total_transactions')
                 ->groupBy('year')
@@ -739,7 +739,7 @@ class DashboardController extends Controller
             $details = \App\Models\Pesanan::where('kategori_channel', 'agent')
                 ->where('channel_id', $user->id)
                 ->whereHas('pembayaran', function($query) {
-                    $query->whereIn('status_pembayaran', ['selesai', 'berhasil']);
+                    $query->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS']);
                 })
                 ->with('produk:id,nama_paket')
                 ->whereRaw('DATE_FORMAT(created_at, "%Y-%m") = ?', [$month])
@@ -832,6 +832,15 @@ class DashboardController extends Controller
             return redirect()->route('login')->with('error', 'Login gagal. Akun Anda belum terdaftar. Silakan daftar terlebih dahulu atau hubungi tim support.');
         }
 
+        // Initialize default profitData
+        $profitData = [
+            'current_balance' => 0,
+            'monthly_profit' => 0,
+            'yearly_profit' => 0,
+            'monthly_history' => [],
+            'yearly_history' => []
+        ];
+
         $viewData = [
             'user' => $data['user'],
             'linkReferral' => $linkReferral,
@@ -848,6 +857,67 @@ class DashboardController extends Controller
         if ($data['user'] instanceof \App\Models\Agent) {
             $user = $data['user'];
             
+            // --- Logic for Profit Data (Graph) ---
+            $profitData['current_balance'] = $user->saldo ?? 0;
+            $profitData['monthly_profit'] = $user->saldo_bulan ?? 0;
+            $profitData['yearly_profit'] = $user->saldo_tahun ?? 0;
+            
+            // Ambil history profit per bulan dari pesanan
+            $monthlyHistory = \App\Models\Pesanan::where('kategori_channel', 'agent')
+                ->where('channel_id', $user->id)
+                ->whereHas('pembayaran', function($query) {
+                    $query->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS']);
+                })
+                ->selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month, SUM(profit) as total_profit, COUNT(*) as total_transactions')
+                ->groupBy('month')
+                ->orderBy('month', 'DESC')
+                ->limit(12)
+                ->get();
+            
+            // Untuk setiap bulan, ambil detail transaksinya dan restructure ke array
+            $monthlyHistoryArray = [];
+            foreach ($monthlyHistory as $monthData) {
+                // Simplified details fetch for graph (optional, mainly used in history-profit page, but let's keep it consistent)
+                $details = \App\Models\Pesanan::where('kategori_channel', 'agent')
+                    ->where('channel_id', $user->id)
+                    ->whereHas('pembayaran', function($query) {
+                        $query->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS']);
+                    })
+                    ->with('produk:id,nama_paket')
+                    ->whereRaw('DATE_FORMAT(created_at, "%Y-%m") = ?', [$monthData->month])
+                    ->select('id', 'produk_id', 'profit', 'created_at')
+                    ->orderBy('created_at', 'DESC')
+                    ->get()
+                    ->map(function($pesanan) {
+                        return [
+                            'id' => $pesanan->id,
+                            'product' => $pesanan->produk->nama_paket ?? '-',
+                            'profit' => $pesanan->profit,
+                            'date' => $pesanan->created_at->format('d M Y')
+                        ];
+                    });
+                
+                $monthlyHistoryArray[] = [
+                    'month' => $monthData->month,
+                    'total_profit' => $monthData->total_profit,
+                    'total_transactions' => $monthData->total_transactions,
+                    'details' => $details
+                ];
+            }
+            $profitData['monthly_history'] = $monthlyHistoryArray;
+            
+            // Ambil history profit per tahun dari pesanan
+            $profitData['yearly_history'] = \App\Models\Pesanan::where('kategori_channel', 'agent')
+                ->where('channel_id', $user->id)
+                ->whereHas('pembayaran', function($query) {
+                    $query->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS']);
+                })
+                ->selectRaw('YEAR(created_at) as year, SUM(profit) as total_profit, COUNT(*) as total_transactions')
+                ->groupBy('year')
+                ->orderBy('year', 'DESC')
+                ->get();
+
+            // --- Logic for Referral Orders Table ---
             // Ambil pesanan agent ini
             $referralOrders = \App\Models\Pesanan::where('kategori_channel', 'agent')
                 ->where('channel_id', $user->id)
@@ -891,6 +961,9 @@ class DashboardController extends Controller
             $viewData['pendingCommission'] = $pendingCommission;
             $viewData['referralOrders'] = $referralData;
         }
+
+        // Add profitData to viewData
+        $viewData['profitData'] = $profitData;
 
         return view($data['viewPath'] . '.referrals', $viewData);
     }

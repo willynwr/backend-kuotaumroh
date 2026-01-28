@@ -15,11 +15,11 @@ return [
     | External API URL
     |--------------------------------------------------------------------------
     |
-    | URL API eksternal kuotaumroh.id untuk proxy requests
+    | URL API eksternal tokodigi.id untuk proxy requests
     | Digunakan oleh BulkPaymentService untuk forward request
     |
     */
-    'external_api_url' => env('EXTERNAL_API_URL', 'https://kuotaumroh.id/api'),
+    'external_api_url' => env('EXTERNAL_API_URL', 'https://tokodigi.id/api'),
 
     /*
     |--------------------------------------------------------------------------

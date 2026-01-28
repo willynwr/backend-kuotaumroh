@@ -155,6 +155,17 @@
         
         init() {
           console.log('historyProfitApp initialized');
+          // Start watcher to ensure we have a valid year selected
+          this.$watch('monthlyHistory', (value) => {
+             if (this.availableYears.length > 0 && !this.availableYears.includes(this.selectedYear)) {
+                this.selectedYear = this.availableYears[0];
+             }
+          });
+          
+          // Initial check
+          if (this.availableYears.length > 0 && !this.availableYears.includes(this.selectedYear)) {
+             this.selectedYear = this.availableYears[0];
+          }
         },
         
         get availableYears() {
