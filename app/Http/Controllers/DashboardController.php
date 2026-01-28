@@ -1190,4 +1190,26 @@ class DashboardController extends Controller
             'agent' => $agent
         ], 201);
     }
+
+    /**
+     * Halaman Transactions
+     */
+    public function transactions($linkReferral)
+    {
+        $data = $this->getUserByLinkReferral($linkReferral);
+        if (!$data) {
+            return redirect()->route('login')->with('error', 'Login gagal. Akun Anda belum terdaftar. Silakan daftar terlebih dahulu atau hubungi tim support.');
+        }
+
+        // TODO: Get actual transactions from database
+        $transactions = [];
+
+        return view($data['viewPath'] . '.transactions', [
+            'user' => $data['user'],
+            'linkReferral' => $linkReferral,
+            'portalType' => $data['portalType'],
+            'stats' => $this->getStats($data['user']),
+            'transactions' => $transactions
+        ]);
+    }
 }
