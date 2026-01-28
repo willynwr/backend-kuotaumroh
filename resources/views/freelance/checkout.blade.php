@@ -159,10 +159,16 @@
                             </div>
                             
                             <!-- Catatan -->
-                            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                                <p class="text-sm text-yellow-800 font-medium mb-2">Catatan Penting:</p>
-                                <p class="text-sm text-yellow-700">Harap membayar sesuai nominal (termasuk kode unik).</p>
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <p class="text-sm text-blue-800 font-medium mb-2">Catatan Penting:</p>
+                                <p class="text-sm text-blue-700">Harap membayar sesuai nominal (termasuk kode unik).</p>
                             </div>
+
+                            <!-- Check Payment Button -->
+                            <button @click="handleCheckPayment()" class="w-full inline-flex items-center justify-center gap-2 rounded-md bg-primary text-primary-foreground h-11 px-4 py-2 hover:bg-primary/90 font-medium mt-4">
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                <span x-text="paymentStatus === 'pending' ? 'Cek Status Pembayaran' : (paymentStatus === 'verifying' ? 'Memeriksa...' : 'Terkonfirmasi')"></span>
+                            </button>
                             
                             <!-- QR Code -->
                             <div class="flex justify-center">
@@ -173,11 +179,15 @@
                             
                             <!-- QRIS Toggle -->
                             <template x-if="qrisStaticString">
-                                <div class="flex items-center justify-center gap-2">
-                                    <label class="flex items-center gap-2 text-sm cursor-pointer">
-                                        <input type="checkbox" x-model="useStaticQris" class="rounded">
-                                        <span>Gunakan QRIS Static</span>
-                                    </label>
+                                <div class="flex flex-col items-center justify-center gap-3 mt-4">
+                                    <p class="text-xs text-muted-foreground text-center px-4">
+                                        Jika pembayaran QRIS di atas gagal <br> (khususnya BCA Mobile), <br> klik tombol di bawah:
+                                    </p>
+                                    <button @click="useStaticQris = !useStaticQris"
+                                        class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2"
+                                        :class="useStaticQris ? 'bg-primary text-primary-foreground hover:bg-primary/90 border-primary' : ''">
+                                        <span x-text="useStaticQris ? 'Kembali ke QRIS Utama' : 'QRIS Alternatif'"></span>
+                                    </button>
                                 </div>
                             </template>
 
@@ -209,10 +219,6 @@
 
                             <!-- Check Button & Instructions -->
                             <div class="space-y-4">
-                                <button @click="handleCheckPayment()" class="w-full inline-flex items-center justify-center gap-2 rounded-md bg-primary text-primary-foreground h-11 px-4 py-2 hover:bg-primary/90 font-medium">
-                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                    <span x-text="paymentStatus === 'pending' ? 'Cek Status Pembayaran' : (paymentStatus === 'verifying' ? 'Memeriksa...' : 'Terkonfirmasi')"></span>
-                                </button>
                                 
                                 <div>
                                     <h4 class="text-sm font-semibold mb-3">Cara Pembayaran</h4>
@@ -402,13 +408,67 @@ function checkoutApp() {
 
         async init() {
             this.$watch('useStaticQris', () => this.generateQRCode());
+            
+            // Watch for payment status changes and persist to localStorage
+            this.$watch('paymentStatus', (newStatus) => {
+                console.log('📊 Payment status changed to:', newStatus);
+                this.savePaymentState();
+            });
+            
             const saved = localStorage.getItem('pendingOrder');
             if (!saved) { window.location.href = '{{ route("freelance.order") }}'; return; }
             const data = JSON.parse(saved);
             this.orderData = { items: data.items || [], total: data.subtotal || data.total || 0, platformFee: data.platformFee || 0, paymentMethod: data.paymentMethod || 'qris', refCode: data.refCode || '{{ $freelance->id ?? 1 }}', scheduleDate: data.scheduleDate || null, isBulk: true };
-            if (data.paymentId) { this.paymentId = data.paymentId; this.batchId = data.batchId; await this.fetchQrisData(); }
+            
+            // Restore payment status dari localStorage jika ada
+            if (data.paymentStatus && ['pending', 'verifying', 'activated'].includes(data.paymentStatus)) {
+                this.paymentStatus = data.paymentStatus;
+                console.log('♻️ Restored payment status:', this.paymentStatus);
+            }
+            
+            if (data.paymentId) { 
+                this.paymentId = data.paymentId; 
+                this.batchId = data.batchId; 
+                await this.fetchQrisData(); 
+                // Auto-verify payment saat page load
+                console.log('🔄 Auto-verifying payment on page load...');
+                await this.autoVerifyPayment();
+            }
             else { await this.createPayment(); }
             this.startTimer(); this.startPaymentPolling();
+        },
+        
+        // Save payment state ke localStorage
+        savePaymentState() {
+            const saved = localStorage.getItem('pendingOrder');
+            if (saved) {
+                const orderData = JSON.parse(saved);
+                orderData.paymentStatus = this.paymentStatus;
+                localStorage.setItem('pendingOrder', JSON.stringify(orderData));
+                console.log('💾 Payment status saved:', this.paymentStatus);
+            }
+        },
+        
+        // Auto-verify payment saat page load
+        async autoVerifyPayment() {
+            if (!this.paymentId) return;
+            try {
+                console.log('🔍 Auto-verifying payment:', this.paymentId);
+                const v = await verifyPayment(this.paymentId);
+                if (v.success && ['berhasil','success','sukses'].includes(v.status?.toLowerCase())) { 
+                    console.log('✅ Auto-verify found payment successful!');
+                    this.setPaymentActivated(); 
+                    return; 
+                }
+                const r = await getPaymentStatus(this.paymentId);
+                const d = Array.isArray(r) ? r[0] : (r.data || r);
+                if (d?.id) {
+                    const st = (d.status || d.payment_status || '').toLowerCase();
+                    console.log('📊 Auto-verify - Current status:', st);
+                    if (['success','sukses','paid','berhasil','completed'].includes(st)) this.setPaymentActivated();
+                    else if (['expired','failed'].includes(st)) { this.paymentStatus = 'expired'; localStorage.removeItem('pendingOrder'); }
+                }
+            } catch(e) { console.error('❌ Auto-verify failed:', e); }
         },
 
         get totalAmount() { return this.paymentAmount > 0 ? this.paymentAmount : this.orderData.total + (this.orderData.uniqueCode || this.orderData.paymentUnique || this.orderData.platformFee); },
@@ -451,8 +511,9 @@ function checkoutApp() {
         },
 
         qrCodeInstance: null,
+        async fetchStaticDynamicQris() { try { const a = this.totalAmount; const r = await fetch(`/api/umroh/qris/static-dynamic?amount=${a}`); const d = await r.json(); if (d.success) this.qrisStaticDynamicString = d.qris_string; } catch(e){ console.error(e); } },
         generateQRCode() {
-            const qris = this.useStaticQris ? this.qrisStaticString : this.qrisString;
+            const qris = this.useStaticQris ? (this.qrisStaticDynamicString || this.qrisStaticString) : this.qrisString;
             if (!qris) return;
             const c = document.getElementById('qrContainer');
             if (!c) return;
@@ -477,7 +538,20 @@ function checkoutApp() {
             } catch(e) { console.error(e); }
         },
 
-        startTimer() { this.timerInterval = setInterval(() => { if (this.timeRemaining <= 1) { clearInterval(this.timerInterval); clearInterval(this.paymentCheckInterval); this.paymentStatus = 'expired'; } else this.timeRemaining--; }, 1000); },
+        startTimer() { 
+            this.timerInterval = setInterval(() => { 
+                if (this.timeRemaining <= 1) { 
+                    clearInterval(this.timerInterval); 
+                    clearInterval(this.paymentCheckInterval); 
+                    if (this.paymentStatus === 'activated') {
+                        localStorage.removeItem('pendingOrder');
+                    } else {
+                        this.paymentStatus = 'expired'; 
+                        localStorage.removeItem('pendingOrder');
+                    }
+                } else this.timeRemaining--; 
+            }, 1000); 
+        },
 
         async createPayment() {
             try {
@@ -542,9 +616,11 @@ function checkoutApp() {
         setPaymentActivated() {
             if (this.paymentStatus === 'activated') return;
             this.paymentStatus = 'activated';
+            // Save final state
+            this.savePaymentState();
             this.showToast('Paket Aktif! 🎉', 'Pembayaran berhasil!');
-            clearInterval(this.timerInterval); clearInterval(this.paymentCheckInterval);
-            localStorage.removeItem('pendingOrder');
+            // Keep timer running
+            if (this.paymentCheckInterval) clearInterval(this.paymentCheckInterval);
         },
 
         showToast(t, m) { this.toastTitle = t; this.toastMessage = m; this.toastVisible = true; setTimeout(() => this.toastVisible = false, 3000); },
