@@ -191,6 +191,21 @@ function orderApp() {
 
     // Lifecycle
     async init() {
+      // Clear previous completed order if exists
+      const savedOrder = localStorage.getItem('pendingOrder');
+      if (savedOrder) {
+        try {
+          const parsed = JSON.parse(savedOrder);
+          if (parsed.paymentStatus === 'activated' || parsed.paymentStatus === 'expired') {
+            console.log('🧹 Clearing completed/expired order from storage');
+            localStorage.removeItem('pendingOrder');
+          }
+        } catch (e) {
+          console.error('Error parsing saved order:', e);
+          localStorage.removeItem('pendingOrder');
+        }
+      }
+
       // Load packages from API when component initializes
       await this.loadAllPackages();
     },
@@ -199,6 +214,21 @@ function orderApp() {
     async loadAllPackages() {
       try {
         this.packagesLoading = true;
+        
+        // Check Session Storage first to avoid 429
+        const cachedPackages = sessionStorage.getItem('cachedPackages');
+        if (cachedPackages) {
+            const { timestamp, data } = JSON.parse(cachedPackages);
+            const now = Date.now();
+            // Cache valid for 5 minutes
+            if (now - timestamp < 5 * 60 * 1000) {
+                console.log('📦 Using cached packages');
+                this.processPackagesData(data);
+                this.packagesLoading = false;
+                return;
+            }
+        }
+
         // Selalu gunakan bulk_umroh untuk dapat harga bulk
         const catalogRefCode = 'bulk_umroh';
         const response = await fetch(`${API_BASE_URL}/api/proxy/umroh/package?ref_code=${catalogRefCode}`);
@@ -209,6 +239,24 @@ function orderApp() {
         const data = await response.json();
         console.log('📦 API Response:', data);
         
+        // Save to cache
+        sessionStorage.setItem('cachedPackages', JSON.stringify({
+            timestamp: Date.now(),
+            data: data
+        }));
+
+        this.processPackagesData(data);
+        this.packagesLoading = false;
+      } catch (error) {
+        console.error('Error loading packages:', error);
+        this.allPackages = [];
+        this.packages = [];
+        this.packagesLoading = false;
+        this.showToast('Error', 'Gagal memuat data paket. Silakan refresh halaman.');
+      }
+    },
+
+    processPackagesData(data) {
         // Response langsung array, tidak wrapped
         if (Array.isArray(data)) {
           this.allPackages = data.map(pkg => {
@@ -250,14 +298,6 @@ function orderApp() {
           this.packages = this.allPackages;
           console.log('📦 Mapped packages:', this.packages.length);
         }
-        this.packagesLoading = false;
-      } catch (error) {
-        console.error('Error loading packages:', error);
-        this.allPackages = [];
-        this.packages = [];
-        this.packagesLoading = false;
-        this.showToast('Error', 'Gagal memuat data paket');
-      }
     },
 
     // Methods
