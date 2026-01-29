@@ -845,7 +845,7 @@
                             packageName: i.package_name || i.package_id || 'Umroh Package',
                             packageType: 'UMROH',
                             quota: '-', // Data kuota tidak tersimpan di local detail
-                            price: parseInt(i.price || data.total_amount || 0)
+                            price: parseInt(i.price || 0)
                         }));
                         
                         // Use the main data for metadata
@@ -897,20 +897,35 @@
                     this.invoice.orderedBy.type = 'Individual';
                     this.invoice.orderedBy.phone = items.length > 0 ? items[0].msisdn : (item.msisdn || '');
 
-                    // Set items
-                    this.invoice.items = items;
-
                     // Totals
                     // payment_amount sudah termasuk kode unik, jadi:
                     // Total = payment_amount
                     // Kode Unik = payment_unique
                     // Subtotal = Total - Kode Unik
-                    const totalPayment = parseInt(item.payment_amount || item.total_payment || item.total_amount || 0);
-                    const uniqueCode = parseInt(item.payment_unique || item.unique_code || 0);
+                    const detail = item.detail || item.detail_pesanan || {};
+                    const uniqueCode = parseInt(item.payment_unique || item.unique_code || detail.payment_unique || detail.unique_code || 0);
+                    let totalPayment = parseInt(item.payment_amount || item.total_payment || item.total_amount || detail.total_payment || detail.total_amount || 0);
                     
+                    const itemsSum = items.reduce((sum, it) => sum + (parseInt(it.price || 0) || 0), 0);
+                    let subtotal = totalPayment > 0 ? (totalPayment - uniqueCode) : itemsSum;
+                    
+                    if (subtotal < 0) subtotal = itemsSum;
+                    if (!totalPayment && itemsSum > 0) totalPayment = itemsSum + uniqueCode;
+                    
+                    // Jika hanya 1 item dan harga item belum ada / masih total (termasuk kode unik),
+                    // sesuaikan harga item agar sesuai subtotal.
+                    if (items.length === 1 && subtotal > 0) {
+                        const currentPrice = parseInt(items[0].price || 0);
+                        if (currentPrice === 0 || (totalPayment && currentPrice === totalPayment)) {
+                            items[0].price = subtotal;
+                        }
+                    }
+                    
+                    // Set items
+                    this.invoice.items = items;
                     this.invoice.total = totalPayment;
                     this.invoice.platformFee = uniqueCode;
-                    this.invoice.subtotal = totalPayment - uniqueCode;
+                    this.invoice.subtotal = subtotal;
                     this.invoice.notes = 'Terima kasih telah menggunakan layanan Kuotaumroh.id';
                     
                     console.log('✅ Invoice parsed:', this.invoice);
