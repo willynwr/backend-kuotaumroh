@@ -109,7 +109,7 @@
     </div>
     
     <!-- Table Header -->
-    <div class="px-6 py-3 border-b bg-muted/30">
+    <div class="px-6 py-3 border-b bg-muted/30 hidden sm:block">
       <div class="flex items-center">
         <span class="w-1/2 text-sm font-medium text-muted-foreground">Nomor HP</span>
         <span class="w-1/2 text-sm font-medium text-muted-foreground">Paket</span>
@@ -119,11 +119,11 @@
     <!-- Number List with Package Dropdowns -->
     <div class="max-h-[50vh] overflow-y-auto">
       <template x-for="num in getEditingNumbers()" :key="num">
-        <div class="flex items-center px-6 py-3 border-b hover:bg-muted/10">
+        <div class="flex flex-col sm:flex-row sm:items-center px-6 py-3 border-b hover:bg-muted/10 gap-2 sm:gap-0">
           <!-- Phone Number -->
-          <span class="w-1/2 font-mono text-sm" x-text="num"></span>
+          <span class="w-full sm:w-1/2 font-mono text-sm" x-text="num"></span>
           <!-- Package Picker Button -->
-          <div class="w-1/2 flex items-center gap-2">
+          <div class="w-full sm:w-1/2 flex items-center gap-2">
             <button
               @click="openSingleNumberPackagePicker(editingProvider, num)"
               class="flex-1 h-9 rounded-md border border-input bg-background px-3 text-sm text-left hover:bg-muted/50 flex items-center justify-between"
