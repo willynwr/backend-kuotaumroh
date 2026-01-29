@@ -30,6 +30,12 @@ Route::middleware('web')->group(function () {
     Route::post('/auth/logout', [App\Http\Controllers\Api\AuthController::class, 'destroySession']);
 });
 
+// Admin API Routes (protected with Sanctum)
+Route::middleware('auth:sanctum')->prefix('admin')->group(function () {
+    Route::get('/me', [App\Http\Controllers\Api\AdminController::class, 'getCurrentAdmin']);
+    Route::post('/logout', [App\Http\Controllers\Api\AdminController::class, 'logout']);
+});
+
 /*
 |--------------------------------------------------------------------------
 | Proxy API Routes (untuk menghindari CORS)
@@ -69,6 +75,10 @@ Route::prefix('umroh')->group(function () {
     // 2. POST Order Bulk Payment
     // POST /api/umroh/bulkpayment
     Route::post('/bulkpayment', [UmrohPaymentController::class, 'createBulkPayment']);
+    
+    // 3. POST Order Individual Payment (untuk homepage / public user)
+    // POST /api/umroh/payment
+    Route::post('/payment', [UmrohPaymentController::class, 'createIndividualPayment']);
 
     // 4. GET Order Bulk History
     // GET /api/umroh/bulkpayment?agent_id=600001
@@ -81,6 +91,10 @@ Route::prefix('umroh')->group(function () {
     // Payment Status & Verification
     // GET /api/umroh/payment/status?id=123
     Route::get('/payment/status', [UmrohPaymentController::class, 'getPaymentStatus']);
+
+    // GET /api/umroh/payment/local-detail?id=123
+    // Get payment detail from local database (with updated status)
+    Route::get('/payment/local-detail', [UmrohPaymentController::class, 'getLocalDetail']);
 
     // POST /api/umroh/payment/verify
     Route::post('/payment/verify', [UmrohPaymentController::class, 'verifyPayment']);

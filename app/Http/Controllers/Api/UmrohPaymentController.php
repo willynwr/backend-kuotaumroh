@@ -185,6 +185,92 @@ class UmrohPaymentController extends Controller
     }
 
     /**
+     * GET /api/umroh/payment/local-detail
+     * 
+     * Get payment detail from local database (not from external API)
+     * Use this for invoice to get the updated status from local DB
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getLocalDetail(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'id' => 'required', // Allow both string and integer
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $paymentId = $request->input('id');
+            $detail = $this->paymentService->getLocalPaymentDetail($paymentId);
+
+            return response()->json($detail);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil detail pembayaran',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * POST /api/umroh/payment
+     * 
+     * Create individual payment order (untuk homepage / public user)
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function createIndividualPayment(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'payment_method' => 'required|string|in:QRIS,SALDO,qris,saldo',
+            'detail' => 'nullable|string',
+            'ref_code' => 'required|string|max:50',
+            'msisdn' => 'required|string', // STRING untuk individual
+            'package_id' => 'required|string', // STRING untuk individual
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $result = $this->paymentService->createIndividualPayment($request->all());
+
+            return response()->json($result, 201);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 400);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal membuat individual payment',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * GET /api/umroh/payment/status
      * 
      * Get payment status (for polling)

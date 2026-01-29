@@ -103,10 +103,13 @@
             },
         }
     </script>
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
 </head>
 
 <body class="min-h-screen bg-background overflow-x-hidden">
-    <div x-data="checkoutApp()">
+    <div x-data="checkoutApp()" x-init="init()">
 
         <!-- Header -->
         <header class="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
@@ -119,53 +122,63 @@
 
                 <!-- Status Pembayaran Badge - Hidden on mobile, shown on desktop -->
                 <div class="hidden sm:flex items-center gap-2">
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold"
-                        :class="{
-                            'bg-yellow-100 text-yellow-700': paymentStatus === 'pending',
-                            'bg-green-100 text-green-700': paymentStatus === 'success',
-                            'bg-red-100 text-red-700': paymentStatus === 'expired'
-                        }">
-                        <span class="w-2 h-2 rounded-full"
-                            :class="{
-                                'bg-yellow-500': paymentStatus === 'pending',
-                                'bg-green-500': paymentStatus === 'success',
-                                'bg-red-500': paymentStatus === 'expired'
-                            }"></span>
-                        <span x-text="paymentStatus === 'pending' ? 'Menunggu Pembayaran' : (paymentStatus === 'success' ? 'Pembayaran Berhasil' : 'Pembayaran Kedaluwarsa')"></span>
-                    </span>
-                </div>
-            </div>
-        </header>
-
-        <!-- Main Content -->
-        <main class="container mx-auto py-6 animate-fade-in px-4">
-
-            <!-- Success State -->
-            <div x-show="paymentStatus === 'success'" x-cloak class="flex items-center justify-center min-h-[60vh]">
-                <div class="max-w-md w-full rounded-lg border bg-white shadow-sm">
-                    <div class="p-6 text-center space-y-4">
-                        <div class="flex justify-center">
-                            <div class="rounded-full bg-green-500/10 p-4">
-                                <svg class="h-16 w-16 text-green-500" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
+                    <!-- Step Indicator Desktop -->
+                    <div class="step-indicator flex items-center gap-1">
+                        <!-- Step 1: Pilih -->
+                        <div class="flex items-center">
+                            <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs bg-green-500 text-white">
+                                <i class="fas fa-check"></i>
                             </div>
+                            <span class="text-[10px] ml-1 text-gray-600">Pilih</span>
                         </div>
-                        <h2 class="text-2xl font-bold">Pembayaran Berhasil!</h2>
-                        <p class="text-muted-foreground">
-                            Pesanan Anda sedang diproses. Paket akan segera diaktifkan.
-                        </p>
-                        <div class="pt-4">
-                            <button @click="window.location.href = '{{ route('welcome') }}'"
-                                class="w-full inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground h-10 px-4 py-2 hover:bg-primary/90 transition-colors">
-                                Kembali ke Beranda
-                            </button>
+                        <div class="w-4 h-0.5 bg-green-500"></div>
+                        
+                        <!-- Step 2: Bayar -->
+                        <div class="flex items-center">
+                            <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs"
+                                :class="paymentStatus === 'pending' ? 'bg-yellow-500 text-white animate-pulse' : 'bg-green-500 text-white'">
+                                <i class="fas" :class="paymentStatus === 'pending' ? 'fa-clock' : 'fa-check'"></i>
+                            </div>
+                            <span class="text-[10px] ml-1 text-gray-600">Bayar</span>
+                        </div>
+                        <div class="w-4 h-0.5" :class="['verifying', 'activated'].includes(paymentStatus) ? 'bg-green-500' : 'bg-gray-300'"></div>
+                        
+                        <!-- Step 3: Verifikasi Pembayaran -->
+                        <div class="flex items-center">
+                            <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs"
+                                :class="paymentStatus === 'verifying' ? 'bg-yellow-500 text-white animate-pulse' : (paymentStatus === 'activated' ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-500')">
+                                <i class="fas" :class="paymentStatus === 'verifying' ? 'fa-spinner fa-spin' : (paymentStatus === 'activated' ? 'fa-check' : 'fa-shield-alt')"></i>
+                            </div>
+                            <span class="text-[10px] ml-1 text-gray-600 whitespace-nowrap">Verifikasi</span>
+                        </div>
+                        <div class="w-4 h-0.5" :class="paymentStatus === 'activated' ? 'bg-green-500' : 'bg-gray-300'"></div>
+                        
+                        <!-- Step 4: Paket Aktif -->
+                        <div class="flex items-center">
+                            <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs"
+                                :class="paymentStatus === 'activated' ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-500'">
+                                <i class="fas" :class="paymentStatus === 'activated' ? 'fa-check' : 'fa-box'"></i>
+                            </div>
+                            <span class="text-[10px] ml-1 text-gray-600 whitespace-nowrap">Paket Aktif</span>
                         </div>
                     </div>
                 </div>
             </div>
+        </header>
+
+        <!-- Loading Skeleton (shown before QR ready) -->
+        <div x-show="isLoading" x-cloak class="container mx-auto py-6 px-4">
+            <div class="flex items-center justify-center min-h-[60vh]">
+                <div class="text-center space-y-4">
+                    <div class="w-20 h-20 mx-auto border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                    <p class="text-lg font-medium text-gray-700">Memuat pembayaran...</p>
+                    <p class="text-sm text-muted-foreground">Mohon tunggu sebentar</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content (shown after QR ready) -->
+        <main x-show="!isLoading" x-cloak class="container mx-auto py-6 animate-fade-in px-4">
 
             <!-- Expired State -->
             <div x-show="paymentStatus === 'expired'" x-cloak class="flex items-center justify-center min-h-[60vh]">
@@ -195,8 +208,8 @@
             </div>
 
             
-            <!-- Pending State (Payment Page) -->
-            <div x-show="paymentStatus === 'pending'" x-cloak class="overflow-hidden">
+            <!-- Pending/Verifying/Activated State (Payment Page) - Show checkout page -->
+            <div x-show="['pending', 'verifying', 'activated'].includes(paymentStatus)" x-cloak class="overflow-hidden">
                 <!-- Page Header -->
                 <div class="mb-6">
                     <div class="flex items-center gap-2 text-sm text-muted-foreground mb-2 flex-wrap">
@@ -204,8 +217,8 @@
                         <span>/</span>
                         <span class="text-foreground">Pembayaran</span>
                     </div>
-                    <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">Pembayaran</h1>
-                    <p class="text-muted-foreground mt-2 text-sm sm:text-base">Selesaikan pembayaran Anda</p>
+                    <h1 class="text-2xl sm:text-3xl font-bold tracking-tight" x-text="paymentStatus === 'pending' ? 'Pembayaran' : (paymentStatus === 'verifying' ? 'Verifikasi Pembayaran' : 'Paket Aktif')"></h1>
+                    <p class="text-muted-foreground mt-2 text-sm sm:text-base" x-text="paymentStatus === 'pending' ? 'Selesaikan pembayaran Anda' : (paymentStatus === 'verifying' ? 'Pembayaran sedang diverifikasi...' : 'Paket kuota umroh Anda sudah aktif!')"></p>
                 </div>
 
                 <div class="grid gap-6 lg:grid-cols-3">
@@ -220,7 +233,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
                                     </svg>
-                                    Scan QR Code QRIS
+                                    <span x-text="paymentStatus === 'pending' ? 'Scan QR Code QRIS' : (paymentStatus === 'verifying' ? 'Verifikasi Pembayaran' : 'Paket Aktif ✓')"></span>
                                 </h3>
                                 
                                 <!-- Payment ID Info -->
@@ -231,8 +244,8 @@
                                             <p class="text-sm font-mono text-black-900 font-semibold truncate" x-text="paymentId"></p>
                                         </div>
                                         <button @click="navigator.clipboard.writeText(paymentId); showToast('Tersalin', 'Payment ID berhasil disalin')"
-                                            class="ml-2 h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-blue-100 transition-colors flex-shrink-0">
-                                            <svg class="h-4 w-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            class="ml-2 h-10 w-10 inline-flex items-center justify-center rounded-md hover:bg-blue-100 transition-colors flex-shrink-0">
+                                            <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                                             </svg>
@@ -241,64 +254,118 @@
                                     <p class="text-xs text-black-600 mt-2">Simpan ID ini untuk verifikasi pembayaran</p>
                                 </div>
                                 
-                                <!-- Status Pembayaran Badge - Mobile Only (shown below Payment ID) -->
-                                <div class="sm:hidden mt-3">
-                                    <div class="flex items-center justify-center">
-                                        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold"
-                                            :class="{
-                                                'bg-yellow-100 text-yellow-700': paymentStatus === 'pending',
-                                                'bg-green-100 text-green-700': paymentStatus === 'success',
-                                                'bg-red-100 text-red-700': paymentStatus === 'expired'
-                                            }">
-                                            <span class="w-2 h-2 rounded-full"
-                                                :class="{
-                                                    'bg-yellow-500': paymentStatus === 'pending',
-                                                    'bg-green-500': paymentStatus === 'success',
-                                                    'bg-red-500': paymentStatus === 'expired'
-                                                }"></span>
-                                            <span x-text="paymentStatus === 'pending' ? 'Menunggu Pembayaran' : (paymentStatus === 'success' ? 'Pembayaran Berhasil' : 'Pembayaran Kedaluwarsa')"></span>
-                                        </span>
+                                <!-- Status Pembayaran Step Indicator - Mobile Only (shown below Payment ID) -->
+                                <div class="sm:hidden mt-4">
+                                    <div class="step-indicator flex justify-between items-center px-2">
+                                        <!-- Step 1: Pilih -->
+                                        <div class="step-item text-center flex-1">
+                                            <div class="w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-1 bg-green-500 text-white">
+                                                <i class="fas fa-check text-xs"></i>
+                                            </div>
+                                            <span class="text-[10px] font-medium text-gray-600">Pilih</span>
+                                        </div>
+                                        
+                                        <!-- Connector 1-2 -->
+                                        <div class="flex-1 h-0.5 bg-green-500 -mt-4"></div>
+                                        
+                                        <!-- Step 2: Bayar -->
+                                        <div class="step-item text-center flex-1">
+                                            <div class="w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-1"
+                                                :class="paymentStatus === 'pending' ? 'bg-yellow-500 text-white animate-pulse' : 'bg-green-500 text-white'">
+                                                <i class="fas text-xs" :class="paymentStatus === 'pending' ? 'fa-clock' : 'fa-check'"></i>
+                                            </div>
+                                            <span class="text-[10px] font-medium text-gray-600">Bayar</span>
+                                        </div>
+                                        
+                                        <!-- Connector 2-3 -->
+                                        <div class="flex-1 h-0.5 -mt-4" :class="['verifying', 'activated'].includes(paymentStatus) ? 'bg-green-500' : 'bg-gray-300'"></div>
+                                        
+                                        <!-- Step 3: Verifikasi -->
+                                        <div class="step-item text-center flex-1">
+                                            <div class="w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-1"
+                                                :class="paymentStatus === 'verifying' ? 'bg-yellow-500 text-white animate-pulse' : (paymentStatus === 'activated' ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-500')">
+                                                <i class="fas text-xs" :class="paymentStatus === 'verifying' ? 'fa-spinner fa-spin' : (paymentStatus === 'activated' ? 'fa-check' : 'fa-shield-alt')"></i>
+                                            </div>
+                                            <span class="text-[10px] font-medium text-gray-600">Verifikasi</span>
+                                        </div>
+                                        
+                                        <!-- Connector 3-4 -->
+                                        <div class="flex-1 h-0.5 -mt-4" :class="paymentStatus === 'activated' ? 'bg-green-500' : 'bg-gray-300'"></div>
+                                        
+                                        <!-- Step 4: Paket Aktif -->
+                                        <div class="step-item text-center flex-1">
+                                            <div class="w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-1"
+                                                :class="paymentStatus === 'activated' ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-500'">
+                                                <i class="fas text-xs" :class="paymentStatus === 'activated' ? 'fa-check' : 'fa-box'"></i>
+                                            </div>
+                                            <span class="text-[10px] font-medium text-gray-600">Paket Aktif</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="p-6 space-y-4">
+                            <div id="payment-summary" class="p-6 space-y-4">
+                                
+                                <!-- Detail Paket & Nomor (di atas catatan penting) -->
+                                <div class="bg-gradient-to-br from-purple-50 to-blue-50 border border-purple-100 rounded-lg p-3 text-center">
+                                    <template x-if="orderData.items && orderData.items.length > 0">
+                                        <div>
+                                            <p class="text-xl font-bold text-gray-800 mb-1 font-mono" x-text="orderData.items[0].msisdn"></p>
+                                            <p class="text-sm font-semibold text-gray-700" x-text="orderData.items[0].packageName"></p>
+                                            <template x-if="orderData.items.length > 1">
+                                                <p class="text-xs text-gray-600 mt-1">+ <span x-text="orderData.items.length - 1"></span> nomor lainnya</p>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+                                
+                                <!-- Catatan Penting -->
+                                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                    <p class="text-sm text-blue-800 font-medium mb-2">Catatan Penting:</p>
+                                    <p class="text-sm text-blue-700">
+                                        Harap membayar sesuai dengan nominal yang tertera (termasuk kode unik di belakang).
+                                    </p>
+                                </div>
+
+                                <!-- Check Payment Button -->
+                                <button @click="handleCheckPayment()"
+                                    class="w-full inline-flex items-center justify-center gap-2 rounded-md bg-primary text-primary-foreground h-11 px-4 py-2 hover:bg-primary/90 transition-colors font-medium mt-4">
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span x-text="paymentStatus === 'pending' ? 'Cek Status Pembayaran' : (paymentStatus === 'verifying' ? 'Memeriksa...' : 'Status Terkonfirmasi')"></span>
+                                </button>
+                                
                                 <!-- QR Code Container -->
                                 <div class="flex justify-center">
                                     <div class="bg-white p-4 rounded-lg border-2 border-border">
-                                        <!-- Loading state when QR is not ready -->
-                                        <div x-show="!qrisString" class="w-48 h-48 flex items-center justify-center bg-gray-100 rounded">
-                                            <div class="text-center">
-                                                <svg class="animate-spin h-8 w-8 mx-auto text-primary mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                </svg>
-                                                <p class="text-sm text-muted-foreground">Memuat QR Code...</p>
-                                            </div>
-                                        </div>
                                         <!-- QR Code will be generated here by qrcodejs -->
-                                        <div x-show="qrisString" id="qrContainer" class="flex items-center justify-center"></div>
+                                        <div id="qrContainer" class="flex items-center justify-center"></div>
                                     </div>
                                 </div>
                                 
                                 <!-- Toggle Static QRIS (untuk bank BCA dll yang gagal) -->
                                 <template x-if="qrisStaticString">
-                                    <div class="flex items-center justify-center gap-2">
-                                        <label class="flex items-center gap-2 text-sm cursor-pointer">
-                                            <input type="checkbox" x-model="useStaticQris" @change="generateQRCode()"
-                                                class="rounded border-gray-300 text-primary focus:ring-primary">
-                                            <span class="text-muted-foreground">Pakai QRIS Statis (BCA/Bank lain gagal)</span>
-                                        </label>
+                                    <div class="flex flex-col items-center justify-center gap-3 mt-4">
+                                        <p class="text-xs text-muted-foreground text-center px-4">
+                                            Jika pembayaran QRIS di atas gagal <br> (khususnya BCA Mobile), <br> klik tombol di bawah:
+                                        </p>
+                                        <button @click="useStaticQris = !useStaticQris"
+                                            class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2"
+                                            :class="useStaticQris ? 'bg-primary text-primary-foreground hover:bg-primary/90 border-primary' : ''">
+                                            <span x-text="useStaticQris ? 'Kembali ke QRIS Utama' : 'QRIS Alternatif'"></span>
+                                        </button>
                                     </div>
                                 </template>
 
                                 <!-- Amount -->
                                 <div class="space-y-2">
-                                    <p class="text-sm text-muted-foreground text-center">Total Pembayaran</p>
+                                    <p class="text-sm text-muted-foreground text-center">Pembayaran:</p>
+                                    <p class="text-sm text-center text-gray-600">Rp <span x-text="formatNumber(orderData.total)"></span> + <span x-text="orderData.uniqueCode || orderData.platformFee"></span> (kode unik)</p>
                                     <div class="flex items-center justify-center gap-2">
-                                        <p class="text-2xl font-bold text-center" x-text="formatRupiah(totalAmount)"></p>
+                                        <p class="text-3xl font-bold text-center" x-text="formatRupiah(totalAmount)"></p>
                                         <button @click="handleCopyAmount()"
-                                            class="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-muted transition-colors">
-                                            <svg class="h-4 w-4" fill="none" stroke="currentColor"
+                                            class="h-10 w-10 inline-flex items-center justify-center rounded-md hover:bg-muted transition-colors">
+                                            <svg class="h-6 w-6" fill="none" stroke="currentColor"
                                                 viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round"
                                                     stroke-width="2"
@@ -328,23 +395,19 @@
                                         x-text="paymentMethodLabel"></span>
                                 </div>
 
-                            <!-- Important Note & Instructions Combined -->
+                            <!-- Check Payment Button (Moved Here) -->
                             <div class="space-y-4">
-                                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                                    <p class="text-sm text-yellow-800 font-medium mb-2">⚠️ Catatan Penting:</p>
-                                    <p class="text-sm text-yellow-700">
-                                        Harap membayar sesuai dengan nominal yang tertera.
-                                    </p>
-                                </div>
-
+                                
+                                <!-- Instructions -->
                                 <div>
                                     <h4 class="text-sm font-semibold mb-3">Cara Pembayaran</h4>
                                     <ol class="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
                                         <li>Buka aplikasi e-wallet atau mobile banking Anda</li>
                                         <li>Scan QR Code QRIS di atas</li>
-                                        <li>Pastikan nominal pembayaran sesuai</li>
+                                        <li>Pastikan nominal pembayaran sesuai (dengan 3 digit kode unik)</li>
                                         <li>Konfirmasi pembayaran</li>
                                         <li>Simpan bukti pembayaran</li>
+                                        <li>Klik tombol "Cek Status Pembayaran" di atas</li>
                                     </ol>
                                 </div>
                             </div>
@@ -380,8 +443,8 @@
                                             <span class="font-medium" x-text="formatRupiah(orderData.total)"></span>
                                         </div>
                                         <div class="flex justify-between text-sm text-muted-foreground">
-                                            <span>Biaya Platform</span>
-                                            <span x-text="formatRupiah(orderData.platformFee)"></span>
+                                            <span>Kode Unik</span>
+                                            <span x-text="formatRupiah(orderData.uniqueCode || orderData.platformFee)"></span>
                                         </div>
                                         <div class="flex justify-between pt-2 border-t">
                                             <span class="font-bold">Total Pembayaran</span>
@@ -421,12 +484,12 @@
                                                     x-text="formatRupiah(orderData.total)"></td>
                                             </tr>
 
-                                            <!-- Platform Fee -->
+                                            <!-- Kode Unik (Biaya Platform) -->
                                             <tr class="border-b">
                                                 <td colspan="3"
-                                                    class="px-4 py-3 text-right text-muted-foreground">Biaya Platform</td>
+                                                    class="px-4 py-3 text-right text-muted-foreground">Kode Unik</td>
                                                 <td class="px-4 py-3 text-right text-muted-foreground"
-                                                    x-text="formatRupiah(orderData.platformFee)"></td>
+                                                    x-text="formatRupiah(orderData.uniqueCode || orderData.platformFee)"></td>
                                             </tr>
 
                                             <!-- Total -->
@@ -442,15 +505,6 @@
 
                                 <!-- Action Buttons (Di bawah Detail Pesanan) -->
                                 <div class="mt-6 pt-6 border-t space-y-3">
-                                    <!-- Check Payment Button -->
-                                    <button @click="handleCheckPayment()"
-                                        class="w-full inline-flex items-center justify-center gap-2 rounded-md border bg-background h-10 px-4 py-2 hover:bg-muted transition-colors">
-                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        Cek Status Pembayaran
-                                    </button>
-
                                     <!-- View Invoice Button - Only enabled if payment is successful -->
                                     <button @click="handleViewInvoice()"
                                         :disabled="!canAccessInvoice"
@@ -490,14 +544,64 @@
             <div class="font-semibold mb-1" x-text="toastTitle"></div>
             <div class="text-sm text-muted-foreground" x-text="toastMessage"></div>
         </div>
+
+        <!-- Error Modal -->
+        <div x-show="errorModalVisible" 
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-50 overflow-y-auto" 
+             style="display: none;"
+             @click.self="errorModalVisible = false">
+            <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                <!-- Background overlay -->
+                <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" aria-hidden="true"></div>
+                
+                <!-- Modal panel -->
+                <div x-show="errorModalVisible"
+                     x-transition:enter="transition ease-out duration-300"
+                     x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                     x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                     x-transition:leave="transition ease-in duration-200"
+                     x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                     x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                     class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                            <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900" x-text="errorModalTitle"></h3>
+                            <div class="mt-2">
+                                <p class="text-sm text-gray-500" x-text="errorModalMessage"></p>
+                                <p class="text-xs text-gray-400 mt-2">Kembali ke halaman order dalam <span x-text="errorModalCountdown"></span> detik...</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+                        <button @click="errorModalVisible = false" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
+                            Tutup
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Page Script -->
     <script>
         function checkoutApp() {
             return {
-                // Payment state
-                paymentStatus: 'pending', // 'pending', 'success', 'expired'
+                // Loading state
+                isLoading: true,
+                
+                // Payment state - akan di-restore dari localStorage jika ada
+                paymentStatus: 'pending', // 'pending', 'verifying', 'activated', 'expired'
                 timeRemaining: 15 * 60, // 15 minutes in seconds
 
                 // Order data from localStorage
@@ -505,6 +609,7 @@
                     items: [],
                     total: 0,
                     platformFee: 0,
+                    uniqueCode: 0,
                     paymentMethod: 'qris',
                     refCode: null,
                 },
@@ -515,6 +620,7 @@
                 qrCodeUrl: null,
                 qrisString: null,      // QRIS string for dynamic QR
                 qrisStaticString: null, // QRIS static string (untuk bank yg gagal)
+                qrisStaticDynamicString: null, // QRIS static converted to dynamic
                 useStaticQris: false,   // Toggle untuk pakai QRIS static
                 paymentAmount: 0,       // Total pembayaran dari API
 
@@ -523,6 +629,12 @@
                 toastTitle: '',
                 toastMessage: '',
 
+                // Error Modal
+                errorModalVisible: false,
+                errorModalTitle: '',
+                errorModalMessage: '',
+                errorModalCountdown: 5,
+
                 // Timer interval
                 timerInterval: null,
                 paymentCheckInterval: null,
@@ -530,9 +642,17 @@
                 // Lifecycle
                 async init() {
                     // Watch for QRIS type toggle
-                    this.$watch('useStaticQris', (value) => {
+                    this.$watch('useStaticQris', async (value) => {
                         console.log('🔄 Switched to', value ? 'STATIC' : 'DYNAMIC', 'QRIS');
+                        // Public checkout tidak support static dynamic conversion
+                        // Just regenerate QR code
                         this.generateQRCode();
+                    });
+                    
+                    // Watch for payment status changes and persist to localStorage
+                    this.$watch('paymentStatus', (newStatus) => {
+                        console.log('📊 Payment status changed to:', newStatus);
+                        this.savePaymentState();
                     });
                     
                     // Load order data from localStorage
@@ -559,6 +679,12 @@
                     };
                     
                     console.log('📦 Order mode:', this.orderData.isBulk ? 'BULK (Agent)' : 'INDIVIDUAL (Public)');
+                    
+                    // Restore payment status dari localStorage jika ada (untuk handle refresh)
+                    if (parsedData.paymentStatus && ['pending', 'verifying', 'activated'].includes(parsedData.paymentStatus)) {
+                        this.paymentStatus = parsedData.paymentStatus;
+                        console.log('♻️ Restored payment status:', this.paymentStatus);
+                    }
 
                     // Check if payment already exists (user refreshed page)
                     if (parsedData.paymentId) {
@@ -566,8 +692,19 @@
                         this.paymentId = parsedData.paymentId;
                         this.batchId = parsedData.batchId || null;
                         
-                        // Fetch existing QRIS data
-                        await this.fetchQrisData();
+                        // Jika status sudah activated, langsung tampilkan tanpa fetch ulang
+                        if (this.paymentStatus === 'activated') {
+                            console.log('✅ Status sudah activated, skip loading...');
+                            this.isLoading = false;
+                        } else {
+                            // Fetch existing QRIS data
+                            await this.fetchQrisData();
+                            
+                            // Auto-verify payment saat page load (trigger API verify)
+                            // Ini penting untuk meng-update status jika user sudah bayar tapi refresh halaman
+                            console.log('🔄 Auto-verifying payment on page load...');
+                            await this.autoVerifyPayment();
+                        }
                     } else {
                         // Create new payment transaction via API
                         console.log('🆕 Membuat payment baru...');
@@ -579,6 +716,72 @@
 
                     // Start polling for payment status
                     this.startPaymentPolling();
+                },
+                
+                // Save payment state ke localStorage (untuk handle refresh)
+                savePaymentState() {
+                    const savedOrder = localStorage.getItem('pendingOrder');
+                    if (savedOrder) {
+                        const orderData = JSON.parse(savedOrder);
+                        orderData.paymentStatus = this.paymentStatus;
+                        localStorage.setItem('pendingOrder', JSON.stringify(orderData));
+                        console.log('💾 Payment status disimpan ke localStorage:', this.paymentStatus);
+                    }
+                },
+                
+                // Auto-verify payment saat page load (untuk handle refresh)
+                // Ini akan trigger API verify untuk meng-check status pembayaran terbaru
+                async autoVerifyPayment() {
+                    if (!this.paymentId) {
+                        console.log('⚠️ No payment ID for auto-verify');
+                        return;
+                    }
+                    
+                    try {
+                        console.log('🔍 Auto-verifying payment:', this.paymentId);
+                        
+                        // Langsung get status dari database (sama seperti manual check)
+                        const response = await getPaymentStatus(this.paymentId);
+                        
+                        // Response is array, get first item
+                        const rawData = Array.isArray(response) ? response[0] : (response.data || response);
+                        const data = rawData;
+                        const status = (data.status || data.payment_status || '').toLowerCase();
+                        
+                        console.log('🔍 Manual check - Status:', status, 'Data:', data);
+                        
+                        if (data && data.id) {
+                            // Update QRIS if available
+                            if (data.qris && !this.qrisString) {
+                                this.qrisString = data.qris;
+                                this.qrisStaticString = data.qris_static || null;
+                                this.$nextTick(() => this.generateQRCode());
+                            }
+                            
+                            // Handle status sukses -> step 4 (paket aktif)
+                            if (status === 'success' || status === 'sukses' || status === 'paid' || status === 'berhasil' || status === 'completed') {
+                                this.setPaymentActivated();
+                            }
+                            // Handle status: verifikasi pembayaran -> pindah ke step 3
+                            else if (status.includes('verifikasi') || status === 'verify' || status === 'verifying') {
+                                // Set ke step 3 (verifying) berdasarkan status API
+                                if (this.paymentStatus !== 'activated') {
+                                    this.paymentStatus = 'verifying';
+                                    console.log('📊 Status dari API: verifying');
+                                }
+                            }
+                            else if (status === 'pending' || status === 'unpaid' || status === 'menunggu pembayaran') {
+                                // Tetap di step 2 (pending)
+                                this.paymentStatus = 'pending';
+                            }
+                            else if (status === 'expired' || status === 'failed') {
+                                this.paymentStatus = 'expired';
+                                localStorage.removeItem('pendingOrder');
+                            }
+                        }
+                    } catch (error) {
+                        console.error('❌ Auto-verify failed:', error);
+                    }
                 },
 
                 // Computed: Total amount - prioritize API payment_amount
@@ -603,7 +806,7 @@
 
                 // Computed: Can access invoice (only when payment is successful)
                 get canAccessInvoice() {
-                    return this.paymentStatus === 'success';
+                    return this.paymentStatus === 'activated';
                 },
 
                 // Generate QR Code from QRIS string
@@ -628,16 +831,47 @@
                     container.innerHTML = '';
                     
                     try {
-                        // qrcodejs library uses constructor
-                        this.qrCodeInstance = new QRCode(container, {
+                        // Create wrapper for template with QR overlay (ukuran diperbesar)
+                        const wrapper = document.createElement('div');
+                        wrapper.style.position = 'relative';
+                        wrapper.style.width = '260px';  // Diperbesar dari 220px
+                        wrapper.style.height = '300px';  // Diperbesar dari 260px
+                        
+                        // Add template background image
+                        const templateImg = document.createElement('img');
+                        templateImg.src = '{{ asset("images/template_qris.png") }}';
+                        templateImg.style.width = '100%';
+                        templateImg.style.height = '100%';
+                        templateImg.style.objectFit = 'contain';
+                        templateImg.style.position = 'absolute';
+                        templateImg.style.top = '0';
+                        templateImg.style.left = '0';
+                        wrapper.appendChild(templateImg);
+                        
+                        // Create QR code container (positioned in center-bottom area where template has space)
+                        const qrDiv = document.createElement('div');
+                        qrDiv.id = 'qrcode-inner';
+                        qrDiv.style.position = 'absolute';
+                        qrDiv.style.top = '55%';
+                        qrDiv.style.left = '50%';
+                        qrDiv.style.transform = 'translate(-50%, -50%)';
+                        qrDiv.style.background = 'white';
+                        qrDiv.style.padding = '4px';
+                        qrDiv.style.borderRadius = '4px';
+                        wrapper.appendChild(qrDiv);
+                        
+                        container.appendChild(wrapper);
+                        
+                        // Generate QR code inside the overlay div (ukuran diperbesar)
+                        this.qrCodeInstance = new QRCode(qrDiv, {
                             text: qrisData,
-                            width: 192,
-                            height: 192,
+                            width: 170,   // Diperbesar dari 140
+                            height: 170,  // Diperbesar dari 140
                             colorDark: '#000000',
                             colorLight: '#ffffff',
                             correctLevel: QRCode.CorrectLevel.M
                         });
-                        console.log('✅ QR Code generated successfully');
+                        console.log('✅ QR Code with template generated successfully');
                     } catch (error) {
                         console.error('❌ QR Code generation error:', error);
                     }
@@ -664,13 +898,17 @@
                             // Generate QR code
                             this.$nextTick(() => {
                                 this.generateQRCode();
+                                // Hide loading after QR generated
+                                setTimeout(() => {
+                                    this.isLoading = false;
+                                }, 500);
                             });
                         }
                         
                         // Update payment amount if available
                         if (data && data.payment_amount) {
                             this.paymentAmount = parseInt(data.payment_amount) || 0;
-                            this.orderData.paymentUnique = parseInt(data.payment_unique) || 0;
+                            this.orderData.uniqueCode = parseInt(data.payment_unique) || 0;
                             console.log('💰 Payment amount:', this.paymentAmount);
                         }
                         
@@ -692,8 +930,17 @@
                         if (this.timeRemaining <= 1) {
                             clearInterval(this.timerInterval);
                             clearInterval(this.paymentCheckInterval);
-                            this.paymentStatus = 'expired';
-                            this.timeRemaining = 0;
+                            
+                            // Jika status sudah activated, jangan ubah jadi expired
+                            // Cukup hapus localStorage agar jika direfresh kembali ke home
+                            if (this.paymentStatus === 'activated') {
+                                localStorage.removeItem('pendingOrder');
+                                console.log('🗑️ Time up for activated order. Storage cleared.');
+                            } else {
+                                this.paymentStatus = 'expired';
+                                this.timeRemaining = 0;
+                                localStorage.removeItem('pendingOrder');
+                            }
                         } else {
                             this.timeRemaining--;
                         }
@@ -852,26 +1099,47 @@
                             
                             // Fetch QRIS data after payment created
                             await this.fetchQrisData();
+                            
+                            // Auto-scroll ke ringkasan pembayaran setelah QR berhasil di-generate
+                            this.$nextTick(() => {
+                                setTimeout(() => {
+                                    const summaryElement = document.getElementById('payment-summary');
+                                    if (summaryElement) {
+                                        summaryElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                        console.log('📤 Auto-scrolled to payment summary');
+                                    }
+                                }, 500);
+                            });
                         } else {
                             throw new Error(response.message || 'Gagal membuat transaksi');
                         }
                     } catch (error) {
                         console.error('❌ Failed to create payment:', error);
-                        this.showToast('Error', error.message || 'Gagal membuat transaksi pembayaran');
+                        this.showErrorModal('Error', error.message || 'Gagal membuat transaksi pembayaran. Silakan coba lagi.');
                     }
                 },
 
                 startPaymentPolling() {
                     if (!this.paymentId) return;
+                    
+                    // Jika sudah activated, tidak perlu polling
+                    if (this.paymentStatus === 'activated') {
+                        console.log('✅ Status sudah activated, skip polling');
+                        return;
+                    }
 
-                    // Check payment status every 5 seconds
+                    // Check payment status every 5 seconds - langsung dari database seperti manual check
                     this.paymentCheckInterval = setInterval(async () => {
                         try {
+                            // Langsung get status dari database (sama seperti manual check)
                             const response = await getPaymentStatus(this.paymentId);
                             
                             // Response is array, get first item
                             const rawData = Array.isArray(response) ? response[0] : (response.data || response);
                             const data = rawData;
+                            const status = (data.status || data.payment_status || '').toLowerCase();
+                            
+                            console.log('🔍 Manual check - Status:', status, 'Data:', data);
 
                             if (data && data.id) {
                                 // Update QRIS strings if available
@@ -882,16 +1150,23 @@
                                     this.$nextTick(() => this.generateQRCode());
                                 }
                                 
-                                const status = data.status || data.payment_status;
-                                console.log('📊 Payment status:', status);
-                                
-                                if (status === 'success' || status === 'PAID') {
-                                    this.paymentStatus = 'success';
-                                    clearInterval(this.paymentCheckInterval);
-                                    clearInterval(this.timerInterval);
-                                    localStorage.removeItem('pendingOrder');
-                                    this.showToast('Pembayaran Berhasil', 'Pembayaran telah dikonfirmasi');
-                                } else if (status === 'expired' || status === 'failed' || status === 'EXPIRED' || status === 'FAILED') {
+                                // Update indikator berdasarkan status dari API (sama seperti manual check)
+                                if (status === 'success' || status === 'sukses' || status === 'paid' || status === 'berhasil' || status === 'completed') {
+                                    this.setPaymentActivated();
+                                } 
+                                else if (status.includes('verifikasi') || status === 'verify' || status === 'verifying') {
+                                    if (this.paymentStatus !== 'activated') {
+                                        this.paymentStatus = 'verifying';
+                                        console.log('📊 Status dari API: verifying');
+                                    }
+                                }
+                                else if (status === 'pending' || status === 'unpaid' || status === 'menunggu pembayaran') {
+                                    // Tetap di step 2 (pending)
+                                    if (this.paymentStatus !== 'activated' && this.paymentStatus !== 'verifying') {
+                                        this.paymentStatus = 'pending';
+                                    }
+                                }
+                                else if (status === 'expired' || status === 'failed') {
                                     this.paymentStatus = 'expired';
                                     clearInterval(this.paymentCheckInterval);
                                     clearInterval(this.timerInterval);
@@ -924,14 +1199,26 @@
                         'Mohon tunggu, kami sedang memeriksa status pembayaran Anda...'
                     );
 
-                    // Check payment status via API
+                    // Verify payment via internal API (this will update local DB if payment is successful)
                     try {
+                        console.log('🔍 Verifying payment:', this.paymentId);
+                        const verifyResponse = await verifyPayment(this.paymentId);
+                        console.log('🔍 Verify response:', verifyResponse);
+                        
+                        // Check if verification found payment as successful
+                        if (verifyResponse.success && (verifyResponse.status === 'berhasil' || verifyResponse.status === 'success')) {
+                            // Set to activated (paket aktif)
+                            this.setPaymentActivated();
+                            return;
+                        }
+                        
+                        // If not successful yet, also get current status for display
                         const response = await getPaymentStatus(this.paymentId);
                         
                         // Response is array, get first item
                         const rawData = Array.isArray(response) ? response[0] : (response.data || response);
                         const data = rawData;
-                        const status = data.status || data.payment_status;
+                        const status = (data.status || data.payment_status || '').toLowerCase();
                         
                         console.log('🔍 Manual check - Status:', status, 'Data:', data);
 
@@ -943,40 +1230,63 @@
                                 this.$nextTick(() => this.generateQRCode());
                             }
                             
-                            if (status === 'success' || status === 'PAID') {
-                                this.paymentStatus = 'success';
+                            // Handle status sukses -> step 4 (paket aktif)
+                            if (status === 'success' || status === 'sukses' || status === 'paid' || status === 'berhasil' || status === 'completed') {
+                                this.setPaymentActivated();
+                            }
+                            // Handle status: verifikasi pembayaran -> pindah ke step 3
+                            else if (status.includes('verifikasi') || status === 'verify' || status === 'verifying') {
+                                // Set ke step 3 (verifying) berdasarkan status API
+                                if (this.paymentStatus !== 'activated') {
+                                    this.paymentStatus = 'verifying';
+                                    console.log('📊 Status dari API: verifying');
+                                }
+                                this.showToast(
+                                    'Verifikasi Pembayaran',
+                                    'Pembayaran sedang diverifikasi oleh sistem...'
+                                );
+                            }
+                            else if (status === 'pending' || status === 'unpaid' || status === 'menunggu pembayaran') {
+                                // Masih menunggu pembayaran - tetap di pending
+                                if (this.paymentStatus !== 'activated') {
+                                    this.paymentStatus = 'pending';
+                                    console.log('📊 Status dari API: pending');
+                                }
+                                this.showToast(
+                                    'Menunggu Pembayaran',
+                                    'Pembayaran belum diterima. Silakan selesaikan pembayaran dan klik cek status lagi.'
+                                );
+                            } 
+                            else if (status === 'expired' || status === 'failed') {
+                                this.paymentStatus = 'expired';
                                 clearInterval(this.timerInterval);
                                 if (this.paymentCheckInterval) {
                                     clearInterval(this.paymentCheckInterval);
                                 }
                                 localStorage.removeItem('pendingOrder');
-                                this.showToast(
-                                    'Pembayaran Berhasil',
-                                    'Pembayaran Anda telah dikonfirmasi'
-                                );
-                            } else if (status === 'pending' || status === 'PENDING' || status === 'UNPAID' || status === 'VERIFY') {
-                                this.showToast(
-                                    'Menunggu Pembayaran',
-                                    'Pembayaran belum diterima. Silakan scan QR code dan selesaikan pembayaran.'
-                                );
                             } else {
+                                // Status lain yang tidak dikenal - anggap sebagai verifying (sudah bayar)
+                                if (this.paymentStatus === 'pending') {
+                                    this.paymentStatus = 'verifying';
+                                    console.log('📊 Unknown status, assuming verifying:', status);
+                                }
                                 this.showToast(
                                     'Status Pembayaran',
-                                    'Status: ' + status
+                                    'Status: ' + (data.status || data.payment_status)
                                 );
                             }
                         } else {
-                            this.showToast('Error', response.message || 'Gagal memeriksa status');
+                            this.showErrorModal('Error', response.message || 'Gagal memeriksa status pembayaran.');
                         }
                     } catch (error) {
                         console.error('Failed to check payment:', error);
-                        this.showToast('Error', 'Gagal memeriksa status pembayaran');
+                        this.showErrorModal('Error', 'Gagal memeriksa status pembayaran. Silakan coba lagi.');
                     }
                 },
 
                 async handleViewInvoice() {
                     if (!this.paymentId) {
-                        this.showToast('Error', 'Payment ID tidak ditemukan');
+                        this.showErrorModal('Error', 'Payment ID tidak ditemukan. Silakan refresh halaman.');
                         return;
                     }
 
@@ -998,6 +1308,40 @@
                     window.open(invoiceUrl, '_blank');
                 },
 
+                // Set payment to activated state (paket aktif) - called when status is sukses
+                setPaymentActivated() {
+                    if (this.paymentStatus === 'activated') {
+                        console.log('⚠️ Already activated, skipping...');
+                        return;
+                    }
+                    
+                    console.log('🎉 Payment successful! Setting to activated...');
+                    
+                    // Directly set to activated (step 4 - paket aktif)
+                    this.paymentStatus = 'activated';
+                    console.log('📊 Status: activated (paket aktif)');
+                    
+                    // Save final state before cleanup (untuk akses invoice jika refresh)
+                    this.savePaymentState();
+                    
+                    // Show success toast
+                    this.showToast(
+                        'Paket Aktif! 🎉',
+                        'Pembayaran berhasil! Paket kuota umroh Anda sudah aktif. Silakan lihat invoice.'
+                    );
+                    
+                    // Clean up intervals
+                    // NOTE: Timer interval tidak di-clear agar tetap berjalan sampai habis (untuk cleanup localStorage)
+                    // clearInterval(this.timerInterval); 
+                    
+                    if (this.paymentCheckInterval) {
+                        clearInterval(this.paymentCheckInterval);
+                    }
+                    
+                    // REMOVED: Clear localStorage timeout.
+                    // Biarkan timer yang handle cleanup saat waktu habis (agar user bisa refresh selama masih ada waktu)
+                },
+
                 showToast(title, message) {
                     this.toastTitle = title;
                     this.toastMessage = message;
@@ -1005,6 +1349,30 @@
                     setTimeout(() => {
                         this.toastVisible = false;
                     }, 3000);
+                },
+
+                showErrorModal(title, message) {
+                    this.errorModalTitle = title;
+                    this.errorModalMessage = message;
+                    this.errorModalVisible = true;
+                    this.errorModalCountdown = 5;
+                    
+                    const countdownInterval = setInterval(() => {
+                        this.errorModalCountdown--;
+                        if (this.errorModalCountdown <= 0) {
+                            clearInterval(countdownInterval);
+                            this.errorModalVisible = false;
+                            setTimeout(() => {
+                                window.location.href = '{{ route("welcome") }}';
+                            }, 300);
+                        }
+                    }, 1000);
+                },
+                
+                // Format number tanpa Rp (untuk formula)
+                formatNumber(num) {
+                    if (!num) return '0';
+                    return new Intl.NumberFormat('id-ID').format(num);
                 }
             }
         }

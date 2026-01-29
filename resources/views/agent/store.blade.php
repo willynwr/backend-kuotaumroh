@@ -141,12 +141,14 @@
                 <p class="text-lg text-muted-foreground max-w-2xl mx-auto">
                     Dapatkan kuota internet terbaik untuk perjalanan umroh dan haji Anda. Proses cepat, harga terjangkau.
                 </p>
+                @if($agent->nama_travel !== 'Kuotaumroh.id')
                 <div class="mt-4 inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full text-sm text-primary">
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                     </svg>
                     Dilayani oleh: {{ $agent->nama_travel }}
                 </div>
+                @endif
             </div>
 
             <!-- Order Form (sama dengan welcome.blade.php) -->
@@ -448,7 +450,7 @@
                                     <span class="font-medium" x-text="selectedPackage?.name || '-'"></span>
                                 </div>
                                 
-                                <!-- Cetak Invoice Toggle -->
+                                {{-- <!-- Cetak Invoice Toggle -->
                                 <div class="flex items-center justify-between pt-2">
                                     <span class="text-muted-foreground text-sm">Cetak Invoice</span>
                                     <button @click="invoiceCetakEnabled = !invoiceCetakEnabled"
@@ -457,7 +459,7 @@
                                         <span :class="invoiceCetakEnabled ? 'translate-x-6' : 'translate-x-1'"
                                             class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"></span>
                                     </button>
-                                </div>
+                                </div> --}}
 
                                 <!-- Invoice Method Options (when enabled) -->
                                 <div x-show="invoiceCetakEnabled" x-collapse class="border-t pt-3 space-y-3">

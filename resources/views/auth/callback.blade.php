@@ -120,30 +120,38 @@
 
           // Redirect to unique dashboard link based on link_referral
           statusEl.textContent = 'Mengarahkan ke dashboard...';
-          const linkReferral = user.link_referral || user.link_referal;
           
           // Debug logging
           console.log('=== REDIRECT DEBUG ===');
           console.log('Role:', role);
-          console.log('User Status:', user.status);
+          console.log('User:', user);
+          
+          // Priority 1: Admin redirect
+          if (role === 'admin') {
+            console.log('REDIRECTING TO: /admin/dashboard');
+            window.location.href = `{{ url('/') }}/admin/dashboard`;
+            return;
+          }
+          
+          const linkReferral = user.link_referral || user.link_referal;
           console.log('Link Referral:', linkReferral);
           console.log('User ID:', user.id);
           
-          // Priority 1: Jika ada link_referral, redirect ke dashboard normal (approved agent)
+          // Priority 2: Jika ada link_referral, redirect ke dashboard normal (approved agent)
           if (linkReferral) {
             console.log('REDIRECTING TO: /dash/' + linkReferral);
             window.location.href = `{{ url('/') }}/dash/${linkReferral}`;
             return;
           }
           
-          // Priority 2: Jika agent pending tanpa link_referal
+          // Priority 3: Jika agent pending tanpa link_referal
           if (role === 'agent' && user.status === 'pending') {
             console.log('REDIRECTING TO: /agent/pending?id=' + user.id);
             window.location.href = `{{ url('/') }}/agent/pending?id=${user.id}`;
             return;
           }
           
-          // Priority 3: Fallback if no link_referral
+          // Priority 4: Fallback if no link_referral
           if (role === 'agent') {
             console.log('FALLBACK REDIRECTING TO: /agent/dashboard?id=' + user.id);
             window.location.href = `{{ url('/') }}/agent/dashboard?id=${user.id}`;
@@ -158,6 +166,20 @@
         if (result.is_registered && result.user) {
           console.log('User found:', result.user);
           const role = result.role || 'agent';
+          
+          // Validate role vs intent
+          const intent = sessionStorage.getItem('auth_intent');
+          
+          // If admin_login intent, only allow admin role
+          if (intent === 'admin_login' && role !== 'admin') {
+            throw new Error('Akses ditolak. Email Anda tidak terdaftar sebagai administrator.');
+          }
+          
+          // If regular login intent, don't allow admin role
+          if (intent === 'login' && role === 'admin') {
+            throw new Error('Email administrator tidak dapat digunakan di halaman ini. Silakan gunakan halaman login admin.');
+          }
+          
           await redirectUser(result.user, role, role);
           return;
         }
@@ -168,6 +190,8 @@
 
         if (intent === 'login') {
           throw new Error('Login gagal. Akun Anda belum terdaftar. Silakan daftar terlebih dahulu atau hubungi tim support.');
+        } else if (intent === 'admin_login') {
+          throw new Error('Akses ditolak. Email Anda tidak terdaftar sebagai admin.');
         } else {
           // Forward referral context to signup
           const referral = getReferral();
@@ -196,12 +220,15 @@
         // Auto-redirect to login after 5 seconds
         let countdown = 5;
         const countdownEl = document.getElementById('countdown');
+        const intent = sessionStorage.getItem('auth_intent');
+        const loginUrl = intent === 'admin_login' ? '{{ url('/maha') }}' : '{{ route('login') }}';
+        
         const timer = setInterval(() => {
           countdown--;
           if (countdownEl) countdownEl.textContent = countdown;
           if (countdown <= 0) {
             clearInterval(timer);
-            window.location.href = '{{ route('login') }}';
+            window.location.href = loginUrl;
           }
         }, 1000);
       }

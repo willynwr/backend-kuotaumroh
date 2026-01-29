@@ -185,11 +185,19 @@
                   <div class="p-4 space-y-3">
                     <template x-for="(item, index) in individualItems" :key="item.id">
                       <div 
-                        class="flex items-center gap-3 p-3 rounded-lg transition-colors"
-                        :class="validationError && item.provider && !item.packageId ? 'bg-destructive/10 border-2 border-destructive' : ''"
+                        class="flex flex-col sm:flex-row sm:items-center gap-3 p-3 rounded-lg transition-colors border sm:border-0"
+                        :class="validationError && item.provider && !item.packageId ? 'bg-destructive/10 border-destructive' : 'bg-gray-50 sm:bg-transparent'"
                       >
-                        <span class="text-sm text-muted-foreground w-6" x-text="(index + 1) + '.'"></span>
-                        <div class="relative flex-1">
+                        <div class="flex items-center justify-between sm:w-auto w-full flex-shrink-0">
+                          <span class="text-sm text-muted-foreground w-6" x-text="(index + 1) + '.'"></span>
+                          <button @click="removeIndividualItem(item.id)" :disabled="individualItems.length === 1" class="sm:hidden p-2 hover:bg-muted rounded-md disabled:opacity-50 text-destructive">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                        
+                        <div class="relative flex-1 w-full min-w-0">
                           <input
                             type="text"
                             placeholder="Nomor telepon"
@@ -201,19 +209,21 @@
                             <span class="absolute right-2 top-1/2 -translate-y-1/2 badge badge-secondary text-xs" x-text="item.provider"></span>
                           </template>
                         </div>
+                        
                         <button
                           type="button"
                           @click="openIndividualPackagePicker(item)"
                           :disabled="!item.provider"
                           :class="item.provider ? 'hover:bg-muted/50' : 'opacity-50 cursor-not-allowed'"
-                          class="flex h-10 w-48 rounded-md border border-input bg-background px-3 py-2 text-sm text-left flex items-center justify-between"
+                          class="flex h-10 w-full sm:w-48 rounded-md border border-input bg-background px-3 py-2 text-sm text-left flex items-center justify-between flex-shrink-0"
                         >
-                          <span :class="item.packageId ? '' : 'text-muted-foreground'" x-text="item.packageId ? getPackageName(item.packageId) : 'Pilih paket'"></span>
-                          <svg class="h-4 w-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <span class="truncate pr-2" :class="item.packageId ? '' : 'text-muted-foreground'" x-text="item.packageId ? getPackageName(item.packageId) : 'Pilih paket'"></span>
+                          <svg class="h-4 w-4 opacity-50 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                           </svg>
                         </button>
-                        <button @click="removeIndividualItem(item.id)" :disabled="individualItems.length === 1" class="p-2 hover:bg-muted rounded-md disabled:opacity-50">
+                        
+                        <button @click="removeIndividualItem(item.id)" :disabled="individualItems.length === 1" class="hidden sm:block p-2 hover:bg-muted rounded-md disabled:opacity-50 flex-shrink-0">
                           <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                           </svg>
@@ -244,7 +254,7 @@
                 </h3>
               </div>
               <div class="p-6 space-y-4">
-                <div class="grid grid-cols-2 gap-2">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <button
                     @click="activationTime = 'now'"
                     :class="activationTime === 'now' ? 'bg-primary text-primary-foreground' : 'border hover:bg-muted'"
@@ -270,7 +280,7 @@
                     <div class="space-y-2">
                       <label class="text-xs text-muted-foreground uppercase tracking-wide">Pilih Waktu (WIB)</label>
                       <input type="time" x-model="scheduledTime" class="flex h-12 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                      <div class="flex gap-2">
+                      <div class="flex gap-2 flex-wrap">
                         <template x-for="time in quickTimes" :key="time">
                           <button
                             @click="scheduledTime = time"

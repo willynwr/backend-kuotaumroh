@@ -27,6 +27,11 @@ Route::get('/agent', function () {
     return view('auth.login');
 })->name('login');
 
+// Admin login on /maha
+Route::get('/maha', function () {
+    return view('auth.admin.login');
+})->name('admin.login');
+
 // Agent Signup tanpa Referral (default affiliate_id = 1)
 Route::get('/signup', [App\Http\Controllers\AgentController::class, 'signup'])->name('signup');
 
@@ -82,8 +87,14 @@ Route::get('/agent/pending', function(Request $request) {
 // Agent Signup dengan Referral Link dari Affiliate/Freelance
 Route::get('/agent/{link_referral}', [App\Http\Controllers\AgentController::class, 'signupWithReferral'])->name('agent.signup.referral');
 
-// Halaman Toko Agent - /u/{link_referal}
+// Halaman Toko Agent - /u/{link_referal} (redirect ke landing page dulu)
 Route::get('/u/{link_referal}', [App\Http\Controllers\AgentController::class, 'showStore'])->name('agent.store.view');
+
+// Redirect dari landing page ke toko agent (HARUS sebelum route dynamic!)
+Route::get('/store/redirect', [App\Http\Controllers\AgentController::class, 'redirectToStore'])->name('agent.store.redirect');
+
+// Halaman Toko Agent - /store/{link_referal} (langsung tampilkan toko)
+Route::get('/store/{link_referal}', [App\Http\Controllers\AgentController::class, 'showStoreDirect'])->name('agent.store.direct');
 
 Route::get('/callback', function () {
     return view('auth.callback');
@@ -110,6 +121,14 @@ Route::get('/umroh/payment', function () {
 Route::get('/admin/login', function () {
     return view('auth.admin.login');
 })->name('admin.login');
+
+// Admin Dashboard Route
+Route::get('/admin/dashboard', function () {
+    // Get admin ID from localStorage (passed via JS)
+    // We'll pass it via query parameter or use session
+    return view('admin.dashboard');
+})->name('admin.dashboard');
+
 // Dashboard Unique Routes untuk Affiliate & Freelance & Agent
 Route::prefix('dash')->name('dash.')->middleware('web')->group(function () {
     Route::get('/{link_referral}', [DashboardController::class, 'show'])->name('show');
@@ -124,6 +143,7 @@ Route::prefix('dash')->name('dash.')->middleware('web')->group(function () {
     Route::get('/{link_referral}/order', [DashboardController::class, 'order'])->name('order');
     Route::get('/{link_referral}/checkout', [DashboardController::class, 'checkout'])->name('checkout');
     Route::get('/{link_referral}/history', [DashboardController::class, 'history'])->name('history');
+    Route::get('/{link_referral}/transactions', [DashboardController::class, 'transactions'])->name('transactions');
     Route::get('/{link_referral}/wallet', [DashboardController::class, 'wallet'])->name('wallet');
     Route::get('/{link_referral}/history-profit', [DashboardController::class, 'historyProfit'])->name('history-profit');
     Route::get('/{link_referral}/history-profit/{month}', [DashboardController::class, 'historyProfitDetail'])->name('history-profit.detail');
@@ -186,6 +206,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
     // User management
     Route::post('/users/{id}/toggle-status', [App\Http\Controllers\Admin\AdminController::class, 'toggleUserStatus'])->name('users.toggle-status');
+    
+    // Admin management
+    Route::post('/store-admin', [App\Http\Controllers\Admin\AdminController::class, 'storeAdmin'])->name('store-admin');
+    Route::delete('/admins/{id}', [App\Http\Controllers\Admin\AdminController::class, 'deleteAdmin'])->name('admins.delete');
 
     // Affiliate Management
     Route::prefix('affiliate')->name('affiliate.')->group(function () {
@@ -326,9 +350,6 @@ Route::prefix('affiliate')->group(function () {
         return view('affiliate.rewards');
     })->name('affiliate.rewards');
 });
-
-// Order page for affiliate and freelance (uses same route pattern as dashboard)
-Route::get('/dash/{linkReferral}/order', [DashboardController::class, 'order'])->name('dash.order');
 
 // freelance routes
 Route::prefix('freelance')->group(function () {

@@ -55,25 +55,24 @@ class Pembayaran extends Model
     const METODE_SALDO = 'SALDO';
 
     protected $fillable = [
+        'external_payment_id',
         'batch_id',
+        'batch_name',
         'agent_id',
         'produk_id',
-        'nama_batch',
-        'sub_total',
-        'biaya_platform',
-        'unique_code',        // untuk payment unique (integer di DB)
-        'total_pembayaran',
+        'msisdn',
+        'nama_paket',
+        'tipe_paket',
+        'harga_modal',
+        'harga_jual',
         'profit',
         'metode_pembayaran',
-        'bank',
-        'no_rekening',
-        'va',
-        'qris_payload',       // untuk menyimpan QRIS data/detail
-        'verification_ref',   // untuk RRN verifikasi
-        'paid_at',           // waktu pembayaran sukses
-        'expired_at',
+        'qris_string',
+        'qris_nmid',
+        'qris_rrn',
+        'total_pembayaran',
         'status_pembayaran',
-        'provider',
+        'detail_pesanan',
     ];
 
     protected $casts = [

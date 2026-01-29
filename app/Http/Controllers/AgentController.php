@@ -56,10 +56,19 @@ class AgentController extends Controller
             ->first();
 
         if ($affiliate) {
-            // Redirect ke login dengan affiliate referral
-            return redirect()->route('login', [
+            // Simpan data referral ke session
+            session([
                 'ref' => 'affiliate:' . $affiliate->id,
-                'referrer_name' => $affiliate->nama
+                'referrer_name' => $affiliate->nama,
+                'referrer_type' => 'affiliate',
+                'referrer_id' => $affiliate->id
+            ]);
+            
+            // Tampilkan halaman login langsung tanpa redirect
+            return view('auth.login', [
+                'referrerName' => $affiliate->nama,
+                'referralType' => 'affiliate',
+                'referralId' => $affiliate->id
             ]);
         }
 
@@ -69,10 +78,19 @@ class AgentController extends Controller
             ->first();
 
         if ($freelance) {
-            // Redirect ke login dengan freelance referral
-            return redirect()->route('login', [
+            // Simpan data referral ke session
+            session([
                 'ref' => 'freelance:' . $freelance->id,
-                'referrer_name' => $freelance->nama
+                'referrer_name' => $freelance->nama,
+                'referrer_type' => 'freelance',
+                'referrer_id' => $freelance->id
+            ]);
+            
+            // Tampilkan halaman login langsung tanpa redirect
+            return view('auth.login', [
+                'referrerName' => $freelance->nama,
+                'referralType' => 'freelance',
+                'referralId' => $freelance->id
             ]);
         }
 
@@ -81,7 +99,7 @@ class AgentController extends Controller
     }
 
     /**
-     * Tampilkan halaman toko agent berdasarkan link_referral
+     * Redirect ke landing page dengan menyimpan agent_id di session
      * Route: /u/{link_referal}
      */
     public function showStore($linkReferal)
@@ -110,7 +128,14 @@ class AgentController extends Controller
                 ];
             }
 
-            return view('agent.store', compact('agent'));
+            // Simpan agent info ke session
+            session([
+                'pending_agent_id' => is_object($agent) ? $agent->id : $agent['id'],
+                'pending_agent_link' => 'kuotaumroh'
+            ]);
+
+            // Redirect ke landing page
+            return redirect()->route('welcome');
         }
 
         // Cari agent berdasarkan link_referal
@@ -121,6 +146,78 @@ class AgentController extends Controller
         // Jika agent tidak ditemukan, redirect ke home
         if (!$agent) {
             return redirect('/u/kuotaumroh')->with('error', 'Toko tidak ditemukan atau sudah tidak aktif');
+        }
+
+        // Simpan agent info ke session
+        session([
+            'pending_agent_id' => $agent->id,
+            'pending_agent_link' => $agent->link_referal
+        ]);
+
+        // Redirect ke landing page
+        return redirect()->route('welcome');
+    }
+
+    /**
+     * Redirect dari landing page ke toko agent
+     * Route: /store/redirect
+     */
+    public function redirectToStore(Request $request)
+    {
+        // Ambil agent info dari session
+        $agentLink = session('pending_agent_link');
+
+        if (!$agentLink) {
+            // Jika tidak ada agent di session, redirect ke default store
+            $agentLink = 'kuotaumroh';
+        }
+
+        // Clear session setelah digunakan
+        session()->forget(['pending_agent_id', 'pending_agent_link']);
+
+        // Redirect ke URL toko yang sebenarnya: /store/{link_referal}
+        return redirect('/store/' . $agentLink);
+    }
+
+    /**
+     * Tampilkan halaman toko agent langsung (tanpa redirect ke landing)
+     * Route: GET /store/{link_referal}
+     */
+    public function showStoreDirect($linkReferal)
+    {
+        // Handle default store "kuotaumroh"
+        if ($linkReferal === 'kuotaumroh') {
+            // Cari agent dengan link_referal 'kuotaumroh' di database
+            $defaultAgent = Agent::where('link_referal', 'kuotaumroh')->first();
+            
+            if ($defaultAgent) {
+                $agent = $defaultAgent;
+            } else {
+                // Fallback: Create a virtual agent object
+                $agent = (object) [
+                    'id' => 1,
+                    'nama_travel' => 'Kuotaumroh.id',
+                    'nama_pic' => 'Official Store',
+                    'email' => 'support@kuotaumroh.id',
+                    'no_hp' => '628112994499',
+                    'alamat_lengkap' => 'Indonesia',
+                    'logo' => null,
+                    'link_referal' => 'kuotaumroh',
+                    'is_active' => true,
+                ];
+            }
+
+            return view('agent.store', compact('agent'));
+        }
+
+        // Cari agent berdasarkan link_referal
+        $agent = Agent::where('link_referal', $linkReferal)
+            ->where('is_active', true)
+            ->first();
+
+        // Jika agent tidak ditemukan
+        if (!$agent) {
+            return redirect('/store/kuotaumroh')->with('error', 'Toko tidak ditemukan atau sudah tidak aktif');
         }
 
         // Tampilkan halaman toko agent
@@ -197,13 +294,108 @@ class AgentController extends Controller
         
         // Jika user adalah agent, ambil saldo dari database
         if ($user instanceof \App\Models\Agent) {
-            $walletBalance['balance'] = $user->saldo ?? 0;
-            // TODO: Hitung pending withdrawal dari table withdraw
-            $walletBalance['pendingWithdrawal'] = 0;
+            // Hitung profit tersedia dari pesanan yang berhasil (real-time dari database)
+            $profitFromOrders = \App\Models\Pesanan::where('kategori_channel', 'agent')
+                ->where('channel_id', $user->id)
+                ->whereHas('pembayaran', function($query) {
+                    $query->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS']);
+                })
+                ->sum('profit');
+            
+            // Hitung withdrawal yang sudah di-approve
+            $approvedWithdrawal = \App\Models\Withdraw::where('agent_id', $user->id)
+                ->where('status', 'approve')
+                ->sum('jumlah');
+            
+            // Balance = profit dari orders - withdrawal yang sudah approve
+            $walletBalance['balance'] = ($profitFromOrders ?? 0) - ($approvedWithdrawal ?? 0);
+            
+            // Hitung pending withdrawal dari table withdraw
+            $pendingWithdrawal = \App\Models\Withdraw::where('agent_id', $user->id)
+                ->where('status', 'pending')
+                ->sum('jumlah');
+            $walletBalance['pendingWithdrawal'] = $pendingWithdrawal ?? 0;
+            
+            // Data referral komisi
+            $totalCommission = \App\Models\Pesanan::where('kategori_channel', 'agent')
+                ->where('channel_id', $user->id)
+                ->whereHas('pembayaran', function($query) {
+                    $query->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS']);
+                })
+                ->sum('profit');
+                
+            $pendingCommission = \App\Models\Pesanan::where('kategori_channel', 'agent')
+                ->where('channel_id', $user->id)
+                ->whereHas('pembayaran', function($query) {
+                    $query->where('status_pembayaran', 'pending');
+                })
+                ->sum('profit');
+            
+            $referralData = [
+                'totalCommission' => $totalCommission ?? 0,
+                'pendingCommission' => $pendingCommission ?? 0
+            ];
+            
+            // Ambil riwayat transaksi referral untuk tab Pemasukan
+            $referralHistory = \App\Models\Pesanan::where('kategori_channel', 'agent')
+                ->where('channel_id', $user->id)
+                ->with(['pembayaran:id,pesanan_id,status_pembayaran', 'produk:id,nama_paket,provider'])
+                ->select('id', 'produk_id', 'msisdn', 'harga_jual', 'profit', 'created_at')
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function($pesanan) {
+                    $status = 'batal';
+                    if ($pesanan->pembayaran) {
+                        if (in_array($pesanan->pembayaran->status_pembayaran, ['selesai', 'berhasil', 'SUCCESS'])) {
+                            $status = 'sukses';
+                        } elseif ($pesanan->pembayaran->status_pembayaran === 'pending') {
+                            $status = 'proses';
+                        }
+                    }
+                    
+                    return [
+                        'id' => $pesanan->id,
+                        'msisdn' => $pesanan->msisdn,
+                        'provider' => $pesanan->produk->provider ?? '-',
+                        'packageName' => $pesanan->produk->nama_paket ?? '-',
+                        'orderDate' => $pesanan->created_at,
+                        'sellPrice' => $pesanan->harga_jual,
+                        'commission' => $pesanan->profit,
+                        'status' => $status
+                    ];
+                });
+            
+            // Ambil riwayat withdrawal
+            $withdrawalHistory = \App\Models\Withdraw::where('agent_id', $user->id)
+                ->with('rekening:id,nama_bank,nomor_rekening')
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function($withdraw) {
+                    return [
+                        'id' => $withdraw->id,
+                        'date' => $withdraw->created_at,
+                        'bankName' => $withdraw->rekening->nama_bank ?? '-',
+                        'accountNumber' => $withdraw->rekening->nomor_rekening ?? '-',
+                        'amount' => $withdraw->jumlah,
+                        'status' => $withdraw->status,
+                        'keterangan' => $withdraw->keterangan,
+                        'alasan_reject' => $withdraw->alasan_reject
+                    ];
+                });
+        } else {
+            $referralData = [
+                'totalCommission' => 0,
+                'pendingCommission' => 0
+            ];
+            $referralHistory = [];
+            $withdrawalHistory = [];
         }
         
         return view('agent.wallet', [
-            'walletBalance' => $walletBalance
+            'walletBalance' => $walletBalance,
+            'referralData' => $referralData,
+            'referralHistory' => $referralHistory,
+            'withdrawalHistory' => $withdrawalHistory
         ]);
     }
 
@@ -228,7 +420,7 @@ class AgentController extends Controller
             $monthlyHistory = \App\Models\Pesanan::where('kategori_channel', 'agent')
                 ->where('channel_id', $user->id)
                 ->whereHas('pembayaran', function($query) {
-                    $query->whereIn('status_pembayaran', ['selesai', 'berhasil']);
+                    $query->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS']);
                 })
                 ->selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month, SUM(profit) as total_profit, COUNT(*) as total_transactions')
                 ->groupBy('month')
@@ -242,7 +434,7 @@ class AgentController extends Controller
                 $details = \App\Models\Pesanan::where('kategori_channel', 'agent')
                     ->where('channel_id', $user->id)
                     ->whereHas('pembayaran', function($query) {
-                        $query->whereIn('status_pembayaran', ['selesai', 'berhasil']);
+                        $query->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS']);
                     })
                     ->with('produk:id,nama_paket')
                     ->whereRaw('DATE_FORMAT(created_at, "%Y-%m") = ?', [$monthData->month])
@@ -271,7 +463,7 @@ class AgentController extends Controller
             $profitData['yearly_history'] = \App\Models\Pesanan::where('kategori_channel', 'agent')
                 ->where('channel_id', $user->id)
                 ->whereHas('pembayaran', function($query) {
-                    $query->whereIn('status_pembayaran', ['selesai', 'berhasil']);
+                    $query->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS']);
                 })
                 ->selectRaw('YEAR(created_at) as year, SUM(profit) as total_profit, COUNT(*) as total_transactions')
                 ->groupBy('year')
@@ -291,7 +483,67 @@ class AgentController extends Controller
 
     public function referrals()
     {
-        return view('agent.referrals');
+        $user = auth()->user();
+        $profitData = [
+            'current_balance' => 0,
+            'monthly_profit' => 0,
+            'yearly_profit' => 0,
+            'monthly_history' => [],
+            'yearly_history' => []
+        ];
+        
+        // Jika user adalah agent, ambil data profit
+        if ($user instanceof \App\Models\Agent) {
+            $profitData['current_balance'] = $user->saldo ?? 0;
+            $profitData['monthly_profit'] = $user->saldo_bulan ?? 0;
+            $profitData['yearly_profit'] = $user->saldo_tahun ?? 0;
+            
+            // Ambil history profit per bulan dari pesanan
+            $monthlyHistory = \App\Models\Pesanan::where('kategori_channel', 'agent')
+                ->where('channel_id', $user->id)
+                ->whereHas('pembayaran', function($query) {
+                    $query->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS']);
+                })
+                ->selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month, SUM(profit) as total_profit, COUNT(*) as total_transactions')
+                ->groupBy('month')
+                ->orderBy('month', 'DESC')
+                ->limit(12)
+                ->get();
+            
+            // Untuk setiap bulan, ambil detail transaksinya dan restructure ke array
+            $monthlyHistoryArray = [];
+            foreach ($monthlyHistory as $monthData) {
+                $details = \App\Models\Pesanan::where('kategori_channel', 'agent')
+                    ->where('channel_id', $user->id)
+                    ->whereHas('pembayaran', function($query) {
+                        $query->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS']);
+                    })
+                    ->with('produk:id,nama_paket')
+                    ->whereRaw('DATE_FORMAT(created_at, "%Y-%m") = ?', [$monthData->month])
+                    ->select('id', 'produk_id', 'profit', 'created_at')
+                    ->orderBy('created_at', 'DESC')
+                    ->get()
+                    ->map(function($pesanan) {
+                        return [
+                            'id' => $pesanan->id,
+                            'product' => $pesanan->produk->nama_paket ?? '-',
+                            'profit' => $pesanan->profit,
+                            'date' => $pesanan->created_at->format('d M Y')
+                        ];
+                    });
+                
+                $monthlyHistoryArray[] = [
+                    'month' => $monthData->month,
+                    'total_profit' => $monthData->total_profit,
+                    'total_transactions' => $monthData->total_transactions,
+                    'details' => $details
+                ];
+            }
+            
+            $profitData['monthly_history'] = $monthlyHistoryArray;
+        }
+        
+        return view('agent.referrals', ['profitData' => $profitData]);
     }
 
     public function index()
@@ -337,7 +589,7 @@ class AgentController extends Controller
                 'link_gmaps' => 'nullable|string',
                 'long' => 'nullable|numeric',
                 'lat' => 'nullable|numeric',
-                'link_referal' => 'nullable|string',
+                'link_referal' => 'nullable|string|unique:agent,link_referal|unique:affiliate,link_referral|unique:freelance,link_referral',
                 'rekening_agent' => 'nullable|string',
                 'date_approve' => 'nullable|date',
                 // Max 5 MB to match frontend hint
