@@ -167,7 +167,7 @@
                             <!-- Check Payment Button -->
                             <button @click="handleCheckPayment()" class="w-full inline-flex items-center justify-center gap-2 rounded-md bg-primary text-primary-foreground h-11 px-4 py-2 hover:bg-primary/90 font-medium mt-4">
                                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                <span x-text="paymentStatus === 'pending' ? 'Cek Status Pembayaran' : (paymentStatus === 'verifying' ? 'Memeriksa...' : 'Terkonfirmasi')"></span>
+                                <span x-text="paymentStatus === 'activated' ? 'Terkonfirmasi' : 'Cek Status Pembayaran'"></span>
                             </button>
                             
                             <!-- QR Code -->
@@ -398,7 +398,7 @@
 function checkoutApp() {
     return {
         isLoading: true,
-        paymentStatus: 'pending',
+        paymentStatus: 'verifying',
         timeRemaining: 15 * 60,
         orderData: { items: [], total: 0, platformFee: 0, uniqueCode: 0, paymentUnique: 0, paymentMethod: 'qris', refCode: null },
         paymentId: null, batchId: null, qrCodeUrl: null, qrisString: null, qrisStaticString: null, useStaticQris: false, paymentAmount: 0,
@@ -424,18 +424,29 @@ function checkoutApp() {
             this.orderData = { items: data.items || [], total: data.subtotal || data.total || 0, platformFee: data.platformFee || 0, paymentMethod: data.paymentMethod || 'qris', refCode: data.refCode || '{{ $affiliate->id ?? 1 }}', scheduleDate: data.scheduleDate || null, isBulk: true };
             
             // Restore payment status dari localStorage jika ada
-            if (data.paymentStatus && ['pending', 'verifying', 'activated'].includes(data.paymentStatus)) {
+            // Jangan restore pending - langsung set ke verifying (biar masuk step verifikasi)
+            if (data.paymentStatus && ['verifying', 'activated'].includes(data.paymentStatus)) {
                 this.paymentStatus = data.paymentStatus;
                 console.log('♻️ Restored payment status:', this.paymentStatus);
+            } else if (data.paymentStatus === 'pending') {
+                this.paymentStatus = 'verifying';
+                console.log('♻️ Override pending to verifying');
             }
             
             if (data.paymentId) { 
                 this.paymentId = data.paymentId; 
                 this.batchId = data.batchId; 
-                await this.fetchQrisData(); 
-                // Auto-verify payment saat page load
-                console.log('🔄 Auto-verifying payment on page load...');
-                await this.autoVerifyPayment();
+                
+                // Jika status sudah activated, langsung tampilkan tanpa fetch ulang
+                if (this.paymentStatus === 'activated') {
+                    console.log('✅ Status sudah activated, skip loading...');
+                    this.isLoading = false;
+                } else {
+                    await this.fetchQrisData(); 
+                    // Auto-verify payment saat page load
+                    console.log('🔄 Auto-verifying payment on page load...');
+                    await this.autoVerifyPayment();
+                }
             }
             else { await this.createPayment(); }
             this.startTimer(); this.startPaymentPolling();
@@ -446,29 +457,33 @@ function checkoutApp() {
             const saved = localStorage.getItem('pendingOrder');
             if (saved) {
                 const orderData = JSON.parse(saved);
-                orderData.paymentStatus = this.paymentStatus;
+                orderData.paymentStatus = this.paymentStatus === 'pending' ? 'verifying' : this.paymentStatus;
                 localStorage.setItem('pendingOrder', JSON.stringify(orderData));
-                console.log('💾 Payment status saved:', this.paymentStatus);
+                console.log('💾 Payment status saved:', orderData.paymentStatus);
             }
         },
         
         // Auto-verify payment saat page load
+        // Alur sama seperti tokodigi: verifyPayment (cek mutasi) → getPayment (baca DB)
         async autoVerifyPayment() {
             if (!this.paymentId) return;
             try {
                 console.log('🔍 Auto-verifying payment:', this.paymentId);
+                // Step 1: Trigger verifyPayment untuk cek mutasi QRIS
                 const v = await verifyPayment(this.paymentId);
-                if (v.success && ['berhasil','success','sukses'].includes(v.status?.toLowerCase())) { 
-                    console.log('✅ Auto-verify found payment successful!');
-                    this.setPaymentActivated(); 
-                    return; 
-                }
+                console.log('🔍 Verify response:', v);
+                if (v.success && ['berhasil','success','sukses'].includes(v.status?.toLowerCase())) { console.log('✅ Verify found payment successful!'); this.setPaymentActivated(); return; }
+                // Step 2: Get payment data dari database
                 const r = await getPaymentStatus(this.paymentId);
                 const d = Array.isArray(r) ? r[0] : (r.data || r);
+                const st = (d.status || d.payment_status || '').toLowerCase();
+                console.log('🔍 Manual check - Status:', st, 'Data:', d);
                 if (d?.id) {
-                    const st = (d.status || d.payment_status || '').toLowerCase();
-                    console.log('📊 Auto-verify - Current status:', st);
+                    if (d.qris && !this.qrisString) { this.qrisString = d.qris; this.qrisStaticString = d.qris_static || null; this.$nextTick(() => this.generateQRCode()); }
                     if (['success','sukses','paid','berhasil','completed'].includes(st)) this.setPaymentActivated();
+                    // PENTING: Abaikan status pending dari API saat page load
+                    // Status sudah di-set ke 'verifying' di init(), jangan override ke pending
+                    else if (['pending','unpaid'].includes(st) || st.includes('menunggu')) { console.log('⚠️ API returned pending, keeping:', this.paymentStatus); }
                     else if (['expired','failed'].includes(st)) { this.paymentStatus = 'expired'; localStorage.removeItem('pendingOrder'); }
                 }
             } catch(e) { console.error('❌ Auto-verify failed:', e); }
@@ -574,28 +589,38 @@ function checkoutApp() {
 
         startPaymentPolling() {
             if (!this.paymentId) return;
+            // Jika sudah activated, tidak perlu polling
+            if (this.paymentStatus === 'activated') { console.log('✅ Status sudah activated, skip polling'); return; }
+            // Check payment status every 5 seconds
+            // Alur sama seperti tokodigi: verifyPayment (cek mutasi) → getPayment (baca DB)
             this.paymentCheckInterval = setInterval(async () => {
                 try {
+                    // Step 1: Trigger verifyPayment untuk cek mutasi QRIS
                     const v = await verifyPayment(this.paymentId);
-                    if (v.success && ['berhasil','success','sukses'].includes(v.status?.toLowerCase())) { this.setPaymentActivated(); return; }
+                    console.log('🔄 Polling verify response:', v);
+                    if (v.success && ['berhasil','success','sukses'].includes(v.status?.toLowerCase())) { console.log('✅ Polling: Payment successful!'); this.setPaymentActivated(); return; }
+                    // Step 2: Get payment data dari database
                     const r = await getPaymentStatus(this.paymentId);
                     const d = Array.isArray(r) ? r[0] : (r.data || r);
+                    const st = (d?.status || d?.payment_status || '').toLowerCase();
+                    console.log('🔍 Manual check - Status:', st, 'Data:', d);
                     if (d?.id) {
                         if (d.qris && !this.qrisString) { this.qrisString = d.qris; this.qrisStaticString = d.qris_static; this.$nextTick(() => this.generateQRCode()); }
-                        const st = (d.status || d.payment_status || '').toLowerCase();
+                        // Update indikator berdasarkan status dari API (sama seperti manual check)
                         if (['success','sukses','paid','berhasil','completed'].includes(st)) this.setPaymentActivated();
+                        // PENTING: Abaikan status pending dari API saat polling
+                        else if (['pending','unpaid'].includes(st) || st.includes('menunggu')) { console.log('⚠️ Polling: keeping verifying'); }
                         else if (['expired','failed'].includes(st)) { this.paymentStatus = 'expired'; clearInterval(this.paymentCheckInterval); clearInterval(this.timerInterval); localStorage.removeItem('pendingOrder'); }
                     }
                 } catch(e) { console.error(e); }
-            }, 10000);
+            }, 5000); // Check every 5 seconds
         },
 
         handleCopyAmount() { navigator.clipboard.writeText(this.totalAmount.toString()); this.showToast('Tersalin', 'Nominal disalin'); },
 
         async handleCheckPayment() {
             if (!this.paymentId) { this.showErrorModal('Error', 'Payment ID tidak ditemukan'); return; }
-            if (this.paymentStatus === 'pending') this.paymentStatus = 'verifying';
-            this.showToast('Memeriksa', 'Sedang memeriksa...');
+            this.showToast('Mengecek', 'Sedang mengecek...');
             try {
                 const v = await verifyPayment(this.paymentId);
                 if (v.success && ['berhasil','success','sukses'].includes(v.status?.toLowerCase())) { this.setPaymentActivated(); return; }
@@ -603,15 +628,16 @@ function checkoutApp() {
                 const d = Array.isArray(r) ? r[0] : (r.data || r);
                 const st = (d?.status || d?.payment_status || '').toLowerCase();
                 if (['success','sukses','paid','berhasil','completed'].includes(st)) this.setPaymentActivated();
-                else if (['pending','unpaid'].includes(st)) this.showToast('Menunggu', 'Pembayaran belum diterima');
+                else if (st.includes('verifikasi') || st === 'verify' || st === 'verifying') { if (this.paymentStatus !== 'activated') { this.paymentStatus = 'verifying'; console.log('📊 Status dari API: verifying'); } this.showToast('Verifikasi', 'Pembayaran sedang diverifikasi...'); }
+                else if (['pending','unpaid'].includes(st)) { if (this.paymentStatus !== 'activated') { this.paymentStatus = 'pending'; console.log('📊 Status dari API: pending'); } this.showToast('Menunggu', 'Pembayaran belum diterima'); }
                 else if (['expired','failed'].includes(st)) { this.paymentStatus = 'expired'; clearInterval(this.timerInterval); clearInterval(this.paymentCheckInterval); localStorage.removeItem('pendingOrder'); }
                 else this.showToast('Status', 'Status: ' + (d?.status || 'checking'));
-            } catch(e) { console.error(e); this.showErrorModal('Error', 'Gagal memeriksa status pembayaran. Silakan coba lagi.'); }
+            } catch(e) { console.error(e); this.showErrorModal('Error', 'Gagal mengecek status pembayaran. Silakan coba lagi.'); }
         },
 
         async handleViewInvoice() {
             if (!this.paymentId) { this.showErrorModal('Error', 'Payment ID tidak ditemukan. Silakan refresh halaman.'); return; }
-            if (!this.canAccessInvoice) { this.showToast('Info', 'Memeriksa...'); await this.handleCheckPayment(); if (!this.canAccessInvoice) { this.showToast('Menunggu', 'Selesaikan pembayaran dulu'); return; } }
+            if (!this.canAccessInvoice) { this.showToast('Info', 'Mengecek...'); await this.handleCheckPayment(); if (!this.canAccessInvoice) { this.showToast('Menunggu', 'Selesaikan pembayaran dulu'); return; } }
             window.open(`/invoice/${this.paymentId}`, '_blank');
         },
 
