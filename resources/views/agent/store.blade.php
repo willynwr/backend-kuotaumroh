@@ -54,6 +54,7 @@
             link_referal: '{{ $agent->link_referal ?? "kuotaumroh" }}',
             nama_travel: '{{ $agent->nama_travel ?? "Kuotaumroh.id" }}',
             is_individual: true,                         // Flag untuk mode individu (tanpa login)
+            is_agent: false,                             // Flag: false = customer umum, true = agent (gunakan price_bulk)
         };
     </script>
     
@@ -336,16 +337,16 @@
                                                     </div>
 
                                                     <div class="mb-3">
-                                                        <!-- Original Price (Strikethrough) if price_app exists and different from price_customer -->
-                                                        <template x-if="pkg.price_app && pkg.price_app > pkg.price_customer">
-                                                            <p class="text-2l text-gray-500 line-through mb-1" x-text="formatRupiah(pkg.price_app)"></p>
+                                                        <!-- Harga Coret (Strikethrough) - dari harga_komersial -->
+                                                        <template x-if="pkg.harga_komersial && pkg.harga_komersial > pkg.displayPrice">
+                                                            <p class="text-sm text-gray-500 line-through mb-1" x-text="formatRupiah(pkg.harga_komersial)"></p>
                                                         </template>
-                                                        <!-- Discounted Price (price_customer) -->
-                                                        <p class="text-2xl font-bold text-primary" x-text="formatRupiah(pkg.sellPrice || pkg.price)"></p>
-                                                        <!-- Discount Badge -->
-                                                        <template x-if="pkg.price_app && pkg.price_app > pkg.price_customer">
+                                                        <!-- Harga Utama (displayPrice) - price_bulk untuk agent, price_customer untuk non-agent -->
+                                                        <p class="text-2xl font-bold text-primary" x-text="formatRupiah(pkg.displayPrice || pkg.price)"></p>
+                                                        <!-- Label Hemat (hanya tampil jika hemat > 0) -->
+                                                        <template x-if="pkg.showHemat && pkg.hemat > 0">
                                                             <span class="inline-block mt-1 bg-red-100 text-red-600 text-xs font-semibold px-2 py-0.5 rounded"
-                                                                x-text="'Hemat ' + formatRupiah(pkg.price_app - pkg.price_customer)"></span>
+                                                                x-text="'Hemat ' + formatRupiah(pkg.hemat)"></span>
                                                         </template>
                                                     </div>
 
@@ -615,29 +616,40 @@
                 async loadAllPackages() {
                     try {
                         this.packagesLoading = true;
-                        // Gunakan ref_code dari config (0 untuk individu, bulk_umroh untuk bulk)
+                        // Gunakan endpoint lokal (bukan proxy ke external API)
+                        // Data diambil dari database lokal table 'produk'
                         const catalogRefCode = STORE_CONFIG.catalog_ref_code || '0';
-                        const response = await fetch(`${API_BASE_URL}/api/proxy/umroh/package?ref_code=${catalogRefCode}`);
+                        const response = await fetch(`${API_BASE_URL}/api/umroh/package?ref_code=${catalogRefCode}`);
                         if (!response.ok) {
                             throw new Error('Failed to fetch packages');
                         }
                         
                         const data = await response.json();
-                        console.log('📦 API Response:', data);
+                        console.log('📦 API Response (Local DB):', data);
+                        
+                        // Tentukan apakah user adalah agent atau bukan
+                        const isAgent = STORE_CONFIG.is_agent || false;
                         
                         // Response langsung array, tidak wrapped
                         if (Array.isArray(data)) {
                             this.allPackages = data.map(pkg => {
-                                // Parse harga - untuk individu, gunakan price_app dan price_customer
-                                const priceApp = parseInt(pkg.price_app) || 0;         // Harga asli (sebelum diskon)
-                                const priceCustomer = parseInt(pkg.price_customer) || 0; // Harga diskon
-                                const priceBulk = parseInt(pkg.price_bulk) || priceCustomer;
+                                // Parse harga dari local DB
+                                // harga_komersial/price_app = Harga asli (untuk strikethrough/harga coret)
+                                const hargaKomersial = parseInt(pkg.harga_komersial) || parseInt(pkg.price_app) || 0;
+                                const priceCustomer = parseInt(pkg.price_customer) || 0; // Harga untuk customer umum
+                                const priceBulk = parseInt(pkg.price_bulk) || 0;         // Harga untuk agent
                                 
-                                // Untuk store (individu), tampilkan price_customer sebagai harga final
-                                const displayPrice = priceCustomer;
+                                // Pilih harga display berdasarkan role user
+                                // - Agent: gunakan price_bulk
+                                // - Non-agent (customer umum): gunakan price_customer
+                                const displayPrice = isAgent ? priceBulk : priceCustomer;
+                                
+                                // Hitung hemat (harga_komersial - displayPrice)
+                                const hemat = hargaKomersial - displayPrice;
                                 
                                 return {
                                     id: pkg.id,
+                                    produk_id: pkg.produk_id || pkg.id,
                                     package_id: pkg.id,
                                     packageId: pkg.id,
                                     name: pkg.name,
@@ -647,26 +659,31 @@
                                     masa_aktif: parseInt(pkg.days) || 0,
                                     quota: pkg.quota || '',
                                     total_kuota: pkg.quota || '',
-                                    kuota_utama: pkg.quota || '',
-                                    kuota_bonus: pkg.bonus || '',
+                                    kuota_utama: pkg.kuota_utama || pkg.quota || '',
+                                    kuota_bonus: pkg.kuota_bonus || pkg.bonus || '',
                                     bonus: pkg.bonus || '',
                                     telp: pkg.telp || '',
                                     sms: pkg.sms || '',
-                                    price: displayPrice,         // Harga yang digunakan untuk payment (price_customer)
+                                    price: displayPrice,           // Harga yang digunakan untuk payment
                                     harga: displayPrice,
                                     sellPrice: displayPrice,
-                                    displayPrice: displayPrice,  // Harga diskon yang ditampilkan
-                                    price_app: priceApp,         // Harga asli (untuk strikethrough)
-                                    price_customer: priceCustomer, // Harga diskon
-                                    price_bulk: priceBulk,       // Simpan untuk referensi
-                                    profit: 0, // Tidak ada profit untuk individu
+                                    displayPrice: displayPrice,    // Harga yang ditampilkan (besar)
+                                    harga_komersial: hargaKomersial, // Harga coret (strikethrough)
+                                    price_app: hargaKomersial,       // Alias harga coret 
+                                    price_customer: priceCustomer,   // Harga untuk customer
+                                    price_bulk: priceBulk,           // Harga untuk agent
+                                    hemat: hemat > 0 ? hemat : 0,    // Hemat (hanya jika > 0)
+                                    showHemat: hemat > 0,            // Flag untuk tampilkan label hemat
+                                    profit: 0,
                                     subType: pkg.sub_type || '',
                                     tipe_paket: pkg.sub_type || '',
                                     is_active: pkg.is_active,
                                     promo: pkg.promo || null,
+                                    source_name: pkg.source_name || null,
                                 };
                             });
                             console.log('📦 Mapped packages:', this.allPackages.length);
+                            console.log('📦 User role:', isAgent ? 'AGENT' : 'CUSTOMER');
                         }
                         this.packagesLoading = false;
                     } catch (error) {

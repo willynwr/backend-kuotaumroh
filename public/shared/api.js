@@ -161,8 +161,9 @@ async function logout() {
  */
 async function fetchPackages(provider = null) {
   try {
-    // Fetch from real API
-    const response = await fetch(`${API_BASE}/proxy/umroh/package?ref_code=bulk_umroh`);
+    // Fetch dari endpoint lokal (bukan proxy ke external API)
+    // Data diambil dari table 'produk' di database lokal
+    const response = await fetch(`${API_BASE}/umroh/package?ref_code=bulk_umroh`);
     if (!response.ok) {
       throw new Error('Failed to fetch packages');
     }
@@ -172,15 +173,24 @@ async function fetchPackages(provider = null) {
     // Map API response to app format
     const packages = data
       .filter(pkg => pkg.is_active === '1') // Only include active packages
-      .filter(pkg => pkg.price_bulk && pkg.price_customer) // Only include packages with prices
       .map(pkg => {
+        // Parse harga dari response lokal
+        const hargaKomersial = parseInt(pkg.harga_komersial) || parseInt(pkg.price_app) || 0;
+        const priceBulk = parseInt(pkg.price_bulk) || 0;
+        const priceCustomer = parseInt(pkg.price_customer) || 0;
+
         return {
           id: pkg.id,
+          produk_id: pkg.produk_id, // ID database lokal
           name: pkg.name,
           provider: pkg.type, // e.g., "TELKOMSEL", "INDOSAT", "XL", "AXIS"
           subType: pkg.sub_type, // e.g., "INTERNET", "INTERNET + TELP/SMS"
-          price: parseInt(pkg.price_bulk), // Agent wholesale price
-          sellPrice: parseInt(pkg.price_customer), // Public retail price
+          price: priceBulk, // Agent wholesale price (price_bulk)
+          sellPrice: priceCustomer, // Public retail price (price_customer)
+          hargaKomersial: hargaKomersial, // Harga coret (strikethrough)
+          price_app: hargaKomersial, // Alias untuk harga coret
+          price_bulk: priceBulk,
+          price_customer: priceCustomer,
           feeAffiliate: pkg.fee_affiliate ? parseInt(pkg.fee_affiliate) : 0,
           quota: pkg.quota || 'Unlimited',
           validity: `${pkg.days} hari`,
@@ -613,12 +623,12 @@ async function getLocalPaymentDetail(paymentId) {
 async function getInvoiceDetail(paymentId, agentId = null) {
   try {
     console.log('🔍 Fetching invoice for payment:', paymentId, 'agent:', agentId);
-    
+
     // Coba ambil dari local database dulu (untuk status yang sudah diupdate)
     try {
       console.log('🔍 Trying local database first for ID:', paymentId);
       const localResponse = await getLocalPaymentDetail(paymentId);
-      
+
       if (localResponse && localResponse.success && localResponse.data) {
         console.log('✅ Found in local database');
         return {
@@ -630,15 +640,15 @@ async function getInvoiceDetail(paymentId, agentId = null) {
     } catch (localError) {
       console.log('⚠️ Not found in local database, trying external API...');
     }
-    
+
     // Fallback: Coba ambil dari external API via proxy
     console.log('🔍 Fetching from external API (proxy)');
-    
+
     // Coba sebagai individual payment dulu
     const individualResponse = await getIndividualPaymentDetail(paymentId);
-    
+
     console.log('📦 Individual response raw:', individualResponse);
-    
+
     if (individualResponse && (Array.isArray(individualResponse) ? individualResponse.length > 0 : individualResponse.id || individualResponse.payment_id)) {
       const data = Array.isArray(individualResponse) ? individualResponse[0] : individualResponse;
       console.log('✅ Found as individual payment from external API');
@@ -650,12 +660,12 @@ async function getInvoiceDetail(paymentId, agentId = null) {
         data: data
       };
     }
-    
+
     // Jika individual tidak ada, coba bulk
     if (agentId) {
       console.log('🔍 Trying as bulk payment with agent:', agentId);
       const bulkResponse = await getBulkPaymentDetail(paymentId, agentId);
-      
+
       if (bulkResponse && Array.isArray(bulkResponse) && bulkResponse.length > 0) {
         console.log('✅ Found as bulk payment from external API');
         return {
@@ -665,7 +675,7 @@ async function getInvoiceDetail(paymentId, agentId = null) {
         };
       }
     }
-    
+
     throw new Error('Payment not found');
   } catch (error) {
     console.error('Error fetching invoice detail:', error);
@@ -826,7 +836,7 @@ async function checkPaymentStatus(paymentId) {
 
   // Use the new payment status API
   const response = await getPaymentStatus(paymentId);
-  
+
   // Map to expected format
   return {
     success: response.success,

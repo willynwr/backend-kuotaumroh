@@ -21,21 +21,15 @@ class Produk extends Model
         'kuota_bonus',
         'telp',
         'sms',
-        'harga_modal',
-        'harga_eup',
-        'persentase_margin_star',
-        'margin_star',
-        'margin_total',
-        'fee_travel',
-        'persentase_fee_travel',
-        'persentase_fee_affiliate',
-        'fee_affiliate',
-        'persentase_fee_host',
-        'fee_host',
-        'harga_tp_travel',
-        'harga_tp_host',
+        'harga_api',           // Nama kolom sebenarnya di DB (bukan harga_app)
+        'harga_komersial',     // Harga untuk strikethrough
+        'price_bulk',          // Harga untuk agent
+        'price_customer',      // Harga untuk customer umum
+        'persentase_marginstar',
+        'marginstar',
         'poin',
-        'profit',
+        'source_name',
+        'promo',
     ];
 
     protected $casts = [
@@ -45,20 +39,25 @@ class Produk extends Model
         'kuota_bonus' => 'integer',
         'telp' => 'integer',
         'sms' => 'integer',
-        'harga_modal' => 'integer',
-        'harga_eup' => 'integer',
-        'persentase_margin_star' => 'decimal:2',
-        'margin_star' => 'integer',
-        'margin_total' => 'integer',
-        'fee_travel' => 'integer',
-        'persentase_fee_travel' => 'decimal:2',
-        'persentase_fee_affiliate' => 'decimal:2',
-        'fee_affiliate' => 'integer',
-        'persentase_fee_host' => 'decimal:2',
-        'fee_host' => 'integer',
-        'harga_tp_travel' => 'integer',
-        'harga_tp_host' => 'integer',
+        'harga_api' => 'integer',
+        'harga_komersial' => 'integer',
+        'price_bulk' => 'integer',
+        'price_customer' => 'integer',
+        'persentase_marginstar' => 'decimal:2',
+        'marginstar' => 'integer',
         'poin' => 'integer',
-        'profit' => 'integer',
     ];
+
+    // Note: Tidak ada kolom is_active di table produk
+
+    /**
+     * Scope untuk filter produk umroh
+     */
+    public function scopeUmroh($query)
+    {
+        return $query->where(function ($q) {
+            $q->whereNotNull('source_name')
+              ->orWhereIn('provider', ['TELKOMSEL', 'INDOSAT', 'XL', 'AXIS', 'TRI', 'BYU', 'SMARTFREN']);
+        });
+    }
 }

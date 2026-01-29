@@ -19,30 +19,68 @@ return new class extends Migration
         Schema::table('pembayaran', function (Blueprint $table) {
             // Add agent_id and produk_id columns
             if (!Schema::hasColumn('pembayaran', 'agent_id')) {
-                $table->unsignedBigInteger('agent_id')->after('batch_id');
+                $table->string('agent_id')->nullable()->after('batch_id');
             }
             if (!Schema::hasColumn('pembayaran', 'produk_id')) {
-                $table->unsignedBigInteger('produk_id')->after('agent_id');
+                $table->string('produk_id', 20)->nullable()->after('agent_id');
+            }
+            
+            // Add product detail columns
+            if (!Schema::hasColumn('pembayaran', 'mslsdn')) {
+                $table->string('mslsdn')->nullable()->after('produk_id');
+            }
+            if (!Schema::hasColumn('pembayaran', 'nama_paket')) {
+                $table->string('nama_paket')->nullable()->after('mslsdn');
+            }
+            if (!Schema::hasColumn('pembayaran', 'tipe_paket')) {
+                $table->string('tipe_paket')->nullable()->after('nama_paket');
+            }
+            if (!Schema::hasColumn('pembayaran', 'harga_modal')) {
+                $table->integer('harga_modal')->default(0)->after('tipe_paket');
+            }
+            if (!Schema::hasColumn('pembayaran', 'harga_jual')) {
+                $table->integer('harga_jual')->default(0)->after('harga_modal');
+            }
+            
+            // Add metode_pembayaran if not exists (required by add_external_fields migration)
+            if (!Schema::hasColumn('pembayaran', 'metode_pembayaran')) {
+                $table->string('metode_pembayaran')->nullable()->after('harga_jual');
+            }
+            
+            // Drop old columns that don't exist in new structure
+            if (Schema::hasColumn('pembayaran', 'nama_batch')) {
+                $table->dropColumn('nama_batch');
+            }
+            if (Schema::hasColumn('pembayaran', 'sub_total')) {
+                $table->dropColumn('sub_total');
+            }
+            if (Schema::hasColumn('pembayaran', 'biaya_platform')) {
+                $table->dropColumn('biaya_platform');
+            }
+            if (Schema::hasColumn('pembayaran', 'bank')) {
+                $table->dropColumn('bank');
+            }
+            if (Schema::hasColumn('pembayaran', 'no_rekening')) {
+                $table->dropColumn('no_rekening');
+            }
+            if (Schema::hasColumn('pembayaran', 'va')) {
+                $table->dropColumn('va');
             }
         });
         
-        // Add indexes only if they don't exist
-        $existingIndexes = collect(DB::select("SHOW INDEX FROM pembayaran"))->pluck('Key_name')->unique()->toArray();
+        // Change column types to integer
+        DB::statement("ALTER TABLE pembayaran MODIFY COLUMN profit INT DEFAULT 0");
+        DB::statement("ALTER TABLE pembayaran MODIFY COLUMN total_pembayaran INT DEFAULT 0");
         
-        if (!in_array('pembayaran_agent_id_foreign', $existingIndexes)) {
-            Schema::table('pembayaran', function (Blueprint $table) {
-                $table->index('agent_id', 'pembayaran_agent_id_foreign');
-            });
+        // Add or update status_pembayaran enum
+        $columns = DB::select("SHOW COLUMNS FROM pembayaran LIKE 'status_pembayaran'");
+        if (empty($columns)) {
+            // Add status_pembayaran if doesn't exist
+            DB::statement("ALTER TABLE pembayaran ADD COLUMN status_pembayaran ENUM('berhasil', 'proses', 'gagal') DEFAULT 'proses' AFTER total_pembayaran");
+        } else {
+            // Update enum values for status_pembayaran
+            DB::statement("ALTER TABLE pembayaran MODIFY COLUMN status_pembayaran ENUM('berhasil', 'proses', 'gagal') DEFAULT 'proses'");
         }
-        
-        if (!in_array('pembayaran_produk_id_foreign', $existingIndexes)) {
-            Schema::table('pembayaran', function (Blueprint $table) {
-                $table->index('produk_id', 'pembayaran_produk_id_foreign');
-            });
-        }
-        
-        // Update enum values for status_pembayaran
-        DB::statement("ALTER TABLE pembayaran MODIFY COLUMN status_pembayaran ENUM('berhasil', 'proses', 'gagal') DEFAULT 'proses'");
         
         // Re-enable foreign key constraints
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
@@ -57,11 +95,31 @@ return new class extends Migration
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
         
         Schema::table('pembayaran', function (Blueprint $table) {
-            $table->dropIndex('pembayaran_agent_id_foreign');
-            $table->dropIndex('pembayaran_produk_id_foreign');
-            $table->dropColumn(['agent_id', 'produk_id']);
+            // Remove added columns
+            $table->dropColumn([
+                'agent_id', 
+                'produk_id', 
+                'mslsdn', 
+                'nama_paket', 
+                'tipe_paket', 
+                'harga_modal', 
+                'harga_jual'
+            ]);
+            
+            // Restore old columns
+            $table->string('nama_batch');
+            $table->bigInteger('sub_total');
+            $table->bigInteger('biaya_platform')->default(0);
+            $table->string('bank')->nullable();
+            $table->string('no_rekening')->nullable();
+            $table->string('va')->nullable();
         });
         
+        // Restore old column types
+        DB::statement("ALTER TABLE pembayaran MODIFY COLUMN profit BIGINT");
+        DB::statement("ALTER TABLE pembayaran MODIFY COLUMN total_pembayaran BIGINT");
+        
+        // Restore old enum values
         DB::statement("ALTER TABLE pembayaran MODIFY COLUMN status_pembayaran ENUM('selesai', 'menunggu pembayaran', 'gagal') DEFAULT 'menunggu pembayaran'");
         
         // Re-enable foreign key constraints
