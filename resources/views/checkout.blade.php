@@ -730,7 +730,7 @@
                 },
                 
                 // Auto-verify payment saat page load (untuk handle refresh)
-                // Ini akan trigger API verify untuk meng-check status pembayaran terbaru
+                // Alur sama seperti tokodigi: verifyPayment (cek mutasi) → getPayment (baca DB)
                 async autoVerifyPayment() {
                     if (!this.paymentId) {
                         console.log('⚠️ No payment ID for auto-verify');
@@ -740,7 +740,18 @@
                     try {
                         console.log('🔍 Auto-verifying payment:', this.paymentId);
                         
-                        // Langsung get status dari database (sama seperti manual check)
+                        // Step 1: Trigger verifyPayment untuk cek mutasi QRIS (seperti tokodigi)
+                        const verifyResponse = await verifyPayment(this.paymentId);
+                        console.log('🔍 Verify response:', verifyResponse);
+                        
+                        // Jika verify berhasil (pembayaran ditemukan)
+                        if (verifyResponse.success && ['berhasil', 'success', 'sukses'].includes(verifyResponse.status?.toLowerCase())) {
+                            console.log('✅ Verify found payment successful!');
+                            this.setPaymentActivated();
+                            return;
+                        }
+                        
+                        // Step 2: Get payment data dari database (sama seperti tokodigi getPayment)
                         const response = await getPaymentStatus(this.paymentId);
                         
                         // Response is array, get first item
@@ -1128,10 +1139,22 @@
                         return;
                     }
 
-                    // Check payment status every 5 seconds - langsung dari database seperti manual check
+                    // Check payment status every 5 seconds
+                    // Alur sama seperti tokodigi: verifyPayment (cek mutasi) → getPayment (baca DB)
                     this.paymentCheckInterval = setInterval(async () => {
                         try {
-                            // Langsung get status dari database (sama seperti manual check)
+                            // Step 1: Trigger verifyPayment untuk cek mutasi QRIS
+                            const verifyResponse = await verifyPayment(this.paymentId);
+                            console.log('🔄 Polling verify response:', verifyResponse);
+                            
+                            // Jika verify berhasil (pembayaran ditemukan)
+                            if (verifyResponse.success && ['berhasil', 'success', 'sukses'].includes(verifyResponse.status?.toLowerCase())) {
+                                console.log('✅ Polling: Payment successful!');
+                                this.setPaymentActivated();
+                                return;
+                            }
+                            
+                            // Step 2: Get payment data dari database
                             const response = await getPaymentStatus(this.paymentId);
                             
                             // Response is array, get first item

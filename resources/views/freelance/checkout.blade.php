@@ -457,10 +457,16 @@ function checkoutApp() {
         },
         
         // Auto-verify payment saat page load
+        // Alur sama seperti tokodigi: verifyPayment (cek mutasi) → getPayment (baca DB)
         async autoVerifyPayment() {
             if (!this.paymentId) return;
             try {
                 console.log('🔍 Auto-verifying payment:', this.paymentId);
+                // Step 1: Trigger verifyPayment untuk cek mutasi QRIS
+                const v = await verifyPayment(this.paymentId);
+                console.log('🔍 Verify response:', v);
+                if (v.success && ['berhasil','success','sukses'].includes(v.status?.toLowerCase())) { console.log('✅ Verify found payment successful!'); this.setPaymentActivated(); return; }
+                // Step 2: Get payment data dari database
                 const r = await getPaymentStatus(this.paymentId);
                 const d = Array.isArray(r) ? r[0] : (r.data || r);
                 const st = (d.status || d.payment_status || '').toLowerCase();
@@ -578,10 +584,15 @@ function checkoutApp() {
             if (!this.paymentId) return;
             // Jika sudah activated, tidak perlu polling
             if (this.paymentStatus === 'activated') { console.log('✅ Status sudah activated, skip polling'); return; }
-            // Check payment status every 5 seconds - langsung dari database seperti manual check
+            // Check payment status every 5 seconds
+            // Alur sama seperti tokodigi: verifyPayment (cek mutasi) → getPayment (baca DB)
             this.paymentCheckInterval = setInterval(async () => {
                 try {
-                    // Langsung get status dari database (sama seperti manual check)
+                    // Step 1: Trigger verifyPayment untuk cek mutasi QRIS
+                    const v = await verifyPayment(this.paymentId);
+                    console.log('🔄 Polling verify response:', v);
+                    if (v.success && ['berhasil','success','sukses'].includes(v.status?.toLowerCase())) { console.log('✅ Polling: Payment successful!'); this.setPaymentActivated(); return; }
+                    // Step 2: Get payment data dari database
                     const r = await getPaymentStatus(this.paymentId);
                     const d = Array.isArray(r) ? r[0] : (r.data || r);
                     const st = (d?.status || d?.payment_status || '').toLowerCase();
