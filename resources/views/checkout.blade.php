@@ -303,7 +303,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="p-6 space-y-4">
+                            <div id="payment-summary" class="p-6 space-y-4">
                                 
                                 <!-- Detail Paket & Nomor (di atas catatan penting) -->
                                 <div class="bg-gradient-to-br from-purple-50 to-blue-50 border border-purple-100 rounded-lg p-3 text-center">
@@ -644,9 +644,8 @@
                     // Watch for QRIS type toggle
                     this.$watch('useStaticQris', async (value) => {
                         console.log('🔄 Switched to', value ? 'STATIC' : 'DYNAMIC', 'QRIS');
-                        if (value && !this.qrisStaticDynamicString) {
-                            await this.fetchStaticDynamicQris();
-                        }
+                        // Public checkout tidak support static dynamic conversion
+                        // Just regenerate QR code
                         this.generateQRCode();
                     });
                     
@@ -693,13 +692,19 @@
                         this.paymentId = parsedData.paymentId;
                         this.batchId = parsedData.batchId || null;
                         
-                        // Fetch existing QRIS data
-                        await this.fetchQrisData();
-                        
-                        // Auto-verify payment saat page load (trigger API verify)
-                        // Ini penting untuk meng-update status jika user sudah bayar tapi refresh halaman
-                        console.log('🔄 Auto-verifying payment on page load...');
-                        await this.autoVerifyPayment();
+                        // Jika status sudah activated, langsung tampilkan tanpa fetch ulang
+                        if (this.paymentStatus === 'activated') {
+                            console.log('✅ Status sudah activated, skip loading...');
+                            this.isLoading = false;
+                        } else {
+                            // Fetch existing QRIS data
+                            await this.fetchQrisData();
+                            
+                            // Auto-verify payment saat page load (trigger API verify)
+                            // Ini penting untuk meng-update status jika user sudah bayar tapi refresh halaman
+                            console.log('🔄 Auto-verifying payment on page load...');
+                            await this.autoVerifyPayment();
+                        }
                     } else {
                         // Create new payment transaction via API
                         console.log('🆕 Membuat payment baru...');
@@ -735,38 +740,47 @@
                     try {
                         console.log('🔍 Auto-verifying payment:', this.paymentId);
                         
-                        // First, verify payment via internal API
-                        const verifyResponse = await verifyPayment(this.paymentId);
-                        console.log('🔍 Auto-verify response:', verifyResponse);
-                        
-                        // Check if verification found payment as successful
-                        if (verifyResponse.success && (verifyResponse.status === 'berhasil' || verifyResponse.status === 'success')) {
-                            console.log('✅ Auto-verify found payment successful!');
-                            this.setPaymentActivated();
-                            return;
-                        }
-                        
-                        // Get current status from payment endpoint
+                        // Langsung get status dari database (sama seperti manual check)
                         const response = await getPaymentStatus(this.paymentId);
+                        
+                        // Response is array, get first item
                         const rawData = Array.isArray(response) ? response[0] : (response.data || response);
                         const data = rawData;
+                        const status = (data.status || data.payment_status || '').toLowerCase();
+                        
+                        console.log('🔍 Manual check - Status:', status, 'Data:', data);
                         
                         if (data && data.id) {
-                            const status = (data.status || data.payment_status || '').toLowerCase();
-                            console.log('📊 Auto-verify - Current status:', status);
+                            // Update QRIS if available
+                            if (data.qris && !this.qrisString) {
+                                this.qrisString = data.qris;
+                                this.qrisStaticString = data.qris_static || null;
+                                this.$nextTick(() => this.generateQRCode());
+                            }
                             
-                            // Update status berdasarkan response API
+                            // Handle status sukses -> step 4 (paket aktif)
                             if (status === 'success' || status === 'sukses' || status === 'paid' || status === 'berhasil' || status === 'completed') {
                                 this.setPaymentActivated();
-                            } else if (status === 'expired' || status === 'failed') {
+                            }
+                            // Handle status: verifikasi pembayaran -> pindah ke step 3
+                            else if (status.includes('verifikasi') || status === 'verify' || status === 'verifying') {
+                                // Set ke step 3 (verifying) berdasarkan status API
+                                if (this.paymentStatus !== 'activated') {
+                                    this.paymentStatus = 'verifying';
+                                    console.log('📊 Status dari API: verifying');
+                                }
+                            }
+                            else if (status === 'pending' || status === 'unpaid' || status === 'menunggu pembayaran') {
+                                // Tetap di step 2 (pending)
+                                this.paymentStatus = 'pending';
+                            }
+                            else if (status === 'expired' || status === 'failed') {
                                 this.paymentStatus = 'expired';
                                 localStorage.removeItem('pendingOrder');
                             }
-                            // Jika status masih pending/verifying, biarkan status dari localStorage
                         }
                     } catch (error) {
                         console.error('❌ Auto-verify failed:', error);
-                        // Jika gagal, biarkan status dari localStorage
                     }
                 },
 
@@ -1085,6 +1099,17 @@
                             
                             // Fetch QRIS data after payment created
                             await this.fetchQrisData();
+                            
+                            // Auto-scroll ke ringkasan pembayaran setelah QR berhasil di-generate
+                            this.$nextTick(() => {
+                                setTimeout(() => {
+                                    const summaryElement = document.getElementById('payment-summary');
+                                    if (summaryElement) {
+                                        summaryElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                        console.log('📤 Auto-scrolled to payment summary');
+                                    }
+                                }, 500);
+                            });
                         } else {
                             throw new Error(response.message || 'Gagal membuat transaksi');
                         }
@@ -1096,26 +1121,25 @@
 
                 startPaymentPolling() {
                     if (!this.paymentId) return;
+                    
+                    // Jika sudah activated, tidak perlu polling
+                    if (this.paymentStatus === 'activated') {
+                        console.log('✅ Status sudah activated, skip polling');
+                        return;
+                    }
 
-                    // Check payment status every 10 seconds (only for QRIS update and activated status)
+                    // Check payment status every 5 seconds - langsung dari database seperti manual check
                     this.paymentCheckInterval = setInterval(async () => {
                         try {
-                            // First, verify payment (this updates local DB if tokodigi says success)
-                            const verifyResponse = await verifyPayment(this.paymentId);
-                            
-                            // If verification found payment as successful
-                            if (verifyResponse.success && (verifyResponse.status === 'berhasil' || verifyResponse.status === 'success')) {
-                                // Progress to activated (paket aktif)
-                                this.setPaymentActivated();
-                                return;
-                            }
-                            
-                            // Get status for QRIS update only
+                            // Langsung get status dari database (sama seperti manual check)
                             const response = await getPaymentStatus(this.paymentId);
                             
                             // Response is array, get first item
                             const rawData = Array.isArray(response) ? response[0] : (response.data || response);
                             const data = rawData;
+                            const status = (data.status || data.payment_status || '').toLowerCase();
+                            
+                            console.log('🔍 Manual check - Status:', status, 'Data:', data);
 
                             if (data && data.id) {
                                 // Update QRIS strings if available
@@ -1126,16 +1150,22 @@
                                     this.$nextTick(() => this.generateQRCode());
                                 }
                                 
-                                const status = (data.status || data.payment_status || '').toLowerCase();
-                                console.log('📊 Payment status (polling):', status);
-                                
-                                // REMOVED: Auto step 3 transition - hanya manual via button
-                                // User harus klik "Cek Status Pembayaran" untuk pindah ke step 3
-                                
-                                // Handle status sukses -> step 4 (paket aktif) - ini tetap auto
+                                // Update indikator berdasarkan status dari API (sama seperti manual check)
                                 if (status === 'success' || status === 'sukses' || status === 'paid' || status === 'berhasil' || status === 'completed') {
                                     this.setPaymentActivated();
                                 } 
+                                else if (status.includes('verifikasi') || status === 'verify' || status === 'verifying') {
+                                    if (this.paymentStatus !== 'activated') {
+                                        this.paymentStatus = 'verifying';
+                                        console.log('📊 Status dari API: verifying');
+                                    }
+                                }
+                                else if (status === 'pending' || status === 'unpaid' || status === 'menunggu pembayaran') {
+                                    // Tetap di step 2 (pending)
+                                    if (this.paymentStatus !== 'activated' && this.paymentStatus !== 'verifying') {
+                                        this.paymentStatus = 'pending';
+                                    }
+                                }
                                 else if (status === 'expired' || status === 'failed') {
                                     this.paymentStatus = 'expired';
                                     clearInterval(this.paymentCheckInterval);
@@ -1146,7 +1176,7 @@
                         } catch (error) {
                             console.error('Failed to check payment status:', error);
                         }
-                    }, 10000); // Check every 10 seconds
+                    }, 5000); // Check every 5 seconds
                 },
 
                 handleCopyAmount() {
@@ -1162,12 +1192,6 @@
                     if (!this.paymentId) {
                         this.showToast('Error', 'Payment ID tidak ditemukan');
                         return;
-                    }
-
-                    // Langsung pindah ke step 3 (verifying) saat user klik button
-                    if (this.paymentStatus === 'pending') {
-                        this.paymentStatus = 'verifying';
-                        console.log('📊 User clicked check status, moving to verifying state');
                     }
 
                     this.showToast(
@@ -1210,12 +1234,12 @@
                             if (status === 'success' || status === 'sukses' || status === 'paid' || status === 'berhasil' || status === 'completed') {
                                 this.setPaymentActivated();
                             }
-                            // Handle status: verifikasi pembayaran atau status bukan pending -> tetap di step 3
+                            // Handle status: verifikasi pembayaran -> pindah ke step 3
                             else if (status.includes('verifikasi') || status === 'verify' || status === 'verifying') {
-                                // Tetap di step 3 (verifying)
+                                // Set ke step 3 (verifying) berdasarkan status API
                                 if (this.paymentStatus !== 'activated') {
                                     this.paymentStatus = 'verifying';
-                                    console.log('📊 Status: verifying');
+                                    console.log('📊 Status dari API: verifying');
                                 }
                                 this.showToast(
                                     'Verifikasi Pembayaran',
@@ -1223,7 +1247,11 @@
                                 );
                             }
                             else if (status === 'pending' || status === 'unpaid' || status === 'menunggu pembayaran') {
-                                // Masih menunggu pembayaran - tetap di verifying karena user sudah klik check
+                                // Masih menunggu pembayaran - tetap di pending
+                                if (this.paymentStatus !== 'activated') {
+                                    this.paymentStatus = 'pending';
+                                    console.log('📊 Status dari API: pending');
+                                }
                                 this.showToast(
                                     'Menunggu Pembayaran',
                                     'Pembayaran belum diterima. Silakan selesaikan pembayaran dan klik cek status lagi.'

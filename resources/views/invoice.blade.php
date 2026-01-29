@@ -901,9 +901,16 @@
                     this.invoice.items = items;
 
                     // Totals
-                    this.invoice.total = parseInt(item.payment_amount || item.total_payment || item.total_amount || 0);
-                    this.invoice.subtotal = this.invoice.total;
-                    this.invoice.platformFee = 0;
+                    // payment_amount sudah termasuk kode unik, jadi:
+                    // Total = payment_amount
+                    // Kode Unik = payment_unique
+                    // Subtotal = Total - Kode Unik
+                    const totalPayment = parseInt(item.payment_amount || item.total_payment || item.total_amount || 0);
+                    const uniqueCode = parseInt(item.payment_unique || item.unique_code || 0);
+                    
+                    this.invoice.total = totalPayment;
+                    this.invoice.platformFee = uniqueCode;
+                    this.invoice.subtotal = totalPayment - uniqueCode;
                     this.invoice.notes = 'Terima kasih telah menggunakan layanan Kuotaumroh.id';
                     
                     console.log('✅ Invoice parsed:', this.invoice);
