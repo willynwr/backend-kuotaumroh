@@ -407,7 +407,8 @@ class BulkPaymentService
                 'agent_id' => $request['ref_code'] ?? null,
                 'produk_id' => json_encode($request['package_id'] ?? []), // Simpan array package_id
                 'msisdn' => json_encode($request['msisdn'] ?? []),
-                'nama_paket' => $response['package_name'] ?? $request['batch_name'] ?? null,
+                'nama_paket' => $response['package_name'] ?? $request['batch_name'] ?? 'Paket Data Umroh',
+                'tipe_paket' => 'DATA', // Default value required by DB
                 'metode_pembayaran' => $request['payment_method'] ?? 'QRIS',
                 'qris_string' => $qrisString,
                 'qris_nmid' => $qrisNmid,
