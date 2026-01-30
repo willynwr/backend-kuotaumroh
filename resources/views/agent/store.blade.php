@@ -170,8 +170,10 @@
                                 <label for="msisdn" class="text-sm font-medium">Masukkan Nomor HP</label>
                                 <input id="msisdn" type="text" x-model="msisdn" @input="handleMsisdnInput($event)"
                                     placeholder="Contoh: 081234567890"
-                                    class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                                <p class="text-xs text-muted-foreground">Format: 08xxxxxxxxxx</p>
+                                    class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    :class="errorMessage ? 'border-red-500 focus:ring-red-500' : ''">
+                                <p x-show="errorMessage" x-text="errorMessage" class="text-xs text-red-500 font-medium"></p>
+                                <p x-show="!errorMessage" class="text-xs text-muted-foreground">Format: 08xxxxxxxxxx</p>
                             </div>
 
                             <!-- Provider Badge -->
@@ -617,6 +619,7 @@
                 invoiceMethod: 'whatsapp',
                 invoiceEmail: '',
                 invoiceWhatsapp: '',
+                errorMessage: '',
 
                 async init() {
                     // Load all packages on init
@@ -726,6 +729,15 @@
                     const cleaned = String(this.msisdn || '').replace(/\D/g, '');
                     this.msisdn = cleaned;
                     this.invoiceWhatsapp = cleaned;  // Sync nomor ke invoice WhatsApp
+                    this.errorMessage = ''; // Reset error message
+
+                    // Jika kosong, reset semua
+                    if (!cleaned) {
+                        this.provider = null;
+                        this.selectedPackage = null;
+                        this.resetFilters();
+                        return;
+                    }
 
                     if (validateMsisdn(cleaned)) {
                         const detectedProvider = detectProvider(cleaned);
@@ -734,6 +746,11 @@
                         if (this.provider) {
                             // Load packages for this provider
                             this.loadPackagesByProvider(this.provider);
+                            this.errorMessage = ''; // Valid provider found
+                        } else {
+                            // Valid format but unknown provider
+                            this.errorMessage = 'Provider tidak dikenali. Pastikan nomor HP benar.';
+                            this.provider = null;
                         }
                         
                         if (this.selectedPackage && this.selectedPackage.provider !== this.provider) {
@@ -742,6 +759,18 @@
                         this.generateDurationFilters();
                         this.generateSubTypeFilters();
                     } else {
+                        // Invalid format (length check usually)
+                        // Hanya tampilkan error jika panjang sudah mendekati atau lebih (misal > 4 digit) supaya tidak mengganggu saat mengetik
+                        if (cleaned.length > 4) {
+                             if (cleaned.length < 10) {
+                                 this.errorMessage = 'Nomor HP terlalu pendek (min 10 digit)';
+                             } else if (cleaned.length > 13) {
+                                 this.errorMessage = 'Nomor HP terlalu panjang (max 13 digit)';
+                             } else {
+                                 this.errorMessage = 'Format nomor HP tidak valid';
+                             }
+                        }
+                        
                         this.provider = null;
                         this.selectedPackage = null;
                         this.resetFilters();
