@@ -303,7 +303,7 @@
                                                                 <svg class="h-4 w-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
                                                                 </svg>
-                                                                <span x-text="pkg.bonus"></span>
+                                                                <span x-text="pkg.bonus + ' GB transit'"></span>
                                                             </div>
                                                         </template>
 
@@ -400,12 +400,14 @@
                                         <label for="scheduledDate" class="text-xs font-semibold text-muted-foreground uppercase">Tanggal</label>
                                         <input id="scheduledDate" type="date" x-model="scheduledDate"
                                             :min="new Date().toISOString().split('T')[0]"
-                                            class="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 transition-all">
+                                            @click="$el.showPicker()"
+                                            class="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer">
                                     </div>
                                     <div class="space-y-2">
                                         <label for="scheduledTime" class="text-xs font-semibold text-muted-foreground uppercase">Jam</label>
                                         <input id="scheduledTime" type="time" x-model="scheduledTime"
-                                            class="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 transition-all">
+                                            @click="$el.showPicker()"
+                                            class="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer">
                                     </div>
                                 </div>
 
@@ -820,22 +822,27 @@
                     // Untuk paket INTERNET atau INTERNET + TELP/SMS
                     if (subType.includes('INTERNET')) {
                         // Hitung total kuota (quota + bonus)
-                        // Convert to string safely
                         const quotaStr = String(pkg.quota || '');
                         const bonusStr = String(pkg.bonus || '');
                         
-                        const quotaMatch = quotaStr.match(/(\d+(?:\.\d+)?)\s*GB/i);
-                        const bonusMatch = bonusStr.match(/(\d+(?:\.\d+)?)\s*GB/i);
+                        // Helper untuk ambil angka dari string (misal "50GB" -> 50, "50" -> 50)
+                        const extractNumber = (str) => {
+                            const match = str.match(/(\d+(?:\.\d+)?)/);
+                            return match ? parseFloat(match[1]) : 0;
+                        };
                         
                         let totalGB = 0;
-                        if (quotaMatch) totalGB += parseFloat(quotaMatch[1]);
-                        if (bonusMatch) totalGB += parseFloat(bonusMatch[1]);
+                        // Ambil angka dari quota dan bonus
+                        if (quotaStr) totalGB += extractNumber(quotaStr);
+                        if (bonusStr) totalGB += extractNumber(bonusStr);
                         
                         if (totalGB > 0) {
+                            // Format: "Kuota 51GB - 12 Hari"
                             return `Kuota ${totalGB}GB${daysSuffix}`;
                         }
-                        // Fallback jika tidak bisa parse
-                        return pkg.quota ? `Kuota ${pkg.quota}${daysSuffix}` : `Paket Internet${daysSuffix}`;
+                        
+                        // Fallback jika tidak ada angka (misal "Unlimited")
+                        return pkg.quota ? `${pkg.quota}${daysSuffix}` : `Paket Internet${daysSuffix}`;
                     }
                     
                     // Untuk paket TELP/SMS
