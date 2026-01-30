@@ -11,6 +11,27 @@ class Produk extends Model
 
     protected $table = 'produk';
 
+    /**
+     * The primary key associated with the table.
+     *
+     * @var string
+     */
+    protected $primaryKey = 'id';
+
+    /**
+     * Indicates if the model's ID is auto-incrementing.
+     *
+     * @var bool
+     */
+    public $incrementing = false;
+
+    /**
+     * The data type of the auto-incrementing ID.
+     *
+     * @var string
+     */
+    protected $keyType = 'string';
+
     protected $fillable = [
         'nama_paket',
         'tipe_paket',
