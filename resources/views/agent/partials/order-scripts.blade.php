@@ -263,6 +263,7 @@ function orderApp() {
             // Parse harga dengan fallback
             const priceBulk = parseInt(pkg.price_bulk) || 0;
             const priceCustomer = parseInt(pkg.price_customer) || priceBulk;
+            const priceApp = parseInt(pkg.price_app) || 0;
             
             return {
               id: pkg.id,
@@ -287,6 +288,7 @@ function orderApp() {
               displayPrice: priceCustomer,
               price_bulk: priceBulk,
               price_customer: priceCustomer,
+              price_app: priceApp,           // Harga Coret
               profit: priceCustomer - priceBulk,
               subType: pkg.sub_type || '',
               tipe_paket: pkg.sub_type || '',
@@ -874,6 +876,12 @@ function orderApp() {
         ...(existingPaymentId && { paymentId: existingPaymentId }),
         ...(existingBatchId && { batchId: existingBatchId })
       };
+      
+      // Add price to each item for backend processing
+      orderData.items = orderData.items.map(item => ({
+        ...item,
+        price: item.price || item.harga || 0 // Ensure price is included
+      }));
 
       localStorage.setItem('pendingOrder', JSON.stringify(orderData));
 

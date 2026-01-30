@@ -56,27 +56,8 @@ class BulkPaymentService
      */
     public function getCatalog(string $refCode = 'bulk_umroh'): array
     {
-        try {
-            // Proxy ke external API
-            $response = Http::timeout(30)->get("{$this->externalApiUrl}/umroh/package", [
-                'ref_code' => $refCode,
-            ]);
-
-            if ($response->successful()) {
-                return $response->json();
-            }
-
-            Log::error('Failed to fetch catalog from external API', [
-                'status' => $response->status(),
-                'body' => $response->body(),
-            ]);
-
-            // Fallback ke local database jika external API gagal
-            return $this->getCatalogFromLocal($refCode);
-        } catch (\Exception $e) {
-            Log::error('Exception fetching catalog: ' . $e->getMessage());
-            return $this->getCatalogFromLocal($refCode);
-        }
+        // Langsung ambil dari local database
+        return $this->getCatalogFromLocal($refCode);
     }
 
     /**
@@ -86,28 +67,42 @@ class BulkPaymentService
     {
         $query = Produk::query();
 
-        $products = $query->orderBy('nama_paket')->get();
+        // Sort by promo existence (not null/empty first), then by name
+        $products = $query->orderByRaw("CASE WHEN promo IS NOT NULL AND promo != '' THEN 0 ELSE 1 END")
+                          ->orderBy('nama_paket')
+                          ->get();
 
-        return $products->map(function ($product) use ($refCode) {
-            $price = $refCode === 'bulk_umroh' 
-                ? $product->harga_tp_travel 
-                : $product->harga_eup;
-
+        return $products->map(function ($product) {
             return [
-                'id' => $this->generatePackageId($product),
+                'id' => $product->id,
+                'package_id' => $product->id,
                 'name' => $product->nama_paket,
+                'packageName' => $product->nama_paket,
                 'type' => $product->provider,
+                'provider' => $product->provider,
                 'sub_type' => $product->tipe_paket,
+                'tipe_paket' => $product->tipe_paket,
                 'days' => $product->masa_aktif,
+                'masa_aktif' => $product->masa_aktif,
                 'quota' => $product->total_kuota,
+                'total_kuota' => $product->total_kuota,
                 'telp' => $product->telp,
                 'sms' => $product->sms,
                 'bonus' => $product->kuota_bonus,
-                'price_customer' => $product->harga_eup,
-                'price_bulk' => $product->harga_tp_travel,
-                'fee_affiliate' => 0,
+                'kuota_bonus' => $product->kuota_bonus,
+                
+                // Pricing Rules
+                'price_app' => $product->harga_komersial, // Harga Coret
+                'price_customer' => $product->price_customer, // Harga Customer (Non-Agent)
+                'price_bulk' => $product->price_bulk, // Harga Agent
+                
+                // Legacy fields mapping for compatibility
+                'price' => $product->price_customer, 
+                'harga' => $product->price_customer,
+                
+                'fee_affiliate' => $product->fee_affiliate ?? 0,
                 'is_active' => '1',
-                'promo' => null,
+                'promo' => $product->promo,
             ];
         })->toArray();
     }
@@ -155,10 +150,16 @@ class BulkPaymentService
         $refCode = $data['ref_code'] ?? 'bulk_umroh';
         $msisdnList = $data['msisdn'] ?? [];
         $packageIdList = $data['package_id'] ?? [];
+        $priceList = $data['price'] ?? []; // Harga dari local DB
 
         // Validasi jumlah msisdn dan package_id harus sama
         if (count($msisdnList) !== count($packageIdList)) {
             throw new \InvalidArgumentException('Jumlah msisdn dan package_id harus sama');
+        }
+
+        // Validasi jumlah price harus sama jika ada
+        if (!empty($priceList) && count($priceList) !== count($msisdnList)) {
+            throw new \InvalidArgumentException('Jumlah price harus sama dengan jumlah item');
         }
 
         if (empty($msisdnList)) {
@@ -180,6 +181,7 @@ class BulkPaymentService
             'ref_code' => $refCode,
             'msisdn' => $formattedMsisdn,
             'package_id' => $packageIdList,
+            'price' => $priceList, // Kirim harga local ke external API
         ];
 
         Log::info('Creating bulk payment via external API', [
@@ -462,6 +464,7 @@ class BulkPaymentService
         $refCode = $data['ref_code'] ?? '0';
         $msisdn = $data['msisdn'] ?? null; // STRING untuk individual
         $packageId = $data['package_id'] ?? null; // STRING untuk individual
+        $price = $data['price'] ?? 0; // Harga dari local DB
 
         // Validasi
         if (!$msisdn || !$packageId) {
@@ -482,6 +485,7 @@ class BulkPaymentService
             'ref_code' => $refCode,
             'msisdn' => $formattedMsisdn,
             'package_id' => $packageId,
+            'price' => $price, // Kirim harga local ke external API
         ];
 
         Log::info('Creating individual payment via external API', [

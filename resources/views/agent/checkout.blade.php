@@ -828,6 +828,7 @@ function checkoutApp() {
                 });
                 
                 const packageIdList = this.orderData.items.map(item => item.packageId || item.package_id);
+                const priceList = this.orderData.items.map(item => item.price || 0);
 
                 const requestData = {
                     batch_id: batchId,
@@ -837,6 +838,7 @@ function checkoutApp() {
                     ref_code: this.orderData.refCode || '{{ $agent->id ?? 1 }}',
                     msisdn: msisdnList,
                     package_id: packageIdList,
+                    price: priceList,
                 };
 
                 console.log('📤 BULK payment request:', requestData);
