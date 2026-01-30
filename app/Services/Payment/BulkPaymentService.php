@@ -92,7 +92,7 @@ class BulkPaymentService
                 'kuota_bonus' => $product->kuota_bonus,
                 
                 // Pricing Rules
-                'price_app' => $product->price_app, // Harga Coret
+                'price_app' => $product->harga_komersial, // Harga Coret
                 'price_customer' => $product->price_customer, // Harga Customer (Non-Agent)
                 'price_bulk' => $product->price_bulk, // Harga Agent
                 
