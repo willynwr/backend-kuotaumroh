@@ -915,6 +915,12 @@
                         isBulk: false,  // Flag untuk INDIVIDUAL payment (Store mode tanpa login)
                         createdAt: new Date().toISOString(),
                     };
+                    
+                    // Add price to each item for backend processing
+                    orderData.items = orderData.items.map(item => ({
+                        ...item,
+                        price: item.price || item.harga || 0 // Ensure price is included
+                    }));
 
                     // Store in localStorage and redirect to payment
                     localStorage.setItem('pendingOrder', JSON.stringify(orderData));

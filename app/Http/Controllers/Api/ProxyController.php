@@ -31,6 +31,17 @@ class ProxyController extends Controller
     public function proxyGet(Request $request, $path = '')
     {
         try {
+            // Special handling untuk umroh/package - use local controller
+            if ($path === 'umroh/package') {
+                Log::info('🔀 Redirecting umroh/package to UmrohPaymentController for local DB', [
+                    'path' => $path,
+                    'query' => $request->query(),
+                ]);
+                
+                $controller = app(UmrohPaymentController::class);
+                return $controller->getPackages($request);
+            }
+
             $url = $this->externalApiUrl . '/' . $path;
             
             // Ambil query parameters dari request
