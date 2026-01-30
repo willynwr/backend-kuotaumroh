@@ -68,6 +68,8 @@ class UmrohPaymentController extends Controller
             'msisdn.*' => 'required|string',
             'package_id' => 'required|array|min:1',
             'package_id.*' => 'required|string',
+            'price' => 'required|array|min:1', // Wajib ada price dari local
+            'price.*' => 'required|numeric|min:0',
         ]);
 
         if ($validator->fails()) {
@@ -242,6 +244,7 @@ class UmrohPaymentController extends Controller
             'ref_code' => 'required|string|max:50',
             'msisdn' => 'required|string', // STRING untuk individual
             'package_id' => 'required|string', // STRING untuk individual
+            'price' => 'required|numeric|min:0', // Wajib ada price dari local
         ]);
 
         if ($validator->fails()) {

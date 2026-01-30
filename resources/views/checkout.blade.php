@@ -1036,6 +1036,7 @@
                                 ref_code: this.orderData.refCode || '0',
                                 msisdn: msisdn,  // String (untuk validasi provider)
                                 package_id: String(item.packageId || item.package_id),  // String (bukan array)
+                                price: item.price || 0, // String/Number
                             };
 
                             console.log('📤 Sending INDIVIDUAL payment request:', requestData);
