@@ -861,6 +861,34 @@ function checkoutApp() {
                         this.orderData.uniqueCode = parseInt(data.payment_unique) || 0;
                     }
 
+                    // OPTIMISASI: Generate QR Code langsung dari response createPayment
+                    if (data.qris) {
+                        // Handle if qris is object or string
+                        if (typeof data.qris === 'object' && data.qris !== null) {
+                             this.qrisString = data.qris.qris_string || data.qris.string || null;
+                             if (!this.qrisString && data.qris_string) {
+                                 this.qrisString = data.qris_string;
+                             }
+                        } else {
+                             this.qrisString = data.qris;
+                        }
+                        
+                        this.qrisStaticString = data.qris_static || null; 
+                        
+                        if (this.qrisString) {
+                            this.$nextTick(() => {
+                                this.generateQRCode();
+                                this.isLoading = false; 
+                            });
+                        }
+                    } else if (data.qris_string) {
+                        this.qrisString = data.qris_string;
+                        this.$nextTick(() => {
+                            this.generateQRCode();
+                            this.isLoading = false; 
+                        });
+                    }
+
                     // Save to localStorage
                     const savedOrder = localStorage.getItem('pendingOrder');
                     if (savedOrder) {
@@ -870,7 +898,10 @@ function checkoutApp() {
                         localStorage.setItem('pendingOrder', JSON.stringify(orderData));
                     }
                     
-                    await this.fetchQrisData();
+                    // OPTIMISASI: Skip fetchQrisData jika QR string sudah didapat
+                    if (!this.qrisString) {
+                        await this.fetchQrisData();
+                    }
                 } else {
                     throw new Error(response.message || 'Gagal membuat transaksi');
                 }
@@ -878,6 +909,8 @@ function checkoutApp() {
                 console.error('❌ Payment error:', error);
                 this.showErrorModal('Error', error.message || 'Gagal membuat transaksi');
                 this.isLoading = false;
+            } finally {
+                this.isCreatingPayment = false;
             }
         },
 

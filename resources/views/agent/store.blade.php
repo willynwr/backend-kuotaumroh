@@ -373,54 +373,72 @@
                                 Waktu Aktivasi
                             </h2>
                         </div>
-                        <div class="p-6 space-y-4">
-                            <!-- Activation Time Options -->
-                            <div class="grid grid-cols-2 gap-3">
-                                <div @click="activationTime = 'now'"
-                                    :class="activationTime === 'now' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'"
-                                    class="border-2 rounded-lg p-4 cursor-pointer transition-all text-center">
-                                    <div class="flex flex-col items-center gap-2">
-                                        <svg class="h-8 w-8"
-                                            :class="activationTime === 'now' ? 'text-primary' : 'text-muted-foreground'"
-                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                        </svg>
-                                        <span class="font-medium"
-                                            :class="activationTime === 'now' && 'text-primary'">Segera</span>
-                                        <span class="text-xs text-muted-foreground">Langsung aktif</span>
-                                    </div>
-                                </div>
-                                <div @click="activationTime = 'scheduled'"
-                                    :class="activationTime === 'scheduled' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'"
-                                    class="border-2 rounded-lg p-4 cursor-pointer transition-all text-center">
-                                    <div class="flex flex-col items-center gap-2">
-                                        <svg class="h-8 w-8"
-                                            :class="activationTime === 'scheduled' ? 'text-primary' : 'text-muted-foreground'"
-                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                        </svg>
-                                        <span class="font-medium"
-                                            :class="activationTime === 'scheduled' && 'text-primary'">Terjadwal</span>
-                                        <span class="text-xs text-muted-foreground">Pilih waktu</span>
-                                    </div>
-                                </div>
+                        <div class="p-6 space-y-6">
+                            <!-- Tabs for Activation Type -->
+                            <div class="grid grid-cols-2 p-1 bg-muted rounded-lg">
+                                <button @click="activationTime = 'now'"
+                                    :class="activationTime === 'now' ? 'bg-white text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'"
+                                    class="py-2.5 text-sm font-semibold rounded-md transition-all">
+                                    AKTIFKAN LANGSUNG
+                                </button>
+                                <button @click="activationTime = 'scheduled'"
+                                    :class="activationTime === 'scheduled' ? 'bg-white text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'"
+                                    class="py-2.5 text-sm font-semibold rounded-md transition-all">
+                                    PILIH JADWAL AKTIVASI
+                                </button>
                             </div>
 
+                            <!-- Description Text -->
+                            <p class="text-sm text-muted-foreground text-center" x-show="activationTime === 'now'" x-transition>
+                                Paket akan aktif segera setelah pembayaran berhasil.
+                            </p>
+
                             <!-- Scheduled Options -->
-                            <div x-show="activationTime === 'scheduled'" x-collapse class="space-y-3 pt-2">
-                                <div class="space-y-2">
-                                    <label for="scheduledDate" class="text-sm font-medium">Tanggal</label>
-                                    <input id="scheduledDate" type="date" x-model="scheduledDate"
-                                        :min="new Date().toISOString().split('T')[0]"
-                                        class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                            <div x-show="activationTime === 'scheduled'" x-collapse class="space-y-4">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="space-y-2">
+                                        <label for="scheduledDate" class="text-xs font-semibold text-muted-foreground uppercase">Tanggal</label>
+                                        <input id="scheduledDate" type="date" x-model="scheduledDate"
+                                            :min="new Date().toISOString().split('T')[0]"
+                                            class="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 transition-all">
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label for="scheduledTime" class="text-xs font-semibold text-muted-foreground uppercase">Jam</label>
+                                        <input id="scheduledTime" type="time" x-model="scheduledTime"
+                                            class="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 transition-all">
+                                    </div>
                                 </div>
+
+                                <!-- Preset Time Buttons -->
                                 <div class="space-y-2">
-                                    <label for="scheduledTime" class="text-sm font-medium">Waktu</label>
-                                    <input id="scheduledTime" type="time" x-model="scheduledTime"
-                                        class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                                    <label class="text-xs font-semibold text-muted-foreground uppercase">Waktu Populer</label>
+                                    <div class="grid grid-cols-4 gap-2">
+                                        <button @click="scheduledTime = '02:00'" 
+                                            :class="scheduledTime === '02:00' ? 'border-primary bg-primary/5 text-primary' : 'border-input hover:border-primary/50 hover:text-primary'"
+                                            class="py-2 border rounded-md text-sm font-medium transition-colors">
+                                            02:00
+                                        </button>
+                                        <button @click="scheduledTime = '04:00'" 
+                                            :class="scheduledTime === '04:00' ? 'border-primary bg-primary/5 text-primary' : 'border-input hover:border-primary/50 hover:text-primary'"
+                                            class="py-2 border rounded-md text-sm font-medium transition-colors">
+                                            04:00
+                                        </button>
+                                        <button @click="scheduledTime = '13:00'" 
+                                            :class="scheduledTime === '13:00' ? 'border-primary bg-primary/5 text-primary' : 'border-input hover:border-primary/50 hover:text-primary'"
+                                            class="py-2 border rounded-md text-sm font-medium transition-colors">
+                                            13:00
+                                        </button>
+                                        <button @click="scheduledTime = '22:00'" 
+                                            :class="scheduledTime === '22:00' ? 'border-primary bg-primary/5 text-primary' : 'border-input hover:border-primary/50 hover:text-primary'"
+                                            class="py-2 border rounded-md text-sm font-medium transition-colors">
+                                            22:00
+                                        </button>
+                                    </div>
                                 </div>
+                                
+                                <p class="text-xs text-muted-foreground text-center pt-2">
+                                    Waktu mengacu pada Waktu Indonesia Barat (WIB)
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -544,17 +562,8 @@
                             <h3 class="font-bold text-lg mb-2">Customer Service</h3>
                             <div class="space-y-1">
                                 <p>Email: info@digilabsmitrasolusi.com</p>
-                                <p>Wa: +62 811-3995-599</p>
+                                <p>Wa: +62 8112-994-499</p>
                             </div>
-                        </div>
-                        <div>
-                            <h3 class="font-bold text-lg mb-2">Alamat</h3>
-                            <p class="text-primary-foreground/90 leading-relaxed">
-                                Griya Candramas 3 Blok is nomor 31, <br>
-                                Desa/Kelurahan Pepe, Kec. Sedati,<br>
-                                Kab. Sidoarjo, Provinsi Jawa Timur,<br>
-                                Kode Pos: 61253
-                            </p>
                         </div>
                     </div>
                 </div>
@@ -868,7 +877,13 @@
                 },
 
                 get canCheckout() {
-                    return this.msisdn && this.provider && this.selectedPackage;
+                    if (!this.msisdn || !this.provider || !this.selectedPackage) return false;
+                    
+                    if (this.activationTime === 'scheduled') {
+                        return this.scheduledDate && this.scheduledTime;
+                    }
+                    
+                    return true;
                 },
 
                 handleCheckout() {

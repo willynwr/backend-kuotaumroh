@@ -961,6 +961,14 @@
                 },
 
                 async createPayment() {
+                    // Prevent double submission
+                    if (this.isCreatingPayment || this.paymentId) {
+                        console.log('⚠️ Payment creation already in progress or payment already exists. Skipping.');
+                        return;
+                    }
+
+                    this.isCreatingPayment = true;
+
                     try {
                         let response;
                         
@@ -1073,6 +1081,38 @@
                                 console.log('⚠️ QR Code URL not provided by API, using placeholder');
                                 // Keep qrCodeUrl as null, will show placeholder
                             }
+
+                            // OPTIMISASI: Generate QR Code langsung dari response createPayment
+                            // Tanpa perlu fetchQrisData() lagi yang bikin lama
+                            if (data.qris) {
+                                // Handle if qris is object or string
+                                if (typeof data.qris === 'object' && data.qris !== null) {
+                                     this.qrisString = data.qris.qris_string || data.qris.string || null;
+                                     // Fallback jika qris_string ada di root object
+                                     if (!this.qrisString && data.qris_string) {
+                                         this.qrisString = data.qris_string;
+                                     }
+                                } else {
+                                     this.qrisString = data.qris;
+                                }
+                                
+                                this.qrisStaticString = data.qris_static || null; 
+                                
+                                if (this.qrisString) {
+                                    console.log('✅ QRIS data set immediately from creation response');
+                                    this.$nextTick(() => {
+                                        this.generateQRCode();
+                                        // Langsung sembunyikan loading
+                                        this.isLoading = false; 
+                                    });
+                                }
+                            } else if (data.qris_string) {
+                                this.qrisString = data.qris_string;
+                                this.$nextTick(() => {
+                                    this.generateQRCode();
+                                    this.isLoading = false; 
+                                });
+                            }
                             
                             // Update time remaining from server
                             if (data.remaining_time) {
@@ -1112,7 +1152,10 @@
                             }
                             
                             // Fetch QRIS data after payment created
-                            await this.fetchQrisData();
+                            // OPTIMISASI: Skip fetchQrisData jika QR string sudah didapat
+                            if (!this.qrisString) {
+                                await this.fetchQrisData();
+                            }
                             
                             // Auto-scroll ke ringkasan pembayaran setelah QR berhasil di-generate
                             this.$nextTick(() => {
