@@ -539,7 +539,7 @@ class BulkPaymentService
                 'external_payment_id' => (string) $externalPaymentId,
                 'batch_id' => $request['batch_id'] ?? null,
                 'batch_name' => $request['batch_name'] ?? null,
-                'agent_id' => $request['ref_code'] ?? null,
+                'agent_id' => $userId ?? $request['agent_id'] ?? $request['affiliate_id'] ?? $request['ref_code'] ?? null,
                 'produk_id' => json_encode($request['package_id'] ?? []), // Simpan array package_id
                 'msisdn' => json_encode($request['msisdn'] ?? []),
                 'nama_paket' => $response['package_name'] ?? $request['batch_name'] ?? 'Paket Data Umroh',
