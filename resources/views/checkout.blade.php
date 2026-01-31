@@ -773,6 +773,7 @@
                         items: parsedData.items || [],
                         total: parsedData.subtotal || 0,
                         platformFee: parsedData.platformFee || 0,
+                        uniqueCode: parsedData.uniqueCode || 0,
                         paymentMethod: parsedData.paymentMethod || 'qris',
                         refCode: parsedData.refCode || null,
                         scheduleDate: parsedData.scheduleDate || null,
