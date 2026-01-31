@@ -220,9 +220,10 @@ class AgentController extends Controller
             if ($defaultAgent) {
                 $agent = $defaultAgent;
             } else {
-                // Fallback: Create a virtual agent object
+                // Fallback: Create a virtual agent object dengan ID format AGTxxxxx
                 $agent = (object) [
-                    'id' => 1,
+                    'id' => 'AGT00001',  // Format AGT untuk PackagePricingService
+                    'agent_id' => 'AGT00001',  // Alias untuk compatibility
                     'nama_travel' => 'Kuotaumroh.id',
                     'nama_pic' => 'Official Store',
                     'email' => 'support@kuotaumroh.id',

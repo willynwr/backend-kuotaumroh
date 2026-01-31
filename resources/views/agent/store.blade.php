@@ -49,7 +49,7 @@
     <!-- Store Config -->
     <script>
         const STORE_CONFIG = {
-            agent_id: '{{ $agent->id ?? 1 }}',           // Agent ID untuk tracking
+            agent_id: '{{ $agent->id ?? "AGT00001" }}',   // Agent ID format AGTxxxxx untuk PackagePricingService
             catalog_ref_code: '{{ $agent->link_referal ?? "kuotaumroh" }}',  // ref_code=link_referal untuk agent/referral
             link_referal: '{{ $agent->link_referal ?? "kuotaumroh" }}',
             nama_travel: '{{ $agent->nama_travel ?? "Kuotaumroh.id" }}',
@@ -629,9 +629,23 @@
                 async loadAllPackages() {
                     try {
                         this.packagesLoading = true;
-                        // Gunakan ref_code dari config (0 untuk individu, bulk_umroh untuk bulk)
-                        const catalogRefCode = STORE_CONFIG.catalog_ref_code || '0';
-                        const response = await fetch(`${API_BASE_URL}/api/proxy/umroh/package?ref_code=${catalogRefCode}`);
+                        
+                        // ===== GUNAKAN AGENT_ID + CONTEXT=STORE UNTUK AMBIL HARGA DARI VIEW =====
+                        const agentId = STORE_CONFIG.agent_id;
+                        let apiUrl = `${API_BASE_URL}/api/proxy/umroh/package`;
+                        
+                        // Jika agent_id valid (AGTxxxxx), gunakan pricing dari VIEW
+                        if (agentId && agentId.startsWith('AGT')) {
+                            apiUrl = `${API_BASE_URL}/api/proxy/umroh/package?agent_id=${agentId}&context=store`;
+                            console.log('📦 Fetching STORE pricing from VIEW for agent:', agentId);
+                        } else {
+                            // Fallback ke ref_code legacy
+                            const catalogRefCode = STORE_CONFIG.catalog_ref_code || '0';
+                            apiUrl = `${API_BASE_URL}/api/proxy/umroh/package?ref_code=${catalogRefCode}`;
+                            console.log('⚠️ Using legacy ref_code:', catalogRefCode);
+                        }
+                        
+                        const response = await fetch(apiUrl);
                         if (!response.ok) {
                             throw new Error('Failed to fetch packages');
                         }
@@ -642,40 +656,48 @@
                         // Response langsung array, tidak wrapped
                         if (Array.isArray(data)) {
                             this.allPackages = data.map(pkg => {
-                                // Parse harga - untuk individu, gunakan price_app dan price_customer
-                                const priceApp = parseInt(pkg.price_app) || 0;         // Harga asli (sebelum diskon)
-                                const priceCustomer = parseInt(pkg.price_customer) || 0; // Harga diskon
-                                const priceBulk = parseInt(pkg.price_bulk) || priceCustomer;
+                                // ===== PRICING DARI VIEW (toko_harga_*) atau LEGACY =====
+                                // VIEW: toko_harga_jual, toko_harga_coret, toko_hemat
+                                // Legacy: price, price_app, price_customer
+                                const priceApp = parseInt(pkg.price_app) || 0;         // Harga coret (dari VIEW atau legacy)
+                                const price = parseInt(pkg.price) || 0;                 // Harga jual (dari VIEW atau legacy)
+                                const hemat = parseInt(pkg.hemat) || parseInt(pkg.toko_hemat) || (priceApp - price);
                                 
-                                // Untuk store (individu), tampilkan price_customer sebagai harga final
-                                const displayPrice = priceCustomer;
+                                // Untuk store (individu), tampilkan price (toko_harga_jual) sebagai harga final
+                                const displayPrice = price;
                                 
                                 return {
                                     id: pkg.id,
-                                    package_id: pkg.id,
-                                    packageId: pkg.id,
-                                    name: pkg.name,
-                                    packageName: pkg.name,
-                                    provider: pkg.type, // type = provider (TELKOMSEL, XL, etc)
-                                    days: parseInt(pkg.days) || 0,
-                                    masa_aktif: parseInt(pkg.days) || 0,
-                                    quota: pkg.quota || '',
-                                    total_kuota: pkg.quota || '',
+                                    package_id: pkg.id || pkg.package_id,
+                                    packageId: pkg.id || pkg.package_id,
+                                    name: pkg.name || pkg.packageName,
+                                    packageName: pkg.name || pkg.packageName,
+                                    provider: pkg.type || pkg.provider,
+                                    days: parseInt(pkg.days) || parseInt(pkg.masa_aktif) || 0,
+                                    masa_aktif: parseInt(pkg.days) || parseInt(pkg.masa_aktif) || 0,
+                                    quota: pkg.quota || pkg.total_kuota || '',
+                                    total_kuota: pkg.quota || pkg.total_kuota || '',
                                     kuota_utama: pkg.quota || '',
-                                    kuota_bonus: pkg.bonus || '',
-                                    bonus: pkg.bonus || '',
+                                    kuota_bonus: pkg.bonus || pkg.kuota_bonus || '',
+                                    bonus: pkg.bonus || pkg.kuota_bonus || '',
                                     telp: pkg.telp || '',
                                     sms: pkg.sms || '',
-                                    price: displayPrice,         // Harga yang digunakan untuk payment (price_customer)
+                                    // ===== PRICING =====
+                                    price: displayPrice,         // Harga jual (toko_harga_jual)
                                     harga: displayPrice,
                                     sellPrice: displayPrice,
-                                    displayPrice: displayPrice,  // Harga diskon yang ditampilkan
-                                    price_app: priceApp,         // Harga asli (untuk strikethrough)
-                                    price_customer: priceCustomer, // Harga diskon
-                                    price_bulk: priceBulk,       // Simpan untuk referensi
-                                    profit: 0, // Tidak ada profit untuk individu
-                                    subType: pkg.sub_type || '',
-                                    tipe_paket: pkg.sub_type || '',
+                                    displayPrice: displayPrice,
+                                    price_app: priceApp,         // Harga coret (toko_harga_coret)
+                                    hemat: hemat,                // Hemat (toko_hemat)
+                                    // Legacy compatibility
+                                    price_customer: displayPrice,
+                                    price_bulk: displayPrice,
+                                    // Fee/profit (from VIEW)
+                                    profit_agent: parseInt(pkg.profit_agent) || parseInt(pkg.mandiri_final_fee_travel) || 0,
+                                    profit_affiliate: parseInt(pkg.profit_affiliate) || parseInt(pkg.mandiri_final_fee_affiliate) || 0,
+                                    profit: 0, // Tidak tampilkan profit untuk customer
+                                    subType: pkg.sub_type || pkg.tipe_paket || '',
+                                    tipe_paket: pkg.sub_type || pkg.tipe_paket || '',
                                     is_active: pkg.is_active,
                                     promo: pkg.promo || null,
                                 };
