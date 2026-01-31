@@ -40,6 +40,9 @@ return new class extends Migration
             // Increase agent_id length
             $table->string('agent_id', 50)->change();
         });
+
+        // Update status_pembayaran ENUM to match server
+        DB::statement("ALTER TABLE pembayaran MODIFY COLUMN status_pembayaran ENUM('WAITING', 'VERIFY', 'SUCCESS', 'FAILED', 'EXPIRED') DEFAULT 'WAITING'");
     }
 
     /**
