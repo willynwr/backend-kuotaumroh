@@ -583,13 +583,6 @@ function checkoutApp() {
         toastMessage: '',
 
         // Error Modal
-        errorModalVisible: false,
-        errorModalTitle: '',
-        errorModalMessage: '',
-        // Error Modal
-        errorModalVisible: false,
-        errorModalTitle: '',
-        errorModalMessage: '',
         errorModalCountdown: 5,
         
         // Exit Confirmation Modal
@@ -689,7 +682,6 @@ function checkoutApp() {
                 await this.createPayment();
             }
 
-            this.startTimer();
             this.startTimer();
             this.startPaymentPolling();
         },
