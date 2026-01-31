@@ -175,8 +175,8 @@
                              :class="{ 'transition-transform duration-500 ease-out': !isDragging }"
                              :style="`transform: translateX(calc(-${currentSlide * 100}% + ${touchOffset}px))`"
                              @touchstart="handleTouchStart($event)"
-                             @touchmove="handleTouchMove($event)"
-                             @touchend="handleTouchEnd($event)"
+                             @touchmove.window="handleTouchMove($event)"
+                             @touchend.window="handleTouchEnd($event)"
                              style="touch-action: pan-y">
                             <!-- Generate slides dynamically -->
                             <template x-for="slideIndex in totalSlides" :key="slideIndex">

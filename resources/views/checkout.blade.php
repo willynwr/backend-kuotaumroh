@@ -115,7 +115,8 @@
         <header class="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
             <div class="container mx-auto flex h-16 items-center justify-between px-4">
                 <!-- Logo -->
-                <a href="{{ route('welcome') }}" class="flex items-center gap-2">
+                <!-- Logo (Acts as Back Button) -->
+                <a href="#" @click.prevent="handleUiBack('{{ route('welcome') }}')" class="flex items-center gap-2">
                     <img src="{{ asset('images/LOGO.png') }}" alt="Kuotaumroh.id Logo" class="h-9 w-9 object-contain">
                     <span class="text-xl font-semibold">Kuotaumroh.id</span>
                 </a>
@@ -711,6 +712,7 @@
                 
                 // Exit Confirmation Modal
                 showExitModal: false,
+                isForceExit: false,
 
                 // Timer interval
                 timerInterval: null,
@@ -743,6 +745,7 @@
                     // 2. Fallback: Prevent Accidental Tab Close/Refresh
                     // (Browser akan tetap menampilkan dialog default untuk action ini, tidak bisa dicustom)
                     window.addEventListener('beforeunload', (e) => {
+                        if (this.isForceExit) return;
                         if (['pending', 'verifying'].includes(this.paymentStatus)) {
                             e.preventDefault();
                             e.returnValue = ''; // Trigger default browser warning
@@ -825,8 +828,19 @@
                 
                 // Action saat user pilih "Ya, Batalkan"
                 confirmExit() {
+                    this.isForceExit = true;
                     // Redirect ke home
                     window.location.href = '{{ route('welcome') }}';
+                },
+
+                // Handle Back Button UI Click
+                handleUiBack(url) {
+                     if (['pending', 'verifying'].includes(this.paymentStatus)) {
+                        this.showExitModal = true;
+                    } else {
+                        this.isForceExit = true;
+                        window.location.href = url;
+                    }
                 },
                 
                 // Save payment state ke localStorage (untuk handle refresh)
