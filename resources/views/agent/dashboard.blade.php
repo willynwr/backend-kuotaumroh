@@ -182,7 +182,7 @@
           
           // Generate store links using link_referal (format: /u/{link_referal})
           if (this.linkReferalAgent) {
-            const storeBaseUrl = `${window.location.origin}/u/${this.linkReferalAgent}`;
+            const storeBaseUrl = `${window.location.origin}/store/${this.linkReferalAgent}`;
             this.referralLinkUmroh = storeBaseUrl;
             this.referralLinkLeisure = storeBaseUrl;
             console.log('Store URL generated:', storeBaseUrl);
@@ -202,17 +202,35 @@
           if (!link) return;
           navigator.clipboard.writeText(link);
         },
-        downloadQR(link, filename = 'QR-Code') {
+        async downloadQR(link, filename = 'QR-Code') {
           if (!link) return;
-          const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(link)}`;
           
-          // Create a temporary link element and trigger download
-          const a = document.createElement('a');
-          a.href = qrUrl;
-          a.download = `${filename}.png`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
+          try {
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(link)}`;
+            
+            // Fetch the QR code image as blob
+            const response = await fetch(qrUrl);
+            const blob = await response.blob();
+            
+            // Create a temporary URL for the blob
+            const blobUrl = window.URL.createObjectURL(blob);
+            
+            // Create a temporary link element and trigger download
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = `${filename}.png`;
+            document.body.appendChild(a);
+            a.click();
+            
+            // Cleanup
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(blobUrl);
+            
+            console.log('QR Code downloaded successfully:', filename);
+          } catch (error) {
+            console.error('Error downloading QR code:', error);
+            alert('Gagal mendownload QR code. Silakan coba lagi.');
+          }
         },
         async loadStats() {
           try {
