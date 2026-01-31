@@ -843,7 +843,7 @@
                         platformFee: 0,
                         uniqueCode: 0,
                         paymentMethod: 'qris',
-                        refCode: 'kuotaumroh',
+                        refCode: '{{ optional($agent ?? null)->link_referal ?? "kuotaumroh" }}',
                         scheduleDate: null,
                         isBulk: false
                     };
