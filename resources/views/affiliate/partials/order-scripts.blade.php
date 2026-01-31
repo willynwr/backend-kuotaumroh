@@ -48,8 +48,8 @@ function orderApp() {
       id: pkg.id,
       type: pkg.provider,
       name: pkg.nama_paket,
-      price: parseInt(pkg.harga_modal) || 0,
-      sellPrice: parseInt(pkg.harga_eup) || 0,
+      price: parseInt(pkg.harga_komersial) || 0,
+      sellPrice: parseInt(pkg.price_bulk) || 0,
       days: parseInt(pkg.masa_aktif) || 0,
       quota: pkg.total_kuota || 0,
       subType: pkg.tipe_paket || 'INTERNET',
@@ -690,11 +690,7 @@ function orderApp() {
       }
 
       // Save to localStorage
-      // PENTING: Jangan hapus paymentId yang sudah ada agar payment persistence tetap bekerja
-      const existingOrder = localStorage.getItem('pendingOrder');
-      const existingPaymentId = existingOrder ? JSON.parse(existingOrder).paymentId : null;
-      const existingBatchId = existingOrder ? JSON.parse(existingOrder).batchId : null;
-      
+      // RESET paymentId saat membuat order baru agar tidak resume order lama
       const orderData = {
         batchId: this.batchId,
         batchName: this.batchName,
@@ -706,20 +702,25 @@ function orderApp() {
         activationTime: this.activationTime,
         scheduledDate: this.scheduledDate,
         scheduledTime: this.scheduledTime,
-        timestamp: Date.now(),
-        // Pertahankan paymentId & batchId jika ada (untuk payment persistence)
-        ...(existingPaymentId && { paymentId: existingPaymentId }),
-        ...(existingBatchId && { batchId: existingBatchId })
+        timestamp: Date.now()
       };
 
-      localStorage.setItem('pendingOrder', JSON.stringify(orderData));
-
-      // Redirect to checkout page
-      @if(isset($linkReferral))
-        window.location.href = '{{ url('/dash/' . $linkReferral . '/checkout') }}';
-      @else
-        window.location.href = '{{ route('affiliate.checkout') }}';
-      @endif
+      try {
+        localStorage.removeItem('pendingOrder');
+        localStorage.setItem('pendingOrder', JSON.stringify(orderData));
+        
+        // Redirect to checkout page
+        @if(isset($linkReferral))
+          window.location.href = '{{ url('/dash/' . $linkReferral . '/checkout') }}';
+        @else
+          window.location.href = '{{ route('affiliate.checkout') }}';
+        @endif
+      } catch (e) {
+        console.error('Error saving order to localStorage:', e);
+        this.showToast('Error', 'Gagal memproses pesanan (Storage Full). Silakan hapus cache browser Anda.');
+        this.isProcessing = false;
+        return;
+      }
     },
 
     saveBatchName() {

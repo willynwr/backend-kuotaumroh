@@ -548,10 +548,18 @@ function checkoutApp() {
             try {
                 const r = await getPaymentStatus(this.paymentId);
                 const d = Array.isArray(r) ? r[0] : r;
-                if (d?.qris) { this.qrisString = d.qris; this.qrisStaticString = d.qris_static; this.$nextTick(() => { this.generateQRCode(); setTimeout(() => this.isLoading = false, 500); }); }
+                if (d?.qris) { 
+                    this.qrisString = d.qris; 
+                    this.qrisStaticString = d.qris_static; 
+                    this.$nextTick(() => { this.generateQRCode(); }); 
+                }
                 if (d?.payment_amount) { this.paymentAmount = parseInt(d.payment_amount) || 0; this.orderData.uniqueCode = parseInt(d.payment_unique) || 0; }
                 if (d?.payment_expired) { this.timeRemaining = Math.max(0, Math.floor((new Date(d.payment_expired) - new Date()) / 1000)); }
-            } catch(e) { console.error(e); }
+            } catch(e) { 
+                console.error(e); 
+            } finally {
+                setTimeout(() => { this.isLoading = false; }, 500);
+            }
         },
 
         startTimer() { 
@@ -573,7 +581,19 @@ function checkoutApp() {
             try {
                 const msisdns = this.orderData.items.map(i => { let m = i.msisdn || i.phoneNumber; if (m.startsWith('08')) m = '62' + m.slice(1); else if (m.startsWith('8')) m = '62' + m; return m; });
                 const pkgs = this.orderData.items.map(i => i.packageId || i.package_id);
-                const req = { batch_id: 'BATCH_' + Date.now(), batch_name: 'ORDER_' + new Date().toISOString().slice(0,10).replace(/-/g,''), payment_method: 'QRIS', detail: this.orderData.scheduleDate ? `{date: ${this.orderData.scheduleDate}}` : null, ref_code: this.orderData.refCode, msisdn: msisdns, package_id: pkgs };
+                const prices = this.orderData.items.map(i => i.price || 0);
+                
+                const req = { 
+                    batch_id: 'BATCH_' + Date.now(), 
+                    batch_name: 'ORDER_' + new Date().toISOString().slice(0,10).replace(/-/g,''), 
+                    payment_method: 'QRIS', 
+                    detail: this.orderData.scheduleDate ? `{date: ${this.orderData.scheduleDate}}` : null, 
+                    ref_code: this.orderData.refCode, 
+                    msisdn: msisdns, 
+                    package_id: pkgs,
+                    price: prices 
+                };
+                
                 const r = await createBulkPayment(req);
                 const d = r.data || r;
                 if ((r.success || d?.id) && d) {
