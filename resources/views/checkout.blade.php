@@ -600,6 +600,69 @@
                 </div>
             </div>
         </div>
+        <!-- Exit Confirmation Modal (Custom UI) -->
+        <div x-show="showExitModal" 
+             style="display: none;"
+             class="fixed inset-0 z-[60] overflow-y-auto"
+             x-cloak>
+            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                
+                <!-- Background overlay -->
+                <div x-show="showExitModal"
+                     x-transition:enter="transition ease-out duration-300"
+                     x-transition:enter-start="opacity-0"
+                     x-transition:enter-end="opacity-100"
+                     x-transition:leave="transition ease-in duration-200"
+                     x-transition:leave-start="opacity-100"
+                     x-transition:leave-end="opacity-0"
+                     class="fixed inset-0 transition-opacity bg-gray-900 bg-opacity-75 blur-sm" 
+                     @click="showExitModal = false"
+                     aria-hidden="true"></div>
+
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+                <!-- Modal Panel -->
+                <div x-show="showExitModal"
+                     x-transition:enter="transition ease-out duration-300"
+                     x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                     x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                     x-transition:leave="transition ease-in duration-200"
+                     x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                     x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                     class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-sm sm:w-full">
+                    
+                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 pb-4">
+                        <div class="sm:flex sm:items-start">
+                            <div class="mx-auto flex-shrink-0 flex items-center justify-center h-14 w-14 rounded-full bg-red-50 sm:mx-0 sm:h-10 sm:w-10">
+                                <svg class="h-8 w-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                </svg>
+                            </div>
+                            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                                <h3 class="text-xl leading-6 font-bold text-gray-900" id="modal-title">
+                                    Batalkan Pembayaran?
+                                </h3>
+                                <div class="mt-2">
+                                    <p class="text-sm text-gray-500">
+                                        Transaksi Anda belum selesai. Jika Anda keluar sekarang, pembayaran ini akan dibatalkan.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-2">
+                        <button @click="showExitModal = false" type="button" 
+                            class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-4 py-3 bg-emerald-600 text-base font-bold text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 sm:ml-3 sm:w-auto sm:text-sm">
+                            Lanjutkan Pembayaran
+                        </button>
+                        <button @click="confirmExit()" type="button" 
+                            class="mt-3 w-full inline-flex justify-center rounded-xl border border-gray-300 shadow-sm px-4 py-3 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                            Ya, Batalkan
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Page Script -->
@@ -642,7 +705,12 @@
                 errorModalVisible: false,
                 errorModalTitle: '',
                 errorModalMessage: '',
+                errorModalTitle: '',
+                errorModalMessage: '',
                 errorModalCountdown: 5,
+                
+                // Exit Confirmation Modal
+                showExitModal: false,
 
                 // Timer interval
                 timerInterval: null,
@@ -656,6 +724,29 @@
                         // Public checkout tidak support static dynamic conversion
                         // Just regenerate QR code
                         this.generateQRCode();
+                    });
+
+                    // 1. Intercept Browser Back Button (Mobile Friendly)
+                    // Push state awal
+                    history.pushState(null, null, location.href);
+                    
+                    // Listen popstate (saat tombol back ditekan)
+                    window.addEventListener('popstate', (e) => {
+                        if (['pending', 'verifying'].includes(this.paymentStatus)) {
+                             // Push state lagi supaya tidak benar-benar kembali (stay di page)
+                             history.pushState(null, null, location.href);
+                             // Tampilkan modal custom
+                             this.showExitModal = true;
+                        }
+                    });
+
+                    // 2. Fallback: Prevent Accidental Tab Close/Refresh
+                    // (Browser akan tetap menampilkan dialog default untuk action ini, tidak bisa dicustom)
+                    window.addEventListener('beforeunload', (e) => {
+                        if (['pending', 'verifying'].includes(this.paymentStatus)) {
+                            e.preventDefault();
+                            e.returnValue = ''; // Trigger default browser warning
+                        }
                     });
                     
                     // Watch for payment status changes and persist to localStorage
@@ -730,6 +821,12 @@
 
                     // Start polling for payment status
                     this.startPaymentPolling();
+                },
+                
+                // Action saat user pilih "Ya, Batalkan"
+                confirmExit() {
+                    // Redirect ke home
+                    window.location.href = '{{ route('welcome') }}';
                 },
                 
                 // Save payment state ke localStorage (untuk handle refresh)
