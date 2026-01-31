@@ -405,6 +405,7 @@ function checkoutApp() {
         toastVisible: false, toastTitle: '', toastMessage: '',
         errorModalVisible: false, errorModalTitle: '', errorModalMessage: '', errorModalCountdown: 5,
         timerInterval: null, paymentCheckInterval: null,
+        isCreatingPayment: false,
 
         async init() {
             this.$watch('useStaticQris', () => this.generateQRCode());
@@ -456,6 +457,13 @@ function checkoutApp() {
                 const orderData = JSON.parse(saved);
                 // Jangan save status pending - save verifying supaya saat refresh tetap di step 3
                 orderData.paymentStatus = this.paymentStatus === 'pending' ? 'verifying' : this.paymentStatus;
+                
+                // PENTING: Jangan overwrite paymentId jika sudah ada di state tapi belum ada di LS
+                if (this.paymentId && !orderData.paymentId) {
+                    orderData.paymentId = this.paymentId;
+                    orderData.batchId = this.batchId;
+                }
+                
                 localStorage.setItem('pendingOrder', JSON.stringify(orderData));
                 console.log('💾 Payment status saved:', orderData.paymentStatus);
             }
@@ -578,6 +586,8 @@ function checkoutApp() {
         },
 
         async createPayment() {
+            if (this.isCreatingPayment) return;
+            this.isCreatingPayment = true;
             try {
                 const msisdns = this.orderData.items.map(i => { let m = i.msisdn || i.phoneNumber; if (m.startsWith('08')) m = '62' + m.slice(1); else if (m.startsWith('8')) m = '62' + m; return m; });
                 const pkgs = this.orderData.items.map(i => i.packageId || i.package_id);
@@ -604,6 +614,7 @@ function checkoutApp() {
                     await this.fetchQrisData();
                 } else throw new Error(r.message || 'Gagal');
             } catch(e) { console.error(e); this.showErrorModal('Error', e.message); this.isLoading = false; }
+            finally { this.isCreatingPayment = false; }
         },
 
         startPaymentPolling() {
