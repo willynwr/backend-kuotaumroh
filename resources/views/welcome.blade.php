@@ -33,7 +33,10 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- Alpine.js -->
+    <!-- Alpine.js Plugins -->
+    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- Alpine.js Core -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <!-- Shared CSS -->
@@ -168,11 +171,13 @@
                     </template>
                     
                     <template x-if="!loading">
-                        <div class="flex transition-transform duration-500 ease-out" 
-                             :style="`transform: translateX(-${currentSlide * 100}%)`"
+                        <div class="flex" 
+                             :class="{ 'transition-transform duration-500 ease-out': !isDragging }"
+                             :style="`transform: translateX(calc(-${currentSlide * 100}% + ${touchOffset}px))`"
                              @touchstart="handleTouchStart($event)"
                              @touchmove="handleTouchMove($event)"
-                             @touchend="handleTouchEnd($event)">
+                             @touchend="handleTouchEnd($event)"
+                             style="touch-action: pan-y">
                             <!-- Generate slides dynamically -->
                             <template x-for="slideIndex in totalSlides" :key="slideIndex">
                                 <div class="w-full flex-shrink-0 px-1">
@@ -412,6 +417,28 @@
                                        inputmode="numeric">
                             </div>
                             <p class="text-xs text-gray-500 mt-2" x-text="getPhoneHint(selectedPackage?.provider)"></p>
+                        </div>
+
+                        <!-- Payment Method Section (QRIS Only) -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                Metode Pembayaran
+                            </label>
+                            <div class="bg-white border-2 border-emerald-500 bg-emerald-50/50 rounded-xl p-4 flex items-center justify-between shadow-sm cursor-pointer hover:bg-emerald-50 transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <!-- QRIS Badge -->
+                                    <div class="h-10 w-16 bg-white border border-gray-200 rounded-lg flex items-center justify-center p-1">
+                                        <span class="font-black text-gray-800 text-lg italic tracking-tighter">QRIS</span>
+                                    </div>
+                                    <div>
+                                        <h6 class="font-bold text-gray-900 leading-none">QRIS</h6>
+                                        <p class="text-xs text-emerald-600 mt-0.5 font-medium">Scan QR Code</p>
+                                    </div>
+                                </div>
+                                <div class="w-5 h-5 rounded-full border-2 border-emerald-600 flex items-center justify-center bg-emerald-600">
+                                     <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -942,32 +969,34 @@
                 // --- Carousel Logic ---
                 startX: 0,
                 isDragging: false,
+                touchOffset: 0,
                 
                 handleTouchStart(e) {
                     this.startX = e.touches[0].clientX;
                     this.isDragging = true;
+                    this.touchOffset = 0;
                     this.stopAutoSlide();
                 },
                 
                 handleTouchMove(e) {
                     if (!this.isDragging) return;
+                    const currentX = e.touches[0].clientX;
+                    this.touchOffset = currentX - this.startX;
                 },
                 
                 handleTouchEnd(e) {
                     if (!this.isDragging) return;
                     
-                    const endX = e.changedTouches[0].clientX;
-                    const diffX = this.startX - endX;
-                    
-                    if (Math.abs(diffX) > 50) { // Threshold 50px
-                        if (diffX > 0) {
-                            this.nextSlide();
-                        } else {
+                    if (Math.abs(this.touchOffset) > 50) { 
+                        if (this.touchOffset > 0) {
                             this.prevSlide();
+                        } else {
+                            this.nextSlide();
                         }
                     }
                     
                     this.isDragging = false;
+                    this.touchOffset = 0;
                     this.startAutoSlide();
                 },
 
