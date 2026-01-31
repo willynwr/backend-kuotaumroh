@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Services\Payment\BulkPaymentService;
+use App\Services\Payment\PackagePricingService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 /**
@@ -16,10 +18,14 @@ use Illuminate\Support\Facades\Validator;
 class UmrohPaymentController extends Controller
 {
     protected BulkPaymentService $paymentService;
+    protected PackagePricingService $pricingService;
 
-    public function __construct(BulkPaymentService $paymentService)
-    {
+    public function __construct(
+        BulkPaymentService $paymentService,
+        PackagePricingService $pricingService
+    ) {
         $this->paymentService = $paymentService;
+        $this->pricingService = $pricingService;
     }
 
     /**
@@ -27,18 +33,81 @@ class UmrohPaymentController extends Controller
      * 
      * Get catalog of Umroh packages
      * 
+     * Query params:
+     * - ref_code: legacy param (ignored, untuk backward compatibility)
+     * - affiliate_id: AFTxxx untuk affiliate bulk catalog
+     * - agent_id: AGTxxx untuk agent bulk catalog atau ADMxxx untuk admin
+     * - context: 'store' untuk agent store publik, default 'bulk'
+     * 
      * @param Request $request
      * @return JsonResponse
      */
     public function getPackages(Request $request): JsonResponse
     {
         try {
-            $refCode = $request->input('ref_code', 'bulk_umroh');
+            // Ambil params
+            $affiliateId = $request->input('affiliate_id');
+            $agentId = $request->input('agent_id');
+            $context = $request->input('context', 'bulk'); // 'bulk' or 'store'
             
-            $packages = $this->paymentService->getCatalog($refCode);
+            $packages = [];
+            
+            // ===== ROUTE 1: Affiliate Bulk Catalog =====
+            if ($affiliateId) {
+                // Validasi prefix AFT
+                if (!str_starts_with($affiliateId, 'AFT')) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Invalid affiliate_id format. Expected: AFTxxx',
+                    ], 400);
+                }
+                
+                $packages = $this->pricingService->getBulkCatalogForAffiliate($affiliateId);
+            }
+            
+            // ===== ROUTE 2: Agent/Admin Catalog =====
+            elseif ($agentId) {
+                // Detect apakah AGT atau ADM
+                $prefix = substr($agentId, 0, 3);
+                
+                // Admin (ADMxxx) -> bulk only
+                if ($prefix === 'ADM') {
+                    $packages = $this->pricingService->getBulkCatalogForAdmin($agentId);
+                }
+                
+                // Agent (AGTxxx) -> bulk or store
+                elseif ($prefix === 'AGT') {
+                    if ($context === 'store') {
+                        // Store publik (individu)
+                        $packages = $this->pricingService->getStoreCatalogForAgent($agentId);
+                    } else {
+                        // Bulk (default)
+                        $packages = $this->pricingService->getBulkCatalogForAgent($agentId);
+                    }
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Invalid agent_id format. Expected: AGTxxx or ADMxxx',
+                    ], 400);
+                }
+            }
+            
+            // ===== ROUTE 3: Fallback ke legacy (untuk backward compatibility) =====
+            else {
+                // Jika tidak ada affiliate_id/agent_id, fallback ke getCatalog lama
+                // (pakai BulkPaymentService yang query dari Produk lokal)
+                $refCode = $request->input('ref_code', 'bulk_umroh');
+                $packages = $this->paymentService->getCatalog($refCode);
+            }
 
             // Return array langsung (tidak wrapped) untuk kompatibilitas dengan frontend
             return response()->json($packages);
+            
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 400);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -52,6 +121,18 @@ class UmrohPaymentController extends Controller
      * POST /api/umroh/bulkpayment
      * 
      * Create bulk payment order
+     * 
+     * Request body:
+     * - affiliate_id: AFTxxx (untuk affiliate)
+     * - agent_id: AGTxxx atau ADMxxx (untuk agent/admin)
+     * - batch_id: optional
+     * - batch_name: optional
+     * - payment_method: QRIS atau SALDO
+     * - detail: optional (JSON string untuk scheduled time, dll)
+     * - ref_code: required (untuk backward compatibility)
+     * - msisdn: array nomor HP
+     * - package_id: array package ID
+     * - price: array (IGNORED - akan diambil dari VIEW server-side)
      * 
      * @param Request $request
      * @return JsonResponse
@@ -68,8 +149,10 @@ class UmrohPaymentController extends Controller
             'msisdn.*' => 'required|string',
             'package_id' => 'required|array|min:1',
             'package_id.*' => 'required|string',
-            'price' => 'required|array|min:1', // Wajib ada price dari local
-            'price.*' => 'required|numeric|min:0',
+            'price' => 'nullable|array', // Optional (untuk backward compatibility)
+            'price.*' => 'nullable|numeric|min:0',
+            'affiliate_id' => 'nullable|string|max:20', // AFTxxx
+            'agent_id' => 'nullable|string|max:20', // AGTxxx atau ADMxxx
         ]);
 
         if ($validator->fails()) {
@@ -81,9 +164,63 @@ class UmrohPaymentController extends Controller
         }
 
         try {
-            $result = $this->paymentService->createBulkPayment($request->all());
+            // ===== DETECT ROLE & USER ID =====
+            $affiliateId = $request->input('affiliate_id');
+            $agentId = $request->input('agent_id');
+            $role = null;
+            $userId = null;
+
+            if ($affiliateId) {
+                if (!str_starts_with($affiliateId, 'AFT')) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Invalid affiliate_id format. Expected: AFTxxx',
+                    ], 400);
+                }
+                $role = 'affiliate';
+                $userId = $affiliateId;
+            } elseif ($agentId) {
+                $prefix = substr($agentId, 0, 3);
+                if ($prefix === 'AGT') {
+                    $role = 'agent';
+                    $userId = $agentId;
+                } elseif ($prefix === 'ADM') {
+                    $role = 'admin';
+                    $userId = $agentId;
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Invalid agent_id format. Expected: AGTxxx or ADMxxx',
+                    ], 400);
+                }
+            }
+
+            // ===== GET SERVER-SIDE PRICING FROM VIEW =====
+            $packageIds = $request->input('package_id');
+            $serverPricing = null;
+            
+            if ($role && $userId) {
+                try {
+                    $serverPricing = $this->pricingService->getBulkPricesForItems($role, $userId, $packageIds);
+                } catch (\Exception $e) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Gagal mengambil harga dari sistem',
+                        'error' => $e->getMessage(),
+                    ], 500);
+                }
+            }
+
+            // ===== PASS DATA TO SERVICE =====
+            $data = $request->all();
+            $data['_role'] = $role; // Internal field
+            $data['_user_id'] = $userId; // Internal field
+            $data['_server_pricing'] = $serverPricing; // Internal field
+            
+            $result = $this->paymentService->createBulkPayment($data);
 
             return response()->json($result, 201);
+            
         } catch (\InvalidArgumentException $e) {
             return response()->json([
                 'success' => false,
@@ -231,7 +368,16 @@ class UmrohPaymentController extends Controller
     /**
      * POST /api/umroh/payment
      * 
-     * Create individual payment order (untuk homepage / public user)
+     * Create individual payment order (untuk homepage / public user / toko agent)
+     * 
+     * Request body:
+     * - payment_method: QRIS atau SALDO
+     * - detail: optional (JSON string untuk scheduled time, dll)
+     * - ref_code: required (agent_id untuk store publik, atau '0' untuk homepage)
+     * - msisdn: nomor HP (STRING)
+     * - package_id: package ID (STRING)
+     * - price: optional (IGNORED - akan diambil dari VIEW server-side jika agent_id valid)
+     * - agent_id: AGTxxx (untuk toko agent, optional)
      * 
      * @param Request $request
      * @return JsonResponse
@@ -244,7 +390,8 @@ class UmrohPaymentController extends Controller
             'ref_code' => 'required|string|max:50',
             'msisdn' => 'required|string', // STRING untuk individual
             'package_id' => 'required|string', // STRING untuk individual
-            'price' => 'required|numeric|min:0', // Wajib ada price dari local
+            'price' => 'nullable|numeric|min:0', // Optional (untuk backward compatibility)
+            'agent_id' => 'nullable|string|max:20', // AGTxxx untuk toko agent
         ]);
 
         if ($validator->fails()) {
@@ -256,9 +403,53 @@ class UmrohPaymentController extends Controller
         }
 
         try {
-            $result = $this->paymentService->createIndividualPayment($request->all());
+            // ===== DETECT AGENT & GET STORE PRICING =====
+            $agentId = $request->input('agent_id') ?? $request->input('ref_code');
+            $packageId = $request->input('package_id');
+            $storePricing = null;
+            
+            // Jika agent_id valid (AGTxxx), ambil pricing dari VIEW
+            if ($agentId && str_starts_with($agentId, 'AGT')) {
+                try {
+                    $storePricing = $this->pricingService->getStorePriceForItem($agentId, $packageId);
+                    
+                    if (!$storePricing) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => "Package {$packageId} tidak tersedia di toko {$agentId}",
+                        ], 404);
+                    }
+                    
+                    Log::info('✅ Store pricing retrieved from VIEW', [
+                        'agent_id' => $agentId,
+                        'package_id' => $packageId,
+                        'toko_harga_jual' => $storePricing['toko_harga_jual'],
+                    ]);
+                    
+                } catch (\Exception $e) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Gagal mengambil harga dari sistem',
+                        'error' => $e->getMessage(),
+                    ], 500);
+                }
+            } elseif ($agentId && !str_starts_with($agentId, 'AGT')) {
+                // Jika ref_code/agent_id tidak valid tapi ada, warning saja (fallback ke client price)
+                Log::warning('⚠️ Invalid agent_id format for store pricing', [
+                    'agent_id' => $agentId,
+                    'expected' => 'AGTxxx',
+                ]);
+            }
+
+            // ===== PASS DATA TO SERVICE =====
+            $data = $request->all();
+            $data['_store_pricing'] = $storePricing; // Internal field
+            $data['_agent_id'] = str_starts_with($agentId, 'AGT') ? $agentId : null; // Internal field
+            
+            $result = $this->paymentService->createIndividualPayment($data);
 
             return response()->json($result, 201);
+            
         } catch (\InvalidArgumentException $e) {
             return response()->json([
                 'success' => false,

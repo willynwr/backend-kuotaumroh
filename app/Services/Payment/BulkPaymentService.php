@@ -49,9 +49,20 @@ class BulkPaymentService
     }
 
     /**
-     * Get catalog paket dari external API
+     * Get catalog paket dari local database
      * 
-     * @param string $refCode Reference code untuk harga khusus
+     * @deprecated Use PackagePricingService instead for pricing from VIEW
+     * 
+     * Method ini masih dipakai untuk backward compatibility (fallback),
+     * tapi harga masih dari tabel Produk lokal, BUKAN dari VIEW kuotaumroh.
+     * 
+     * Untuk harga yang benar sesuai role (affiliate/agent/admin):
+     * - Gunakan PackagePricingService->getBulkCatalogForAffiliate()
+     * - Gunakan PackagePricingService->getBulkCatalogForAgent()
+     * - Gunakan PackagePricingService->getBulkCatalogForAdmin()
+     * - Gunakan PackagePricingService->getStoreCatalogForAgent()
+     * 
+     * @param string $refCode Reference code (ignored, semua harga sama)
      * @return array
      */
     public function getCatalog(string $refCode = 'bulk_umroh'): array
@@ -62,6 +73,8 @@ class BulkPaymentService
 
     /**
      * Get catalog dari local database (fallback)
+     * 
+     * @deprecated Harga dari tabel Produk, bukan dari VIEW kuotaumroh
      */
     protected function getCatalogFromLocal(string $refCode = 'bulk_umroh'): array
     {
@@ -138,6 +151,9 @@ class BulkPaymentService
      * 
      * Proxies request ke kuotaumroh.id untuk menghindari CORS
      * 
+     * PENTING: Harga diambil dari VIEW (server-side), BUKAN dari client input.
+     * Jika ada _server_pricing, akan override price dari client.
+     * 
      * @param array $data Request data
      * @return array Response dengan payment info
      */
@@ -150,20 +166,71 @@ class BulkPaymentService
         $refCode = $data['ref_code'] ?? 'bulk_umroh';
         $msisdnList = $data['msisdn'] ?? [];
         $packageIdList = $data['package_id'] ?? [];
-        $priceList = $data['price'] ?? []; // Harga dari local DB
+        
+        // Internal fields dari Controller
+        $role = $data['_role'] ?? null;
+        $userId = $data['_user_id'] ?? null;
+        $serverPricing = $data['_server_pricing'] ?? null;
 
         // Validasi jumlah msisdn dan package_id harus sama
         if (count($msisdnList) !== count($packageIdList)) {
             throw new \InvalidArgumentException('Jumlah msisdn dan package_id harus sama');
         }
 
-        // Validasi jumlah price harus sama jika ada
-        if (!empty($priceList) && count($priceList) !== count($msisdnList)) {
-            throw new \InvalidArgumentException('Jumlah price harus sama dengan jumlah item');
-        }
-
         if (empty($msisdnList)) {
             throw new \InvalidArgumentException('Minimal harus ada 1 nomor tujuan');
+        }
+
+        // ===== BUILD PRICE LIST (SERVER-SIDE) =====
+        $priceList = [];
+        $pricingDetails = []; // Untuk simpan ke local DB
+        
+        if ($serverPricing) {
+            // Gunakan harga dari VIEW (server-side)
+            foreach ($packageIdList as $index => $packageId) {
+                if (!isset($serverPricing[$packageId])) {
+                    throw new \InvalidArgumentException("Package {$packageId} tidak ditemukan atau tidak tersedia untuk user {$userId}");
+                }
+                
+                $pricing = $serverPricing[$packageId];
+                $priceList[] = $pricing['bulk_harga_beli']; // Harga yang dikirim ke external API
+                
+                // Simpan detail pricing per item
+                $pricingDetails[] = [
+                    'msisdn' => $msisdnList[$index],
+                    'package_id' => $packageId,
+                    'bulk_harga_beli' => $pricing['bulk_harga_beli'],
+                    'bulk_harga_rekomendasi' => $pricing['bulk_harga_rekomendasi'],
+                    'bulk_potensi_profit' => $pricing['bulk_potensi_profit'] ?? 0,
+                ];
+            }
+            
+            Log::info('✅ Using server-side pricing from VIEW', [
+                'role' => $role,
+                'user_id' => $userId,
+                'price_count' => count($priceList),
+            ]);
+        } else {
+            // Fallback: gunakan price dari client (backward compatibility)
+            $priceList = $data['price'] ?? [];
+            
+            if (empty($priceList) || count($priceList) !== count($msisdnList)) {
+                throw new \InvalidArgumentException('Price tidak tersedia. Sertakan affiliate_id atau agent_id untuk mendapatkan harga otomatis.');
+            }
+            
+            Log::warning('⚠️  Using client-provided pricing (LEGACY - DEPRECATED)', [
+                'price_count' => count($priceList),
+            ]);
+            
+            // Build minimal pricing details untuk legacy
+            foreach ($packageIdList as $index => $packageId) {
+                $pricingDetails[] = [
+                    'msisdn' => $msisdnList[$index],
+                    'package_id' => $packageId,
+                    'price' => $priceList[$index],
+                    'source' => 'client_legacy',
+                ];
+            }
         }
 
         // Format msisdn ke 628xxx
@@ -181,12 +248,13 @@ class BulkPaymentService
             'ref_code' => $refCode,
             'msisdn' => $formattedMsisdn,
             'package_id' => $packageIdList,
-            'price' => $priceList, // Kirim harga local ke external API
+            'price' => $priceList, // Harga dari VIEW (server-side) atau fallback dari client
         ];
 
         Log::info('Creating bulk payment via external API', [
             'request' => $requestBody,
             'url' => "{$this->externalApiUrl}/umroh/bulkpayment",
+            'pricing_source' => $serverPricing ? 'VIEW' : 'client_legacy',
         ]);
 
         try {
@@ -210,7 +278,7 @@ class BulkPaymentService
                 ]);
                 
                 // Store local record for tracking
-                $this->storeLocalPaymentRecord($requestBody, $result);
+                $this->storeLocalPaymentRecord($requestBody, $result, $pricingDetails, $role, $userId);
                 
                 $mappedResponse = $this->mapExternalResponse($result, $batchId);
                 
@@ -267,17 +335,22 @@ class BulkPaymentService
         if (isset($response['id']) || isset($response['payment_id'])) {
             $paymentId = $response['payment_id'] ?? $response['id'] ?? null;
             
+            // External API mengembalikan payment_amount sebagai total (harga + unique)
+            $paymentAmount = (int) ($response['payment_amount'] ?? 0);
+            $paymentUnique = (int) ($response['payment_unique'] ?? 0);
+            $subTotal = $paymentAmount - $paymentUnique; // Hitung sub_total dari payment_amount - unique
+            
             return [
                 'payment_id' => $paymentId,
                 'batch_id' => $response['batch_id'] ?? $batchId,
                 'batch_name' => $response['batch_name'] ?? null,
-                'sub_total' => $response['sub_total'] ?? $response['subtotal'] ?? 0,
+                'sub_total' => $subTotal,
                 'platform_fee' => $response['platform_fee'] ?? $response['biaya_platform'] ?? 0,
                 'payment_unique' => $response['payment_unique'] ?? $response['unique_code'] ?? 0,
-                'total_pembayaran' => $response['total_pembayaran'] ?? $response['total'] ?? 0,
+                'total_pembayaran' => $paymentAmount,
                 'metode_pembayaran' => $response['metode_pembayaran'] ?? $response['payment_method'] ?? 'QRIS',
-                'status_pembayaran' => $response['status_pembayaran'] ?? $response['status'] ?? 'WAITING',
-                'expired_at' => $response['expired_at'] ?? null,
+                'status_pembayaran' => $response['status_pembayaran'] ?? $response['payment_status'] ?? 'WAITING',
+                'expired_at' => $response['expired_at'] ?? $response['payment_expired'] ?? null,
                 'remaining_time' => $response['remaining_time'] ?? (15 * 60),
                 'payment_url' => $response['payment_url'] ?? ($paymentId ? "https://kuotaumroh.id/umroh/payment?id={$paymentId}" : null),
                 'qris' => $this->extractQrisData($response),
@@ -328,14 +401,28 @@ class BulkPaymentService
     }
 
     /**
-     * Store local record for tracking purposes
+     * Store local record for tracking purposes dengan pricing details
+     * 
+     * @param array $request Request body yang dikirim ke external API
+     * @param array $response Response dari external API
+     * @param array $pricingDetails Pricing details dari VIEW (per item)
+     * @param string|null $role Role user (affiliate/agent/admin)
+     * @param string|null $userId User ID (AFTxxx/AGTxxx/ADMxxx)
      */
-    protected function storeLocalPaymentRecord(array $request, array $response): void
-    {
+    protected function storeLocalPaymentRecord(
+        array $request, 
+        array $response,
+        array $pricingDetails = [],
+        ?string $role = null,
+        ?string $userId = null
+    ): void {
         try {
             Log::info('🔍 storeLocalPaymentRecord - Starting', [
                 'response_keys' => array_keys($response),
                 'request_keys' => array_keys($request),
+                'pricing_details_count' => count($pricingDetails),
+                'role' => $role,
+                'user_id' => $userId,
             ]);
             
             // Ambil external payment ID
@@ -380,6 +467,53 @@ class BulkPaymentService
             
             Log::info('✓ Items enriched', ['count' => count($enrichedItems)]);
             
+            // ===== CALCULATE SUMMARY FROM PRICING DETAILS =====
+            $totalHargaBeli = 0;
+            $totalHargaRekomendasi = 0;
+            $totalProfit = 0;
+            $totalFeeTravel = 0;
+            $totalFeeAffiliate = 0;
+            $pricingSource = 'unknown';
+            
+            if (!empty($pricingDetails)) {
+                // Detect pricing type: bulk atau store
+                $firstItem = $pricingDetails[0] ?? [];
+                
+                if (isset($firstItem['bulk_harga_beli'])) {
+                    // BULK PRICING
+                    foreach ($pricingDetails as $item) {
+                        $totalHargaBeli += (int) ($item['bulk_harga_beli'] ?? 0);
+                        $totalHargaRekomendasi += (int) ($item['bulk_harga_rekomendasi'] ?? 0);
+                        $totalProfit += (int) ($item['bulk_potensi_profit'] ?? 0);
+                    }
+                    $pricingSource = 'VIEW_BULK';
+                    
+                    Log::info('💰 Bulk pricing summary calculated', [
+                        'total_harga_beli' => $totalHargaBeli,
+                        'total_harga_rekomendasi' => $totalHargaRekomendasi,
+                        'total_profit' => $totalProfit,
+                    ]);
+                    
+                } elseif (isset($firstItem['toko_harga_jual'])) {
+                    // STORE PRICING (INDIVIDUAL)
+                    foreach ($pricingDetails as $item) {
+                        $totalHargaBeli += (int) ($item['toko_harga_jual'] ?? 0); // Customer bayar
+                        $totalHargaRekomendasi += (int) ($item['toko_harga_coret'] ?? 0); // Harga coret
+                        $totalFeeTravel += (int) ($item['mandiri_final_fee_travel'] ?? 0);
+                        $totalFeeAffiliate += (int) ($item['mandiri_final_fee_affiliate'] ?? 0);
+                    }
+                    $totalProfit = $totalFeeTravel; // Profit agent = fee travel
+                    $pricingSource = 'VIEW_STORE';
+                    
+                    Log::info('💰 Store pricing summary calculated', [
+                        'total_harga_jual' => $totalHargaBeli,
+                        'total_harga_coret' => $totalHargaRekomendasi,
+                        'total_fee_travel' => $totalFeeTravel,
+                        'total_fee_affiliate' => $totalFeeAffiliate,
+                    ]);
+                }
+            }
+            
             // Prepare data untuk create - sesuaikan dengan kolom tabel pembayaran
             // Kolom: id, external_payment_id, batch_id, batch_name, agent_id, produk_id, 
             //        msisdn, nama_paket, tipe_paket, harga_modal, harga_jual, profit, 
@@ -423,11 +557,21 @@ class BulkPaymentService
                     'payment_expired' => $response['payment_expired'] ?? null,
                     'payment_unique' => $response['payment_unique'] ?? null,
                     'external_status' => $externalStatusRaw,
+                    // ===== PRICING DETAILS FROM VIEW =====
+                    'pricing_details' => $pricingDetails, // Per-item pricing dari VIEW (bulk atau store)
+                    'pricing_source' => $pricingSource,
+                    'role' => $role,
+                    'user_id' => $userId,
+                    'total_harga_beli' => $totalHargaBeli ?? null,
+                    'total_harga_rekomendasi' => $totalHargaRekomendasi ?? null,
+                    'total_profit' => $totalProfit ?? null,
+                    'total_fee_travel' => $totalFeeTravel ?? null,
+                    'total_fee_affiliate' => $totalFeeAffiliate ?? null,
                 ]),
-                // Fill required integer columns with 0
-                'harga_modal' => 0,
-                'harga_jual' => 0,
-                'profit' => 0,
+                // Fill required integer columns
+                'harga_modal' => $totalHargaBeli ?? 0,
+                'harga_jual' => $totalHargaRekomendasi ?? 0,
+                'profit' => $totalProfit ?? 0,
             ];
             
             Log::info('💾 Creating payment record', [
@@ -460,6 +604,9 @@ class BulkPaymentService
      * 
      * Proxies request ke tokodigi.id untuk individual payment
      * 
+     * PENTING: Harga diambil dari VIEW (server-side) untuk toko agent,
+     * BUKAN dari client input.
+     * 
      * @param array $data Request data
      * @return array Response dengan payment info
      */
@@ -470,11 +617,52 @@ class BulkPaymentService
         $refCode = $data['ref_code'] ?? '0';
         $msisdn = $data['msisdn'] ?? null; // STRING untuk individual
         $packageId = $data['package_id'] ?? null; // STRING untuk individual
-        $price = $data['price'] ?? 0; // Harga dari local DB
+        
+        // Internal fields dari Controller
+        $storePricing = $data['_store_pricing'] ?? null;
+        $agentId = $data['_agent_id'] ?? null;
 
         // Validasi
         if (!$msisdn || !$packageId) {
             throw new \InvalidArgumentException('msisdn dan package_id harus diisi');
+        }
+
+        // ===== BUILD PRICE (SERVER-SIDE) =====
+        $price = 0;
+        $pricingDetail = null;
+        
+        if ($storePricing) {
+            // Gunakan harga dari VIEW (server-side) - TOKO AGENT
+            $price = $storePricing['toko_harga_jual']; // Harga yang dibayar customer
+            
+            $pricingDetail = [
+                'package_id' => $packageId,
+                'toko_harga_coret' => $storePricing['toko_harga_coret'],
+                'toko_harga_jual' => $storePricing['toko_harga_jual'],
+                'toko_hemat' => $storePricing['toko_hemat'],
+                'mandiri_final_fee_travel' => $storePricing['mandiri_final_fee_travel'],
+                'mandiri_final_fee_affiliate' => $storePricing['mandiri_final_fee_affiliate'],
+            ];
+            
+            Log::info('✅ Using server-side pricing from VIEW (STORE)', [
+                'agent_id' => $agentId,
+                'package_id' => $packageId,
+                'toko_harga_jual' => $price,
+                'fee_travel' => $storePricing['mandiri_final_fee_travel'],
+                'fee_affiliate' => $storePricing['mandiri_final_fee_affiliate'],
+            ]);
+        } else {
+            // Fallback: gunakan price dari client (backward compatibility - HOMEPAGE)
+            $price = $data['price'] ?? 0;
+            
+            if (!$price || $price <= 0) {
+                throw new \InvalidArgumentException('Price tidak tersedia. Sertakan agent_id untuk mendapatkan harga otomatis dari toko.');
+            }
+            
+            Log::warning('⚠️ Using client-provided pricing (LEGACY - HOMEPAGE)', [
+                'price' => $price,
+                'ref_code' => $refCode,
+            ]);
         }
 
         // Format msisdn ke 628xxx
@@ -491,12 +679,13 @@ class BulkPaymentService
             'ref_code' => $refCode,
             'msisdn' => $formattedMsisdn,
             'package_id' => $packageId,
-            'price' => $price, // Kirim harga local ke external API
+            'price' => $price, // Harga dari VIEW (toko_harga_jual) atau fallback dari client
         ];
 
         Log::info('Creating individual payment via external API', [
             'request' => $requestBody,
             'url' => "{$this->externalApiUrl}/umroh/payment",
+            'pricing_source' => $storePricing ? 'VIEW_STORE' : 'client_legacy',
         ]);
 
         try {
@@ -527,7 +716,7 @@ class BulkPaymentService
                     'package_id' => [$packageId], // Convert to array for consistency
                     'batch_id' => 'IND-' . time() . mt_rand(100, 999), // Generate ID untuk individual (required by DB)
                     'batch_name' => 'Individual Order',
-                ], $result);
+                ], $result, $pricingDetail ? [$pricingDetail] : [], 'agent', $agentId); // Pass store pricing details
                 
                 // Return response as-is dari external API
                 return [
