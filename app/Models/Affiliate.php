@@ -45,6 +45,8 @@ class Affiliate extends Model
         'is_active',
         'link_referral',
         'ref_code',
+        'saldo_fee',
+        'total_fee',
     ];
 
     protected $casts = [

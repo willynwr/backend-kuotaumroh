@@ -271,4 +271,45 @@ class FreelanceController extends Controller
         
         return view('freelance.order', compact('packages', 'agents', 'linkReferral'));
     }
+
+    /**
+     * Get profile data for freelance by link_referral.
+     */
+    public function getProfile($linkReferral)
+    {
+        $freelance = Freelance::where('link_referral', $linkReferral)
+            ->with('agents')
+            ->first();
+
+        if (!$freelance) {
+            return response()->json([
+                'message' => 'Freelance not found'
+            ], 404);
+        }
+
+        // Count active agents
+        $activeAgentsCount = $freelance->agents()->where('is_active', 1)->count();
+        $totalAgentsCount = $freelance->agents()->count();
+
+        return response()->json([
+            'message' => 'Profile retrieved successfully',
+            'data' => [
+                'id' => $freelance->id,
+                'nama' => $freelance->nama,
+                'email' => $freelance->email,
+                'no_wa' => $freelance->no_wa,
+                'provinsi' => $freelance->provinsi,
+                'kab_kota' => $freelance->kab_kota,
+                'alamat_lengkap' => $freelance->alamat_lengkap,
+                'link_referral' => $freelance->link_referral,
+                'ref_code' => $freelance->ref_code,
+                'saldo_fee' => $freelance->saldo_fee ?? 0,
+                'total_fee' => $freelance->total_fee ?? 0,
+                'is_active' => $freelance->is_active,
+                'date_register' => $freelance->date_register,
+                'agents_recruited' => $totalAgentsCount,
+                'active_agents' => $activeAgentsCount,
+            ]
+        ], 200);
+    }
 }
