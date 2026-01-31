@@ -81,7 +81,7 @@ class Pembayaran extends Model
         'unique_code' => 'integer',
         'total_pembayaran' => 'integer',
         'profit' => 'integer',
-        'paid_at' => 'datetime',
+        // 'paid_at' => 'datetime', // Removed: column does not exist
         'expired_at' => 'datetime',
     ];
 
@@ -225,11 +225,18 @@ class Pembayaran extends Model
      */
     public function markAsSuccess(string $rrn = null, $date = null): bool
     {
-        return $this->update([
+        $updateData = [
             'status_pembayaran' => self::STATUS_SUCCESS,
-            'verification_ref' => $rrn,
-            'paid_at' => $date ?? now(),
-        ]);
+        ];
+        
+        if ($rrn) {
+            $updateData['qris_rrn'] = $rrn;
+        }
+        
+        // Note: 'paid_at' removed as it does not exist in server DB
+        // 'updated_at' will be handled automatically by Eloquent
+        
+        return $this->update($updateData);
     }
 
     /**
@@ -282,7 +289,7 @@ class Pembayaran extends Model
      */
     public function getQrisRrnAttribute(): ?string
     {
-        return $this->verification_ref;
+        return $this->attributes['qris_rrn'] ?? null;
     }
 
     /**
@@ -290,7 +297,7 @@ class Pembayaran extends Model
      */
     public function setQrisRrnAttribute($value)
     {
-        $this->attributes['verification_ref'] = $value;
+        $this->attributes['qris_rrn'] = $value;
     }
 
     /**
@@ -298,7 +305,7 @@ class Pembayaran extends Model
      */
     public function getQrisDateAttribute()
     {
-        return $this->paid_at;
+        return $this->updated_at; // Use updated_at as proxy for paid_at
     }
 
     /**
@@ -306,7 +313,8 @@ class Pembayaran extends Model
      */
     public function setQrisDateAttribute($value)
     {
-        $this->attributes['paid_at'] = $value;
+        // $this->attributes['paid_at'] = $value; // Removed: column does not exist
+        // No-op or use created_at/updated_at if needed, but safer to ignore
     }
 
     /**

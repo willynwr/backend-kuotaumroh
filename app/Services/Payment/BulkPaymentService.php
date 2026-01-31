@@ -389,6 +389,7 @@ class BulkPaymentService
             $statusMap = [
                 'INJECT' => Pembayaran::STATUS_SUCCESS,
                 'SUCCESS' => Pembayaran::STATUS_SUCCESS,
+                'SUKSES' => Pembayaran::STATUS_SUCCESS, // Added SUKSES
                 'BERHASIL' => Pembayaran::STATUS_SUCCESS,
                 'AKTIF' => Pembayaran::STATUS_SUCCESS,
                 'VERIFY' => Pembayaran::STATUS_VERIFY,
@@ -423,6 +424,10 @@ class BulkPaymentService
                     'payment_unique' => $response['payment_unique'] ?? null,
                     'external_status' => $externalStatusRaw,
                 ]),
+                // Fill required integer columns with 0
+                'harga_modal' => 0,
+                'harga_jual' => 0,
+                'profit' => 0,
             ];
             
             Log::info('💾 Creating payment record', [
@@ -520,7 +525,7 @@ class BulkPaymentService
                     'ref_code' => $refCode,
                     'msisdn' => [$formattedMsisdn], // Convert to array for consistency
                     'package_id' => [$packageId], // Convert to array for consistency
-                    'batch_id' => null, // Individual tidak punya batch
+                    'batch_id' => 'IND-' . time() . mt_rand(100, 999), // Generate ID untuk individual (required by DB)
                     'batch_name' => 'Individual Order',
                 ], $result);
                 
@@ -656,14 +661,15 @@ class BulkPaymentService
     public function verifyPayment(int $paymentId, array $verificationData = []): array
     {
         try {
-            // Check payment status from tokodigi API
-            $response = Http::timeout(30)->get("{$this->tokodigiApiUrl}/umroh/payment", [
+            // Check payment status from tokodigi API (JSON endpoint)
+            $url = rtrim($this->tokodigiApiUrl, '/') . '/api/umroh/payment';
+            $response = Http::timeout(30)->get($url, [
                 'id' => $paymentId,
             ]);
 
             Log::info('Tokodigi payment verification request', [
                 'payment_id' => $paymentId,
-                'url' => "{$this->tokodigiApiUrl}/umroh/payment?id={$paymentId}",
+                'url' => "{$url}?id={$paymentId}",
             ]);
 
             if ($response->successful()) {
@@ -686,21 +692,23 @@ class BulkPaymentService
                 
                 // Check if payment is successful on external API
                 // Handle various status formats from tokodigi API
-                $externalStatus = strtolower(
-                    $data['status'] ?? 
-                    $data['payment_status'] ?? 
-                    $data['status_pembayaran'] ?? 
-                    $responseData['status'] ?? 
-                    ''
-                );
+                $externalStatusRaw = $data['status'] 
+                    ?? $data['payment_status'] 
+                    ?? $data['status_pembayaran'] 
+                    ?? $responseData['status'] 
+                    ?? '';
+                $externalStatus = strtoupper(trim((string) $externalStatusRaw));
+                $mappedStatus = $this->mapExternalStatus($externalStatusRaw);
                 
                 Log::info('Parsed external status', [
                     'payment_id' => $paymentId,
+                    'external_status_raw' => $externalStatusRaw,
                     'external_status' => $externalStatus,
+                    'mapped_status' => $mappedStatus,
                     'parsed_data' => $data,
                 ]);
                 
-                if (in_array($externalStatus, ['success', 'sukses', 'berhasil', 'paid', 'completed'])) {
+                if ($mappedStatus === Pembayaran::STATUS_SUCCESS) {
                     // Update local database status
                     $updated = $this->markPaymentSuccess($paymentId, $data['qris_rrn'] ?? $data['rrn'] ?? null);
                     
@@ -725,12 +733,16 @@ class BulkPaymentService
                         'data' => $data,
                     ];
                 }
+
+                if ($mappedStatus) {
+                    $this->updateLocalPaymentStatus($paymentId, $mappedStatus);
+                }
                 
                 // Payment not yet paid or still pending
                 return [
                     'success' => true,
                     'message' => 'Status pembayaran: ' . ($externalStatus ?: 'menunggu pembayaran'),
-                    'status' => $externalStatus ?: 'pending',
+                    'status' => $externalStatus ? strtolower($externalStatus) : 'pending',
                     'data' => $data,
                 ];
             }
@@ -978,34 +990,97 @@ class BulkPaymentService
             }
 
             $data = $payload[0] ?? [];
-            $externalStatus = $data['payment_status'] ?? null;
+            
+            // Cek berbagai field status yang mungkin
+            $externalStatus = $data['status'] ?? $data['payment_status'] ?? $data['status_pembayaran'] ?? null;
 
             if (!$externalStatus) {
                 return null;
             }
 
-            // Map external status to local status
-            // INJECT = paket sudah diaktifkan = SUCCESS
-            $statusMap = [
-                'INJECT' => Pembayaran::STATUS_SUCCESS,
-                'SUCCESS' => Pembayaran::STATUS_SUCCESS,
-                'BERHASIL' => Pembayaran::STATUS_SUCCESS,
-                'AKTIF' => Pembayaran::STATUS_SUCCESS,
-                'VERIFY' => Pembayaran::STATUS_VERIFY,
-                'WAITING' => Pembayaran::STATUS_WAITING,
-                'PENDING' => Pembayaran::STATUS_WAITING,
-                'FAILED' => Pembayaran::STATUS_FAILED,
-                'EXPIRED' => Pembayaran::STATUS_EXPIRED,
-                'CANCEL' => Pembayaran::STATUS_FAILED,
-            ];
-
-            return $statusMap[strtoupper($externalStatus)] ?? $externalStatus;
+            return $this->mapExternalStatus($externalStatus);
         } catch (\Exception $e) {
             Log::warning('Failed to check external payment status', [
                 'payment_id' => $externalPaymentId,
                 'error' => $e->getMessage(),
             ]);
             return null;
+        }
+    }
+
+    /**
+     * Map external status to local status
+     */
+    protected function mapExternalStatus(?string $externalStatus): ?string
+    {
+        if (!$externalStatus) {
+            return null;
+        }
+
+        $statusMap = [
+            'INJECT' => Pembayaran::STATUS_SUCCESS,
+            'SUCCESS' => Pembayaran::STATUS_SUCCESS,
+            'SUKSES' => Pembayaran::STATUS_SUCCESS, // Added SUKSES
+            'BERHASIL' => Pembayaran::STATUS_SUCCESS,
+            'AKTIF' => Pembayaran::STATUS_SUCCESS,
+            'VERIFY' => Pembayaran::STATUS_VERIFY,
+            'WAITING' => Pembayaran::STATUS_WAITING,
+            'PENDING' => Pembayaran::STATUS_WAITING,
+            'FAILED' => Pembayaran::STATUS_FAILED,
+            'EXPIRED' => Pembayaran::STATUS_EXPIRED,
+            'CANCEL' => Pembayaran::STATUS_FAILED,
+        ];
+
+        $normalized = strtoupper(trim($externalStatus));
+
+        return $statusMap[$normalized] ?? $normalized;
+    }
+
+    /**
+     * Update local payment status without marking as success (no paid_at update)
+     */
+    protected function updateLocalPaymentStatus(string|int $paymentId, string $newStatus): bool
+    {
+        try {
+            $pembayaran = Pembayaran::where('external_payment_id', (string) $paymentId)->first();
+            if (!$pembayaran) {
+                $pembayaran = Pembayaran::find($paymentId);
+            }
+
+            if (!$pembayaran) {
+                Log::warning('Payment not found for status update', [
+                    'payment_id' => $paymentId,
+                    'new_status' => $newStatus,
+                ]);
+                return false;
+            }
+
+            $currentStatus = strtoupper((string) $pembayaran->status_pembayaran);
+
+            // Jangan downgrade jika sudah SUCCESS
+            if ($currentStatus === Pembayaran::STATUS_SUCCESS) {
+                return true;
+            }
+
+            if ($currentStatus !== $newStatus) {
+                $pembayaran->status_pembayaran = $newStatus;
+                $pembayaran->save();
+
+                Log::info('Payment status updated from verify', [
+                    'payment_id' => $paymentId,
+                    'old_status' => $currentStatus,
+                    'new_status' => $newStatus,
+                ]);
+            }
+
+            return true;
+        } catch (\Exception $e) {
+            Log::warning('Failed to update local payment status', [
+                'payment_id' => $paymentId,
+                'new_status' => $newStatus,
+                'error' => $e->getMessage(),
+            ]);
+            return false;
         }
     }
 }
