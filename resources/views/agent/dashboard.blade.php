@@ -182,7 +182,7 @@
           
           // Generate store links using link_referal (format: /u/{link_referal})
           if (this.linkReferalAgent) {
-            const storeBaseUrl = `${window.location.origin}/store/${this.linkReferalAgent}`;
+            const storeBaseUrl = `${window.location.origin}/u/${this.linkReferalAgent}`;
             this.referralLinkUmroh = storeBaseUrl;
             this.referralLinkLeisure = storeBaseUrl;
             console.log('Store URL generated:', storeBaseUrl);

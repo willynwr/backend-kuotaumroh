@@ -14,12 +14,33 @@ use Illuminate\Support\Facades\Storage;
 class AgentController extends Controller
 {
     /**
-     * Tampilkan halaman welcome (homepage) dengan default agent
-     * Route: /
+     * Tampilkan halaman welcome (homepage) dengan optional agent link_referal
+     * Route: / atau /{link_referal}
      */
-    public function showWelcome()
+    public function showWelcome($linkReferal = null)
     {
-        // Cari agent dengan link_referal 'kuotaumroh' di database
+        // Jika ada link_referal dari URL, gunakan itu
+        if ($linkReferal) {
+            // Cari agent berdasarkan link_referal
+            $agent = Agent::where('link_referal', $linkReferal)
+                ->where('is_active', true)
+                ->first();
+            
+            // Jika agent tidak ditemukan, redirect ke default
+            if (!$agent) {
+                return redirect()->route('welcome')->with('error', 'Toko tidak ditemukan atau sudah tidak aktif');
+            }
+            
+            // Simpan agent info ke session untuk digunakan saat redirect ke store
+            session([
+                'pending_agent_id' => $agent->id,
+                'pending_agent_link' => $agent->link_referal
+            ]);
+            
+            return view('welcome', compact('agent'));
+        }
+        
+        // Jika tidak ada link_referal, gunakan default 'kuotaumroh'
         $defaultAgent = Agent::where('link_referal', 'kuotaumroh')->first();
         
         if ($defaultAgent) {
@@ -40,6 +61,12 @@ class AgentController extends Controller
                 'is_active' => true,
             ];
         }
+        
+        // Simpan default agent ke session
+        session([
+            'pending_agent_id' => is_object($agent) ? $agent->id : $agent['id'],
+            'pending_agent_link' => 'kuotaumroh'
+        ]);
 
         return view('welcome', compact('agent'));
     }
