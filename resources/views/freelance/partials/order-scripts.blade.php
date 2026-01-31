@@ -704,11 +704,7 @@ function orderApp() {
       }
 
       // Save to localStorage
-      // PENTING: Jangan hapus paymentId yang sudah ada agar payment persistence tetap bekerja
-      const existingOrder = localStorage.getItem('pendingOrder');
-      const existingPaymentId = existingOrder ? JSON.parse(existingOrder).paymentId : null;
-      const existingBatchId = existingOrder ? JSON.parse(existingOrder).batchId : null;
-      
+      // RESET paymentId saat membuat order baru agar tidak resume order lama
       const orderData = {
         batchId: this.batchId,
         batchName: this.batchName,
@@ -720,20 +716,25 @@ function orderApp() {
         activationTime: this.activationTime,
         scheduledDate: this.scheduledDate,
         scheduledTime: this.scheduledTime,
-        timestamp: Date.now(),
-        // Pertahankan paymentId & batchId jika ada (untuk payment persistence)
-        ...(existingPaymentId && { paymentId: existingPaymentId }),
-        ...(existingBatchId && { batchId: existingBatchId })
+        timestamp: Date.now()
       };
 
-      localStorage.setItem('pendingOrder', JSON.stringify(orderData));
+      try {
+        localStorage.removeItem('pendingOrder');
+        localStorage.setItem('pendingOrder', JSON.stringify(orderData));
 
-      // Redirect to checkout page
-      @if(isset($linkReferral))
-        window.location.href = '{{ url('/dash/' . $linkReferral . '/checkout') }}';
-      @else
-        window.location.href = '{{ route('freelance.checkout') }}';
-      @endif
+        // Redirect to checkout page
+        @if(isset($linkReferral))
+          window.location.href = '{{ url('/dash/' . $linkReferral . '/checkout') }}';
+        @else
+          window.location.href = '{{ route('freelance.checkout') }}';
+        @endif
+      } catch (e) {
+        console.error('Error saving order to localStorage:', e);
+        this.showToast('Error', 'Gagal memproses pesanan (Storage Full). Silakan hapus cache browser Anda.');
+        this.isProcessing = false;
+        return;
+      }
     },
 
     saveBatchName() {

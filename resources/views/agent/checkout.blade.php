@@ -777,7 +777,6 @@ function checkoutApp() {
                     
                     this.$nextTick(() => {
                         this.generateQRCode();
-                        setTimeout(() => { this.isLoading = false; }, 500);
                     });
                 }
                 
@@ -793,6 +792,10 @@ function checkoutApp() {
                 }
             } catch (error) {
                 console.error('❌ Error fetching QRIS:', error);
+            } finally {
+                // Always stop loading after fetch attempt, whether successful or not
+                // This prevents infinite loading screen
+                setTimeout(() => { this.isLoading = false; }, 500);
             }
         },
 
