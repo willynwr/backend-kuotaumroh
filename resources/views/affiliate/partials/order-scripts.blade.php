@@ -49,7 +49,7 @@ function orderApp() {
       type: pkg.provider,
       name: pkg.nama_paket,
       price: parseInt(pkg.harga_modal) || 0,
-      sellPrice: parseInt(pkg.harga_eup) || 0,
+      sellPrice: parseInt(pkg.harga_jual) || 0,
       days: parseInt(pkg.masa_aktif) || 0,
       quota: pkg.total_kuota || 0,
       subType: pkg.tipe_paket || 'INTERNET',
