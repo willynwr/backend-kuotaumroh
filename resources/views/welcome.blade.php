@@ -428,7 +428,7 @@
                                 <div class="flex items-center gap-3">
                                     <!-- QRIS Badge -->
                                     <div class="h-10 w-16 bg-white border border-gray-200 rounded-lg flex items-center justify-center p-1">
-                                        <span class="font-black text-gray-800 text-lg italic tracking-tighter">QRIS</span>
+                                        <img src="{{ asset('images/qris_logo.png') }}" alt="QRIS" class="h-full w-full object-contain">
                                     </div>
                                     <div>
                                         <h6 class="font-bold text-gray-900 leading-none">QRIS</h6>
