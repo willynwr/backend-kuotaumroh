@@ -17,9 +17,8 @@ use App\Http\Controllers\DashboardController;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-})->name('welcome');
+// Welcome page - default
+Route::get('/', [App\Http\Controllers\AgentController::class, 'showWelcome'])->name('welcome');
 
 // Auth Routes - Unified Login for all users (Agent, Affiliate, Freelance) 
 // Agent login on /agent (before prefix group to avoid conflict)
@@ -87,8 +86,8 @@ Route::get('/agent/pending', function(Request $request) {
 // Agent Signup dengan Referral Link dari Affiliate/Freelance
 Route::get('/agent/{link_referral}', [App\Http\Controllers\AgentController::class, 'signupWithReferral'])->name('agent.signup.referral');
 
-// Halaman Toko Agent - /u/{link_referal} (redirect ke landing page dulu)
-Route::get('/u/{link_referal}', [App\Http\Controllers\AgentController::class, 'showStore'])->name('agent.store.view');
+// Halaman Welcome/Landing Page Agent - /u/{link_referal}
+Route::get('/u/{link_referal}', [App\Http\Controllers\AgentController::class, 'showWelcome'])->name('agent.welcome');
 
 // Redirect dari landing page ke toko agent (HARUS sebelum route dynamic!)
 Route::get('/store/redirect', [App\Http\Controllers\AgentController::class, 'redirectToStore'])->name('agent.store.redirect');
