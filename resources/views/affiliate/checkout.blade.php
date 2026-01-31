@@ -394,6 +394,8 @@
 @endsection
 
 @push('scripts')
+<script src="{{ asset('shared/api.js') }}"></script>
+<script src="{{ asset('shared/qrcode.min.js') }}"></script>
 <script>
 function checkoutApp() {
     return {
@@ -546,13 +548,37 @@ function checkoutApp() {
 
         async fetchQrisData() {
             if (!this.paymentId) return;
+            
             try {
-                const r = await getPaymentStatus(this.paymentId);
-                const d = Array.isArray(r) ? r[0] : r;
-                if (d?.qris) { this.qrisString = d.qris; this.qrisStaticString = d.qris_static; this.$nextTick(() => { this.generateQRCode(); setTimeout(() => this.isLoading = false, 500); }); }
-                if (d?.payment_amount) { this.paymentAmount = parseInt(d.payment_amount) || 0; this.orderData.uniqueCode = parseInt(d.payment_unique) || 0; }
-                if (d?.payment_expired) { this.timeRemaining = Math.max(0, Math.floor((new Date(d.payment_expired) - new Date()) / 1000)); }
-            } catch(e) { console.error(e); }
+                const response = await getPaymentStatus(this.paymentId);
+                const data = Array.isArray(response) ? response[0] : response;
+                
+                if (data && data.qris) {
+                    this.qrisString = data.qris;
+                    this.qrisStaticString = data.qris_static || null;
+                    
+                    this.$nextTick(() => {
+                        this.generateQRCode();
+                    });
+                }
+                
+                if (data && data.payment_amount) {
+                    this.paymentAmount = parseInt(data.payment_amount) || 0;
+                    this.orderData.uniqueCode = parseInt(data.payment_unique) || 0;
+                }
+                
+                if (data && data.payment_expired) {
+                    const expiredDate = new Date(data.payment_expired);
+                    const now = new Date();
+                    this.timeRemaining = Math.max(0, Math.floor((expiredDate - now) / 1000));
+                }
+            } catch (error) {
+                console.error('❌ Error fetching QRIS:', error);
+            } finally {
+                // Always stop loading after fetch attempt, whether successful or not
+                // This prevents infinite loading screen
+                setTimeout(() => { this.isLoading = false; }, 500);
+            }
         },
 
         startTimer() { 
@@ -574,7 +600,19 @@ function checkoutApp() {
             try {
                 const msisdns = this.orderData.items.map(i => { let m = i.msisdn || i.phoneNumber; if (m.startsWith('08')) m = '62' + m.slice(1); else if (m.startsWith('8')) m = '62' + m; return m; });
                 const pkgs = this.orderData.items.map(i => i.packageId || i.package_id);
-                const req = { batch_id: 'BATCH_' + Date.now(), batch_name: 'ORDER_' + new Date().toISOString().slice(0,10).replace(/-/g,''), payment_method: 'QRIS', detail: this.orderData.scheduleDate ? `{date: ${this.orderData.scheduleDate}}` : null, ref_code: this.orderData.refCode, msisdn: msisdns, package_id: pkgs };
+                const prices = this.orderData.items.map(i => i.price || 0);
+                
+                const req = { 
+                    batch_id: 'BATCH_' + Date.now(), 
+                    batch_name: 'ORDER_' + new Date().toISOString().slice(0,10).replace(/-/g,''), 
+                    payment_method: 'QRIS', 
+                    detail: this.orderData.scheduleDate ? `{date: ${this.orderData.scheduleDate}}` : null, 
+                    ref_code: this.orderData.refCode, 
+                    msisdn: msisdns, 
+                    package_id: pkgs,
+                    price: prices 
+                };
+                
                 const r = await createBulkPayment(req);
                 const d = r.data || r;
                 if ((r.success || d?.id) && d) {
@@ -666,7 +704,6 @@ function checkoutApp() {
                 } 
             }, 1000);
         },
-        showErrorModal(t, m) { this.errorModalTitle = t; this.errorModalMessage = m; this.errorModalVisible = true; },
         formatNumber(n) { return n ? new Intl.NumberFormat('id-ID').format(n) : '0'; }
     }
 }
