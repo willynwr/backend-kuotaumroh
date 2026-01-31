@@ -320,6 +320,7 @@ Route::prefix('api')->group(function () {
     Route::post('/affiliate/{id}/activate', [App\Http\Controllers\AffiliateController::class, 'activate']);
     Route::post('/affiliate/{id}/deactivate', [App\Http\Controllers\AffiliateController::class, 'deactivate']);
     Route::get('/affiliate/{id}/agent', [App\Http\Controllers\AffiliateController::class, 'agents']);
+    Route::get('/affiliate/profile/{linkReferral}', [App\Http\Controllers\AffiliateController::class, 'getProfile']);
 });
 
 // affiliate portal routes
@@ -343,9 +344,6 @@ Route::prefix('affiliate')->group(function () {
     Route::get('points-history', function () {
         return view('affiliate.points-history');
     })->name('affiliate.points-history');
-    Route::get('profile', function () {
-        return view('affiliate.profile');
-    })->name('affiliate.profile');
     Route::get('rewards', function () {
         return view('affiliate.rewards');
     })->name('affiliate.rewards');
@@ -372,9 +370,6 @@ Route::prefix('freelance')->group(function () {
     Route::get('points-history', function () {
         return view('freelance.points-history');
     })->name('freelance.points-history');
-    Route::get('profile', function () {
-        return view('freelance.profile');
-    })->name('freelance.profile');
     Route::get('rewards', function () {
         return view('freelance.rewards');
     })->name('freelance.rewards');
@@ -390,6 +385,7 @@ Route::prefix('api')->group(function () {
     Route::post('/freelance/{id}/activate', [App\Http\Controllers\FreelanceController::class, 'activate']);
     Route::post('/freelance/{id}/deactivate', [App\Http\Controllers\FreelanceController::class, 'deactivate']);
     Route::get('/freelance/{id}/agent', [App\Http\Controllers\FreelanceController::class, 'agents']);
+    Route::get('/freelance/profile/{linkReferral}', [App\Http\Controllers\FreelanceController::class, 'getProfile']);
 });
 
 // auth routes

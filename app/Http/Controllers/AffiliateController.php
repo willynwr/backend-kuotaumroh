@@ -271,4 +271,45 @@ class AffiliateController extends Controller
         
         return view('affiliate.order', compact('packages', 'agents', 'linkReferral'));
     }
+
+    /**
+     * Get profile data for affiliate by link_referral.
+     */
+    public function getProfile($linkReferral)
+    {
+        $affiliate = Affiliate::where('link_referral', $linkReferral)
+            ->with('agents')
+            ->first();
+
+        if (!$affiliate) {
+            return response()->json([
+                'message' => 'Affiliate not found'
+            ], 404);
+        }
+
+        // Count active agents
+        $activeAgentsCount = $affiliate->agents()->where('is_active', 1)->count();
+        $totalAgentsCount = $affiliate->agents()->count();
+
+        return response()->json([
+            'message' => 'Profile retrieved successfully',
+            'data' => [
+                'id' => $affiliate->id,
+                'nama' => $affiliate->nama,
+                'email' => $affiliate->email,
+                'no_wa' => $affiliate->no_wa,
+                'provinsi' => $affiliate->provinsi,
+                'kab_kota' => $affiliate->kab_kota,
+                'alamat_lengkap' => $affiliate->alamat_lengkap,
+                'link_referral' => $affiliate->link_referral,
+                'ref_code' => $affiliate->ref_code,
+                'saldo_fee' => $affiliate->saldo_fee ?? 0,
+                'total_fee' => $affiliate->total_fee ?? 0,
+                'is_active' => $affiliate->is_active,
+                'date_register' => $affiliate->date_register,
+                'agents_recruited' => $totalAgentsCount,
+                'active_agents' => $activeAgentsCount,
+            ]
+        ], 200);
+    }
 }

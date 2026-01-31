@@ -38,8 +38,8 @@
                     <p class="text-xs text-primary font-medium pt-1" x-text="headerUser.agentCode"></p>
                 </div>
                 <div class="h-px bg-border"></div>
-                <a href="{{ isset($linkReferral) ? url('/dash/' . $linkReferral . '/profile') : route('affiliate.profile') }}"
-                    class="flex w-full items-center px-3 py-2 text-sm hover:bg-muted {{ request()->is('dash/*/profile') ? 'bg-muted/50' : '' }}">
+                <a href="#" @click.prevent="goToProfile()"
+                    class="flex w-full items-center px-3 py-2 text-sm hover:bg-muted">
                     <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -85,6 +85,25 @@
                 localStorage.removeItem('user');
                 localStorage.removeItem('token');
                 window.location.href = "{{ route('login') }}";
+            },
+
+            goToProfile() {
+                // Get link_referral from current URL path
+                const pathParts = window.location.pathname.split('/');
+                // Check if we're on /dash/{link_referral}/* route
+                if (pathParts[1] === 'dash' && pathParts[2]) {
+                    const linkReferral = pathParts[2];
+                    window.location.href = `/dash/${linkReferral}/profile`;
+                } else {
+                    // Fallback: try to get from user data
+                    const user = typeof getUser === 'function' ? getUser() : JSON.parse(localStorage.getItem('user') || '{}');
+                    if (user.linkReferral) {
+                        window.location.href = `/dash/${user.linkReferral}/profile`;
+                    } else {
+                        alert('Link referral tidak ditemukan. Silakan login kembali.');
+                        window.location.href = "{{ route('login') }}";
+                    }
+                }
             },
 
             init() {
