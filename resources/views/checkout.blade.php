@@ -336,11 +336,20 @@
                                 </button>
                                 
                                 <!-- QR Code Container -->
-                                <div class="flex justify-center">
-                                    <div class="bg-white p-4 rounded-lg border-2 border-border">
+                                <div class="flex flex-col items-center justify-center gap-3">
+                                    <div class="bg-white p-4 rounded-lg border-2 border-border shadow-sm">
                                         <!-- QR Code will be generated here by qrcodejs -->
                                         <div id="qrContainer" class="flex items-center justify-center"></div>
                                     </div>
+                                    
+                                    <!-- Download QR Button -->
+                                    <button @click="handleDownloadQR()"
+                                        class="text-sm text-primary font-medium hover:text-primary/80 flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-primary/5 transition-colors">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                        </svg>
+                                        Simpan QR Code
+                                    </button>
                                 </div>
                                 
                                 <!-- Toggle Static QRIS (untuk bank BCA dll yang gagal) -->
@@ -795,6 +804,46 @@
                     } catch (error) {
                         console.error('❌ Auto-verify failed:', error);
                     }
+                },
+                
+                handleDownloadQR() {
+                    // Cari element QR Code yang sebenarnya (di dalam #qrcode-inner)
+                    // Menggunakan ID spesifik agar tidak mengambil gambar template background
+                    const qrInner = document.getElementById('qrcode-inner');
+                    
+                    if (!qrInner) {
+                        this.showToast('Gagal', 'QR Code belum dimuat');
+                        return;
+                    }
+
+                    const img = qrInner.querySelector('img');
+                    const canvas = qrInner.querySelector('canvas');
+                    
+                    let dataUrl = '';
+                    
+                    if (img) {
+                        dataUrl = img.src;
+                    } else if (canvas) {
+                        dataUrl = canvas.toDataURL("image/png");
+                    } else {
+                        this.showToast('Gagal', 'Element QR Code belum generate');
+                        return;
+                    }
+                    
+                    if (!dataUrl || dataUrl === '') {
+                        this.showToast('Gagal', 'Tidak dapat mengunduh QR Code');
+                        return;
+                    }
+                    
+                    // Create download link
+                    const link = document.createElement('a');
+                    link.download = 'QRIS-Payment-KuotaUmroh.png';
+                    link.href = dataUrl;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    this.showToast('Berhasil', 'QR Code sedang diunduh');
                 },
 
                 // Computed: Total amount - prioritize API payment_amount

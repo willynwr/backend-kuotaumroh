@@ -39,6 +39,16 @@
     <!-- Shared CSS -->
     <link rel="stylesheet" href="{{ asset('shared/styles.css') }}">
 
+    <!-- ⚠️ PENTING: Load config.js PERTAMA sebelum script lain -->
+    <script src="{{ asset('shared/config.js') }}?v={{ time() }}"></script>
+
+    <!-- Shared Scripts -->
+    <script src="{{ asset('shared/utils.js') }}?v={{ time() }}"></script>
+
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
+
     <script>
         tailwind.config = {
             theme: {
@@ -111,7 +121,7 @@
     </div>
 
     <!-- Main Content -->
-    <main class="container mx-auto py-8 lg:py-16 px-4 max-w-7xl">
+    <main class="container mx-auto pt-1 pb-8 lg:py-16 px-4 max-w-7xl">
 
         @if(session('pending_agent_link'))
         {{-- <!-- Agent Info Banner -->
@@ -128,556 +138,87 @@
         @endif
 
         <!-- Promo Carousel Section -->
-        <div class="mb-8 md:mb-12" x-data="promoCarousel()" @mouseenter="stopAutoSlide" @mouseleave="startAutoSlide">
-            <div class="flex items-center justify-between mb-4 md:mb-6">
-                <div class="flex items-center gap-2">
-                    <span class="text-2xl">🔥</span>
-                    <h2 class="text-xl md:text-2xl font-bold text-gray-900">Spesial Buat Kamu</h2>
+        <div class="mb-6 md:mb-10" x-data="promoCarousel()" @mouseenter="stopAutoSlide" @mouseleave="startAutoSlide">
+            
+            <div class="flex items-center justify-between mb-8 px-1">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-full bg-gradient-to-br from-orange-100 to-red-50 flex items-center justify-center border border-orange-100 shadow-sm">
+                        <span class="text-2xl animate-pulse">🔥</span>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-2xl font-black text-gray-900 leading-none tracking-tight">
+                                <span class="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Best</span> Seller
+                            </h2>
+                            <span class="px-2 py-0.5 rounded-full bg-red-50 text-red-600 text-[10px] font-bold border border-red-100 uppercase tracking-wide">
+                                Populer
+                            </span>
+                        </div>
+                    </div>
                 </div>
             </div>
             
             <!-- Mobile Carousel View (2 columns per slide) -->
             <div class="md:hidden relative group">
-                <!-- Navigation Arrows (Absolute Centered) -->
-                <button @click="prevSlide" 
-                        class="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-white text-gray-800 p-2 rounded-full shadow-lg border border-gray-100 hover:bg-gray-50 transition-colors -mt-3">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
-                </button>
-                <button @click="nextSlide" 
-                        class="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-white text-gray-800 p-2 rounded-full shadow-lg border border-gray-100 hover:bg-gray-50 transition-colors -mt-3">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
-                </button>
+                <!-- Navigation Arrows Removed (Swipe Enabled) -->
                 
                 <div class="overflow-hidden">
-                    <div class="flex transition-transform duration-500 ease-out" :style="`transform: translateX(-${currentSlide * 100}%)`">
-                        
-                        <!-- Slide 1 -->
-                        <div class="w-full flex-shrink-0 px-1">
-                            <div class="grid grid-cols-2 gap-3">
-                <!-- Mobile Card 1 - Telkomsel -->
-                <a href="{{ route('agent.store.redirect') }}" 
-                   class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 hover:shadow-xl transition-all duration-300 flex flex-col h-full hover:scale-[1.02]">
-                    <div class="relative flex-shrink-0">
-                        <span class="absolute top-2 right-2 bg-gradient-to-r from-red-600 to-red-500 text-white px-2.5 py-1 rounded-full text-[10px] font-extrabold z-10 shadow-lg animate-pulse">🔥 HOT</span>
-                        <div class="h-28 bg-cover bg-center" style="background-image: url('{{ asset('images/Telkomsel.png') }}');"></div>
-                    </div>
-                    <div class="flex flex-col flex-grow">
-                        <div class="p-3 pb-0 flex-grow">
-                            <h3 class="font-extrabold text-sm text-gray-900 leading-tight mb-2">Kuota 50GB - 12 Hari</h3>
-                        </div>
+                    <template x-if="loading">
+                        <div class="text-center py-12 text-gray-500">Memuat paket promo...</div>
+                    </template>
+                    
+                    <template x-if="!loading">
+                        <div class="flex transition-transform duration-500 ease-out" 
+                             :style="`transform: translateX(-${currentSlide * 100}%)`"
+                             @touchstart="handleTouchStart($event)"
+                             @touchmove="handleTouchMove($event)"
+                             @touchend="handleTouchEnd($event)">
+                            <!-- Generate slides dynamically -->
+                            <template x-for="slideIndex in totalSlides" :key="slideIndex">
+                                <div class="w-full flex-shrink-0 px-1">
+                                    <div class="grid grid-cols-3 gap-2">
+                                        <!-- 3 cards per slide for mobile -->
+                                        <template x-for="cardIndex in 3" :key="cardIndex">
+                                            <template x-if="promoPackages[(slideIndex - 1) * 3 + (cardIndex - 1)]">
+                                                <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 hover:shadow-xl transition-all duration-300 flex flex-col h-full hover:scale-[1.02] cursor-pointer"
+                                                     @click="openCheckoutModal(promoPackages[(slideIndex - 1) * 3 + (cardIndex - 1)])">
+                                                    <div class="relative flex-shrink-0">
+                                                        <span class="absolute top-2 right-2 bg-gradient-to-r from-red-600 to-red-500 text-white px-2.5 py-1 rounded-full text-[10px] font-extrabold z-10 shadow-lg animate-pulse">🔥 HOT</span>
+                                                        <div class="h-24 flex items-center justify-center bg-gray-100">
+                                                            <img :src="'/images/' + getProviderImage(promoPackages[(slideIndex - 1) * 3 + (cardIndex - 1)].provider)" 
+                                                                 :alt="promoPackages[(slideIndex - 1) * 3 + (cardIndex - 1)].provider"
+                                                                 class="h-full w-full object-cover">
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex flex-col flex-grow">
+                                                        <div class="p-3 pb-0 flex-grow">
+                                                            <h3 class="font-extrabold text-xs text-gray-900 leading-tight mb-1.5" x-text="getPackageTitle(promoPackages[(slideIndex - 1) * 3 + (cardIndex - 1)])"></h3>
+                                                        </div>
 
-                        <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-3 pt-2 mt-auto">
-                            <div class="mb-2"><span class="text-xs text-gray-700 font-medium">Hemat</span> <span class="text-base text-red-600 font-extrabold drop-shadow-md">Rp 9.400</span></div>
-                            <div class="mb-1">
-                                <span class="text-[10px] text-gray-500 line-through">Rp 410.000</span>
-                            </div>
-                            <p class="text-xl font-black text-emerald-600 mb-2.5">Rp 400.600</p>
-                            
-                            <div class="block w-full text-center bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white text-xs font-bold py-2.5 px-3 rounded-lg shadow-md hover:shadow-lg transition-all">
-                                AMBIL SEKARANG
-                            </div>
-                        </div>
-                    </div>
-                </a>
-
-                <!-- Mobile Card 2 - XL -->
-                <a href="{{ route('agent.store.redirect') }}" 
-                   class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 hover:shadow-xl transition-all duration-300 flex flex-col h-full hover:scale-[1.02]">
-                    <div class="relative flex-shrink-0">
-                        <span class="absolute top-2 right-2 bg-gradient-to-r from-red-600 to-red-500 text-white px-2.5 py-1 rounded-full text-[10px] font-extrabold z-10 shadow-lg animate-pulse">🔥 HOT</span>
-                        <div class="h-28 bg-cover bg-center" style="background-image: url('{{ asset('images/XL.png') }}');"></div>
-                    </div>
-                    <div class="flex flex-col flex-grow">
-                        <div class="p-3 pb-0 flex-grow">
-                            <h3 class="font-extrabold text-sm text-gray-900 leading-tight mb-2">Kuota 70GB - 17 Hari</h3>
-                        </div>
-
-                        <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-3 pt-2 mt-auto">
-                            <div class="mb-2"><span class="text-xs text-gray-700 font-medium">Hemat</span> <span class="text-base text-red-600 font-extrabold drop-shadow-md">Rp 11.400</span></div>
-                            <div class="mb-1">
-                                <span class="text-[10px] text-gray-500 line-through">Rp 510.000</span>
-                            </div>
-                            <p class="text-xl font-black text-emerald-600 mb-2.5">Rp 498.600</p>
-                            
-                            <div class="block w-full text-center bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white text-xs font-bold py-2.5 px-3 rounded-lg shadow-md hover:shadow-lg transition-all">
-                                AMBIL SEKARANG
-                            </div>
-                        </div>
-                    </div>
-                </a>
-                            </div>
-                        </div>
-
-                        <!-- Slide 2 -->
-                        <div class="w-full flex-shrink-0 px-1">
-                            <div class="grid grid-cols-2 gap-3">
-                                <!-- Mobile Card 3 - Indosat -->
-                <a href="{{ route('agent.store.redirect') }}" 
-                   class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 hover:shadow-xl transition-all duration-300 flex flex-col h-full hover:scale-[1.02]">
-                    <div class="relative flex-shrink-0">
-                        <span class="absolute top-2 right-2 bg-gradient-to-r from-red-600 to-red-500 text-white px-2.5 py-1 rounded-full text-[10px] font-extrabold z-10 shadow-lg animate-pulse">🔥 HOT</span>
-                        <div class="h-28 bg-cover bg-center" style="background-image: url('{{ asset('images/Indosat.png') }}');"></div>
-                    </div>
-                    <div class="flex flex-col flex-grow">
-                        <div class="p-3 pb-0 flex-grow">
-                            <h3 class="font-extrabold text-sm text-gray-900 leading-tight mb-2">Kuota 60GB - 15 Hari</h3>
-                        </div>
-
-                        <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-3 pt-2 mt-auto">
-                            <div class="mb-2"><span class="text-xs text-gray-700 font-medium">Hemat</span> <span class="text-base text-red-600 font-extrabold drop-shadow-md">Rp 15.000</span></div>
-                            <div class="mb-1">
-                                <span class="text-[10px] text-gray-500 line-through">Rp 450.000</span>
-                            </div>
-                            <p class="text-xl font-black text-emerald-600 mb-2.5">Rp 435.000</p>
-                            
-                            <div class="block w-full text-center bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white text-xs font-bold py-2.5 px-3 rounded-lg shadow-md hover:shadow-lg transition-all">
-                                AMBIL SEKARANG
-                            </div>
-                        </div>
-                    </div>
-                </a>
-
-                <!-- Mobile Card 4 - Axis -->
-                <a href="{{ route('agent.store.redirect') }}" 
-                   class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 hover:shadow-xl transition-all duration-300 flex flex-col h-full hover:scale-[1.02]">
-                    <div class="relative flex-shrink-0">
-                        <span class="absolute top-2 right-2 bg-gradient-to-r from-red-600 to-red-500 text-white px-2.5 py-1 rounded-full text-[10px] font-extrabold z-10 shadow-lg animate-pulse">🔥 HOT</span>
-                        <div class="h-28 bg-cover bg-center" style="background-image: url('{{ asset('images/AXIS.png') }}');"></div>
-                    </div>
-                    <div class="flex flex-col flex-grow">
-                        <div class="p-3 pb-0 flex-grow">
-                            <h3 class="font-extrabold text-sm text-gray-900 leading-tight mb-2">Kuota 45GB - 10 Hari</h3>
-                        </div>
-
-                        <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-3 pt-2 mt-auto">
-                            <div class="mb-2"><span class="text-xs text-gray-700 font-medium">Hemat</span> <span class="text-base text-red-600 font-extrabold drop-shadow-md">Rp 15.000</span></div>
-                            <div class="mb-1">
-                                <span class="text-[10px] text-gray-500 line-through">Rp 380.000</span>
-                            </div>
-                            <p class="text-xl font-black text-emerald-600 mb-2.5">Rp 365.000</p>
-                            
-                            <div class="block w-full text-center bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white text-xs font-bold py-2.5 px-3 rounded-lg shadow-md hover:shadow-lg transition-all">
-                                AMBIL SEKARANG
-                            </div>
-                        </div>
-                    </div>
-                </a>
-            </div>
-        </div>
-
-                        <!-- Slide 3 -->
-                        <div class="w-full flex-shrink-0 px-1">
-                            <div class="grid grid-cols-2 gap-3">
-                                <!-- Mobile Card 5 - Tri -->
-                <a href="{{ route('agent.store.redirect') }}" 
-                   class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 hover:shadow-xl transition-all duration-300 flex flex-col h-full hover:scale-[1.02]">
-                    <div class="relative flex-shrink-0">
-                        <span class="absolute top-2 right-2 bg-gradient-to-r from-red-600 to-red-500 text-white px-2.5 py-1 rounded-full text-[10px] font-extrabold z-10 shadow-lg animate-pulse">🔥 HOT</span>
-                        <div class="h-28 bg-cover bg-center" style="background-image: url('{{ asset('images/3.png') }}');"></div>
-                    </div>
-                    <div class="flex flex-col flex-grow">
-                        <div class="p-3 pb-0 flex-grow">
-                            <h3 class="font-extrabold text-sm text-gray-900 leading-tight mb-2">Kuota 55GB - 14 Hari</h3>
-                        </div>
-
-                        <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-3 pt-2 mt-auto">
-                            <div class="mb-2"><span class="text-xs text-gray-700 font-medium">Hemat</span> <span class="text-base text-red-600 font-extrabold drop-shadow-md">Rp 15.000</span></div>
-                            <div class="mb-1">
-                                <span class="text-[10px] text-gray-500 line-through">Rp 420.000</span>
-                            </div>
-                            <p class="text-xl font-black text-emerald-600 mb-2.5">Rp 405.000</p>
-                            
-                            <div class="block w-full text-center bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white text-xs font-bold py-2.5 px-3 rounded-lg shadow-md hover:shadow-lg transition-all">
-                                AMBIL SEKARANG
-                            </div>
-                        </div>
-                    </div>
-                </a>
-
-                <!-- Mobile Card 6 - By.U -->
-                <a href="{{ route('agent.store.redirect') }}" 
-                   class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 hover:shadow-xl transition-all duration-300 flex flex-col h-full hover:scale-[1.02]">
-                    <div class="relative flex-shrink-0">
-                        <span class="absolute top-2 right-2 bg-gradient-to-r from-red-600 to-red-500 text-white px-2.5 py-1 rounded-full text-[10px] font-extrabold z-10 shadow-lg animate-pulse">🔥 HOT</span>
-                        <div class="h-28 bg-cover bg-center" style="background-image: url('{{ asset('images/ByU.png') }}');"></div>
-                    </div>
-                    <div class="flex flex-col flex-grow">
-                        <div class="p-3 pb-0 flex-grow">
-                            <h3 class="font-extrabold text-sm text-gray-900 leading-tight mb-2">Kuota 52GB - 13 Hari</h3>
-                        </div>
-
-                        <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-3 pt-2 mt-auto">
-                            <div class="mb-2"><span class="text-xs text-gray-700 font-medium">Hemat</span> <span class="text-base text-red-600 font-extrabold drop-shadow-md">Rp 16.000</span></div>
-                            <div class="mb-1">
-                                <span class="text-[10px] text-gray-500 line-through">Rp 415.000</span>
-                            </div>
-                            <p class="text-xl font-black text-emerald-600 mb-2.5">Rp 399.000</p>
-                            
-                            <div class="block w-full text-center bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white text-xs font-bold py-2.5 px-3 rounded-lg shadow-md hover:shadow-lg transition-all">
-                                AMBIL SEKARANG
-                            </div>
-                        </div>
-                    </div>
-                </a>
-            </div>
-        </div>
-
-                        <!-- Slide 4 -->
-                        <div class="w-full flex-shrink-0 px-1">
-                            <div class="grid grid-cols-2 gap-3">
-                                <!-- Mobile Card 7 - Telkomsel 75GB -->
-                <a href="{{ route('agent.store.redirect') }}" 
-                   class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 hover:shadow-xl transition-all duration-300 flex flex-col h-full hover:scale-[1.02]">
-                    <div class="relative flex-shrink-0">
-                        <span class="absolute top-2 right-2 bg-gradient-to-r from-red-600 to-red-500 text-white px-2.5 py-1 rounded-full text-[10px] font-extrabold z-10 shadow-lg animate-pulse">🔥 HOT</span>
-                        <div class="h-28 bg-cover bg-center" style="background-image: url('{{ asset('images/Telkomsel.png') }}');"></div>
-                    </div>
-                    <div class="flex flex-col flex-grow">
-                        <div class="p-3 pb-0 flex-grow">
-                            <h3 class="font-extrabold text-sm text-gray-900 leading-tight mb-2">Kuota 75GB - 20 Hari</h3>
-                        </div>
-
-                        <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-3 pt-2 mt-auto">
-                            <div class="mb-2"><span class="text-xs text-gray-700 font-medium">Hemat</span> <span class="text-base text-red-600 font-extrabold drop-shadow-md">Rp 25.000</span></div>
-                            <div class="mb-1">
-                                <span class="text-[10px] text-gray-500 line-through">Rp 550.000</span>
-                            </div>
-                            <p class="text-xl font-black text-emerald-600 mb-2.5">Rp 525.000</p>
-                            
-                            <div class="block w-full text-center bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white text-xs font-bold py-2.5 px-3 rounded-lg shadow-md hover:shadow-lg transition-all">
-                                AMBIL SEKARANG
-                            </div>
-                        </div>
-                    </div>
-                </a>
-
-                <!-- Mobile Card 8 - XL 80GB -->
-                <a href="{{ route('agent.store.redirect') }}" 
-                   class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 hover:shadow-xl transition-all duration-300 flex flex-col h-full hover:scale-[1.02]">
-                    <div class="relative flex-shrink-0">
-                        <span class="absolute top-2 right-2 bg-gradient-to-r from-red-600 to-red-500 text-white px-2.5 py-1 rounded-full text-[10px] font-extrabold z-10 shadow-lg animate-pulse">🔥 HOT</span>
-                        <div class="h-28 bg-cover bg-center" style="background-image: url('{{ asset('images/XL.png') }}');"></div>
-                    </div>
-                    <div class="flex flex-col flex-grow">
-                        <div class="p-3 pb-0 flex-grow">
-                            <h3 class="font-extrabold text-sm text-gray-900 leading-tight mb-2">Kuota 80GB - 22 Hari</h3>
-                        </div>
-
-                        <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-3 pt-2 mt-auto">
-                            <div class="mb-2"><span class="text-xs text-gray-700 font-medium">Hemat</span> <span class="text-base text-red-600 font-extrabold drop-shadow-md">Rp 31.000</span></div>
-                            <div class="mb-1">
-                                <span class="text-[10px] text-gray-500 line-through">Rp 580.000</span>
-                            </div>
-                            <p class="text-xl font-black text-emerald-600 mb-2.5">Rp 569.000</p>
-                            
-                            <div class="block w-full text-center bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white text-xs font-bold py-2.5 px-3 rounded-lg shadow-md hover:shadow-lg transition-all">
-                                AMBIL SEKARANG
-                            </div>
-                        </div>
-                    </div>
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
-
-            <!-- Mobile Indicators -->
-            <div class="md:hidden flex justify-center gap-2 mt-4">
-                <template x-for="(slide, index) in 4" :key="index">
-                    <button @click="currentSlide = index" 
-                            class="w-2 h-2 rounded-full transition-all"
-                            :class="currentSlide === index ? 'bg-emerald-600 w-8' : 'bg-gray-300'">
-                    </button>
-                </template>
-            </div>
-            
-
-        </div>
-
-            <!-- Desktop Grid View (4 columns with horizontal scroll) -->
-            <div class="hidden md:block relative">
-                <div class="overflow-hidden">
-                    <div class="flex transition-transform duration-500 ease-out" :style="`transform: translateX(-${currentSlide * 100}%)`">
-                        
-                        <!-- Slide 1 -->
-                        <div class="w-full flex-shrink-0">
-                            <div class="grid grid-cols-4 gap-4">
-                                <!-- Desktop Card 1 - Telkomsel -->
-                                <a href="{{ route('agent.store.redirect') }}" 
-                                   class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow">
-                                    <div class="relative">
-                                        <span class="absolute top-3 right-3 bg-gradient-to-r from-red-600 to-red-500 text-white px-3 py-1.5 rounded-bl-xl rounded-tr-xl text-xs font-bold z-10 shadow-md">PROMO TERBAIK</span>
-                                        <div class="h-48 bg-cover bg-center" style="background-image: url('{{ asset('images/Telkomsel.png') }}');"></div>
-                                    </div>
-                                    <div class="flex flex-col h-full">
-                                        <div class="p-4 flex-grow">
-                                            <p class="text-xs text-gray-500 mb-1 uppercase tracking-wider">TELKOMSEL</p>
-                                            <h3 class="font-bold text-base text-gray-900 mb-3 min-h-[3rem] leading-snug">Kuota 50GB - 12 Hari</h3>
-                                            
-                                            <div class="space-y-2 mb-4">
-                                                <div class="flex items-start gap-2.5">
-                                                    <svg class="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
-                                                    </svg>
-                                                    <span class="text-sm text-gray-600 font-medium">49 GB Kuota Arab</span>
+                                                        <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-2 pt-1.5 mt-auto">
+                                                            <template x-if="promoPackages[(slideIndex - 1) * 3 + (cardIndex - 1)].price_app > promoPackages[(slideIndex - 1) * 3 + (cardIndex - 1)].price_customer">
+                                                                <p class="text-[9px] text-gray-500 line-through mb-0.5" x-text="formatRupiah(promoPackages[(slideIndex - 1) * 3 + (cardIndex - 1)].price_app)"></p>
+                                                            </template>
+                                                            <p class="text-sm font-black text-emerald-600 mb-1.5" x-text="formatRupiah(promoPackages[(slideIndex - 1) * 3 + (cardIndex - 1)].price_customer)"></p>
+                                                            
+                                                            <div class="block w-full text-center bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white text-[9px] font-bold py-1 px-1 rounded shadow-md hover:shadow-lg transition-all">
+                                                                BELI
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <div class="flex items-start gap-2.5">
-                                                    <svg class="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                                    </svg>
-                                                    <span class="text-sm text-gray-600 font-medium">12 Hari Masa Aktif</span>
-                                                </div>
-                                            </div>
-
-                                            <div class="border-t border-gray-100 pt-3 mt-auto">
-                                                <p class="text-sm text-gray-400 line-through mb-1">Rp 410.000</p>
-                                                <p class="text-2xl font-bold text-emerald-600 mb-2">Rp 400.600</p>
-                                                <p class="text-xs text-red-600 bg-red-50 px-3 py-1.5 rounded inline-block">Hemat Rp 9.400</p>
-                                            </div>
-                                        </div>
+                                            </template>
+                                        </template>
                                     </div>
-
-                                <!-- Desktop Card 2 - XL -->
-                                <a href="{{ route('agent.store.redirect') }}" 
-                                   class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow">
-                                    <div class="relative">
-                                        <span class="absolute top-3 right-3 bg-gradient-to-r from-red-600 to-red-500 text-white px-3 py-1.5 rounded-bl-xl rounded-tr-xl text-xs font-bold z-10 shadow-md">PROMO TERBAIK</span>
-                                        <div class="h-48 bg-cover bg-center" style="background-image: url('{{ asset('images/XL.png') }}');"></div>
-                                    </div>
-                                    <div class="flex flex-col h-full">
-                                        <div class="p-4 flex-grow">
-                                            <p class="text-xs text-gray-500 mb-1 uppercase tracking-wider">XL AXIATA</p>
-                                            <h3 class="font-bold text-base text-gray-900 mb-3 min-h-[3rem] leading-snug">Kuota 70GB - 17 Hari</h3>
-                                            
-                                            <div class="space-y-2 mb-4">
-                                                <div class="flex items-start gap-2.5">
-                                                    <svg class="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
-                                                    </svg>
-                                                    <span class="text-sm text-gray-600 font-medium">68 GB Kuota Arab</span>
-                                                </div>
-                                                <div class="flex items-start gap-2.5">
-                                                    <svg class="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                                    </svg>
-                                                    <span class="text-sm text-gray-600 font-medium">17 Hari Masa Aktif</span>
-                                                </div>
-                                            </div>
-
-                                            <div class="border-t border-gray-100 pt-3 mt-auto">
-                                                <p class="text-sm text-gray-400 line-through mb-1">Rp 510.000</p>
-                                                <p class="text-2xl font-bold text-emerald-600 mb-2">Rp 498.600</p>
-                                                <p class="text-xs text-red-600 bg-red-50 px-3 py-1.5 rounded inline-block">Hemat Rp 11.400</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </a>
-
-                                <!-- Desktop Card 3 - Indosat -->
-                                <a href="{{ route('agent.store.redirect') }}" 
-                                   class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow">
-                                    <div class="relative">
-                                        <span class="absolute top-3 right-3 bg-gradient-to-r from-red-600 to-red-500 text-white px-3 py-1.5 rounded-bl-xl rounded-tr-xl text-xs font-bold z-10 shadow-md">PROMO TERBAIK</span>
-                                        <div class="h-48 bg-cover bg-center" style="background-image: url('{{ asset('images/Indosat.png') }}');"></div>
-                                    </div>
-                                    <div class="flex flex-col h-full">
-                                        <div class="p-4 flex-grow">
-                                            <p class="text-xs text-gray-500 mb-1 uppercase tracking-wider">INDOSAT OOREDOO</p>
-                                            <h3 class="font-bold text-base text-gray-900 mb-3 min-h-[3rem] leading-snug">Kuota 60GB - 15 Hari</h3>
-                                            
-                                            <div class="space-y-2 mb-4">
-                                                <div class="flex items-start gap-2.5">
-                                                    <svg class="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
-                                                    </svg>
-                                                    <span class="text-sm text-gray-600 font-medium">50 GB Kuota Arab</span>
-                                                </div>
-                                                <div class="flex items-start gap-2.5">
-                                                    <svg class="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                                    </svg>
-                                                    <span class="text-sm text-gray-600 font-medium">15 Hari Masa Aktif</span>
-                                                </div>
-                                            </div>
-
-                                            <div class="border-t border-gray-100 pt-3 mt-auto">
-                                                <p class="text-sm text-gray-400 line-through mb-1">Rp 450.000</p>
-                                                <p class="text-2xl font-bold text-emerald-600 mb-2">Rp 435.000</p>
-                                                <p class="text-xs text-red-600 bg-red-50 px-3 py-1.5 rounded inline-block">Hemat Rp 15.000</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </a>
-
-                                <!-- Desktop Card 4 - Axis -->
-                                <a href="{{ route('agent.store.redirect') }}" 
-                                   class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow">
-                                    <div class="relative">
-                                        <span class="absolute top-3 right-3 bg-gradient-to-r from-red-600 to-red-500 text-white px-3 py-1.5 rounded-bl-xl rounded-tr-xl text-xs font-bold z-10 shadow-md">PROMO TERBAIK</span>
-                                        <div class="h-48 bg-cover bg-center" style="background-image: url('{{ asset('images/AXIS.png') }}');"></div>
-                                    </div>
-                                    <div class="flex flex-col h-full">
-                                        <div class="p-4 flex-grow">
-                                            <p class="text-xs text-gray-500 mb-1 uppercase tracking-wider">AXIS</p>
-                                            <h3 class="font-bold text-base text-gray-900 mb-3 min-h-[3rem] leading-snug">Kuota 45GB - 10 Hari</h3>
-                                            
-                                            <div class="space-y-2 mb-4">
-                                                <div class="flex items-start gap-2.5">
-                                                    <svg class="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
-                                                    </svg>
-                                                    <span class="text-sm text-gray-600 font-medium">45 GB Kuota Arab</span>
-                                                </div>
-                                                <div class="flex items-start gap-2.5">
-                                                    <svg class="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                                    </svg>
-                                                    <span class="text-sm text-gray-600 font-medium">10 Hari Masa Aktif</span>
-                                                </div>
-                                            </div>
-
-                                            <div class="border-t border-gray-100 pt-3 mt-auto">
-                                                <p class="text-sm text-gray-400 line-through mb-1">Rp 380.000</p>
-                                                <p class="text-2xl font-bold text-emerald-600 mb-2">Rp 365.000</p>
-                                                <p class="text-xs text-red-600 bg-red-50 px-3 py-1.5 rounded inline-block">Hemat Rp 15.000</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </a>
-                            </div>
+                                </div>
+                            </template>
                         </div>
-
-                        <!-- Slide 2 (tambahan promo) -->
-                        <div class="w-full flex-shrink-0">
-                            <div class="grid grid-cols-4 gap-4">
-                                <!-- Bisa diisi dengan promo lainnya -->
-                                <a href="{{ route('agent.store.redirect') }}" 
-                                   class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow">
-                                    <div class="relative">
-                                        <span class="absolute top-3 right-3 bg-gradient-to-r from-red-600 to-red-500 text-white px-3 py-1.5 rounded-bl-xl rounded-tr-xl text-xs font-bold z-10 shadow-md">PROMO TERBAIK</span>
-                                        <div class="h-48 bg-cover bg-center" style="background-image: url('{{ asset('images/3.png') }}');"></div>
-                                    </div>
-                                    <div class="p-4">
-                                        <p class="text-xs text-gray-500 mb-1">TRI</p>
-                                        <h3 class="font-bold text-base text-gray-900 mb-3 min-h-[3rem]">Kuota 55GB - 14 Hari</h3>
-                                        <div class="flex items-center gap-2 mb-2">
-                                            <svg class="w-4 h-4 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"/>
-                                            </svg>
-                                            <span class="text-sm text-gray-600">53 GB Kuota Arab</span>
-                                        </div>
-                                        <div class="flex items-center gap-2 mb-4">
-                                            <svg class="w-4 h-4 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                            </svg>
-                                            <span class="text-sm text-gray-600">14 hari</span>
-                                        </div>
-                                        <div class="border-t pt-3">
-                                            <p class="text-sm text-gray-400 line-through mb-1">Rp 420.000</p>
-                                            <p class="text-2xl font-bold text-emerald-600 mb-2">Rp 405.000</p>
-                                            <p class="text-xs text-red-600 bg-red-50 px-3 py-1.5 rounded inline-block">Hemat Rp 15.000</p>
-                                        </div>
-                                    </div>
-                                </a>
-
-                                <!-- Duplicate atau tambahkan promo lain di sini -->
-                                <a href="{{ route('agent.store.redirect') }}" 
-                                   class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow">
-                                    <div class="relative">
-                                        <span class="absolute top-3 right-3 bg-gradient-to-r from-red-600 to-red-500 text-white px-3 py-1.5 rounded-bl-xl rounded-tr-xl text-xs font-bold z-10 shadow-md">PROMO TERBAIK</span>
-                                        <div class="h-48 bg-cover bg-center" style="background-image: url('{{ asset('images/ByU.png') }}');"></div>
-                                    </div>
-                                    <div class="p-4">
-                                        <p class="text-xs text-gray-500 mb-1">BY.U</p>
-                                        <h3 class="font-bold text-base text-gray-900 mb-3 min-h-[3rem]">Kuota 52GB - 13 Hari</h3>
-                                        <div class="flex items-center gap-2 mb-2">
-                                            <svg class="w-4 h-4 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"/>
-                                            </svg>
-                                            <span class="text-sm text-gray-600">50 GB Kuota Arab</span>
-                                        </div>
-                                        <div class="flex items-center gap-2 mb-4">
-                                            <svg class="w-4 h-4 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                            </svg>
-                                            <span class="text-sm text-gray-600">13 hari</span>
-                                        </div>
-                                        <div class="border-t pt-3">
-                                            <p class="text-sm text-gray-400 line-through mb-1">Rp 415.000</p>
-                                            <p class="text-2xl font-bold text-emerald-600 mb-2">Rp 399.000</p>
-                                            <p class="text-xs text-red-600 bg-red-50 px-3 py-1.5 rounded inline-block">Hemat Rp 16.000</p>
-                                        </div>
-                                    </div>
-                                </a>
-
-                                <!-- Card tambahan -->
-                                <a href="{{ route('agent.store.redirect') }}" 
-                                   class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow">
-                                    <div class="relative">
-                                        <span class="absolute top-3 right-3 bg-gradient-to-r from-red-600 to-red-500 text-white px-3 py-1.5 rounded-bl-xl rounded-tr-xl text-xs font-bold z-10 shadow-md">PROMO TERBAIK</span>
-                                        <div class="h-48 bg-cover bg-center" style="background-image: url('{{ asset('images/Telkomsel.png') }}');"></div>
-                                    </div>
-                                    <div class="p-4">
-                                        <p class="text-xs text-gray-500 mb-1">TELKOMSEL</p>
-                                        <h3 class="font-bold text-base text-gray-900 mb-3 min-h-[3rem]">Kuota 75GB - 20 Hari</h3>
-                                        <div class="flex items-center gap-2 mb-2">
-                                            <svg class="w-4 h-4 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"/>
-                                            </svg>
-                                            <span class="text-sm text-gray-600">72 GB Kuota Arab</span>
-                                        </div>
-                                        <div class="flex items-center gap-2 mb-4">
-                                            <svg class="w-4 h-4 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                            </svg>
-                                            <span class="text-sm text-gray-600">20 hari</span>
-                                        </div>
-                                        <div class="border-t pt-3">
-                                            <p class="text-sm text-gray-400 line-through mb-1">Rp 550.000</p>
-                                            <p class="text-2xl font-bold text-emerald-600 mb-2">Rp 525.000</p>
-                                            <p class="text-xs text-red-600 bg-red-50 px-3 py-1.5 rounded inline-block">Hemat Rp 25.000</p>
-                                        </div>
-                                    </div>
-                                </a>
-
-                                <!-- Card tambahan -->
-                                <a href="{{ route('agent.store.redirect') }}" 
-                                   class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow">
-                                    <div class="relative">
-                                        <span class="absolute top-3 right-3 bg-gradient-to-r from-red-600 to-red-500 text-white px-3 py-1.5 rounded-bl-xl rounded-tr-xl text-xs font-bold z-10 shadow-md">PROMO TERBAIK</span>
-                                        <div class="h-48 bg-cover bg-center" style="background-image: url('{{ asset('images/XL.png') }}');"></div>
-                                    </div>
-                                    <div class="p-4">
-                                        <p class="text-xs text-gray-500 mb-1">XL AXIATA</p>
-                                        <h3 class="font-bold text-base text-gray-900 mb-3 min-h-[3rem]">Kuota 80GB - 22 Hari</h3>
-                                        <div class="flex items-center gap-2 mb-2">
-                                            <svg class="w-4 h-4 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"/>
-                                            </svg>
-                                            <span class="text-sm text-gray-600">77 GB Kuota Arab</span>
-                                        </div>
-                                        <div class="flex items-center gap-2 mb-4">
-                                            <svg class="w-4 h-4 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                            </svg>
-                                            <span class="text-sm text-gray-600">22 hari</span>
-                                        </div>
-                                        <div class="border-t pt-3">
-                                            <p class="text-sm text-gray-400 line-through mb-1">Rp 580.000</p>
-                                            <p class="text-2xl font-bold text-emerald-600 mb-2">Rp 549.000</p>
-                                            <p class="text-xs text-red-600 bg-red-50 px-3 py-1.5 rounded inline-block">Hemat Rp 31.000</p>
-                                        </div>
-                                    </div>
-                                </a>
-                            </div>
-                        </div>
-
-                    </div>
+                    </template>
                 </div>
 
-                <!-- Indicators -->
-                <div class="flex justify-center gap-2 mt-6">
-                    <template x-for="(slide, index) in 2" :key="index">
+                <!-- Mobile Indicators -->
+                <div class="flex justify-center gap-2 mt-4">
+                    <template x-for="(slide, index) in totalSlides" :key="index">
                         <button @click="currentSlide = index" 
                                 class="w-2 h-2 rounded-full transition-all"
                                 :class="currentSlide === index ? 'bg-emerald-600 w-8' : 'bg-gray-300'">
@@ -685,8 +226,249 @@
                     </template>
                 </div>
             </div>
-        </div>
 
+            <!-- Desktop Grid View (4 columns with horizontal scroll) -->
+            <div class="hidden md:block relative group px-4">
+                
+                <!-- Navigation Arrows -->
+                <button class="absolute top-1/2 left-0 -translate-y-1/2 -ml-2 z-20 bg-white text-gray-800 rounded-full w-10 h-10 flex items-center justify-center shadow-lg hover:bg-gray-50 hover:scale-110 transition-all border border-gray-100 opacity-0 group-hover:opacity-100 duration-300"
+                        @click="currentSlide = (currentSlide > 0) ? currentSlide - 1 : totalSlides - 1">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                </button>
+                
+                <button class="absolute top-1/2 right-0 -translate-y-1/2 -mr-2 z-20 bg-white text-gray-800 rounded-full w-10 h-10 flex items-center justify-center shadow-lg hover:bg-gray-50 hover:scale-110 transition-all border border-gray-100 opacity-0 group-hover:opacity-100 duration-300"
+                        @click="currentSlide = (currentSlide < totalSlides - 1) ? currentSlide + 1 : 0">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+
+                <template x-if="loading">
+                    <div class="text-center py-12 text-gray-500">Memuat paket promo...</div>
+                </template>
+                
+                <template x-if="!loading">
+                    <div class="overflow-hidden py-4 -my-4 px-1 -mx-1">
+                        <div class="flex transition-transform duration-500 ease-out" :style="`transform: translateX(-${currentSlide * 100}%)`">
+                            <!-- Generate slides dynamically -->
+                            <template x-for="slideIndex in totalSlides" :key="slideIndex">
+                                <div class="w-full flex-shrink-0">
+                                    <div class="grid grid-cols-4 gap-4 px-1">
+                                        <!-- 4 cards per slide for desktop -->
+                                        <template x-for="cardIndex in 4" :key="cardIndex">
+                                            <template x-if="promoPackages[(slideIndex - 1) * 4 + (cardIndex - 1)]">
+                                                <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow cursor-pointer flex flex-col h-full group/card"
+                                                     @click="openCheckoutModal(promoPackages[(slideIndex - 1) * 4 + (cardIndex - 1)])">
+                                                    <div class="relative flex-none">
+                                                        <!-- Ribbon Badge Best Seller -->
+                                                        <div class="absolute top-0 right-0 z-10">
+                                                            <div class="bg-gradient-to-r from-yellow-400 to-yellow-500 text-white text-[10px] font-black px-3 py-1 rounded-bl-xl shadow-md flex items-center gap-1">
+                                                                <svg class="w-3 h-3 text-yellow-100" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
+                                                                BEST SELLER
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <div class="h-40 flex items-center justify-center bg-gray-100 overflow-hidden">
+                                                            <img :src="'/images/' + getProviderImage(promoPackages[(slideIndex - 1) * 4 + (cardIndex - 1)].provider)" 
+                                                                 :alt="promoPackages[(slideIndex - 1) * 4 + (cardIndex - 1)].provider"
+                                                                 class="h-full w-full object-cover group-hover/card:scale-110 transition-transform duration-500">
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex-grow flex flex-col">
+                                                        <div class="p-3 flex-grow">
+                                                            <p class="text-[10px] text-gray-500 mb-1 uppercase tracking-wider" x-text="getProviderName(promoPackages[(slideIndex - 1) * 4 + (cardIndex - 1)].provider)"></p>
+                                                            <h3 class="font-bold text-sm text-gray-900 mb-2 leading-snug" x-text="getPackageTitle(promoPackages[(slideIndex - 1) * 4 + (cardIndex - 1)])"></h3>
+                                                        </div>
+
+                                                        <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-3 border-t border-gray-100 mt-auto">
+                                                            <template x-if="promoPackages[(slideIndex - 1) * 4 + (cardIndex - 1)].price_app > promoPackages[(slideIndex - 1) * 4 + (cardIndex - 1)].price_customer">
+                                                                <p class="text-xs text-gray-400 line-through mb-0.5" x-text="formatRupiah(promoPackages[(slideIndex - 1) * 4 + (cardIndex - 1)].price_app)"></p>
+                                                            </template>
+                                                            <p class="text-xl font-black text-emerald-600 mb-2" x-text="formatRupiah(promoPackages[(slideIndex - 1) * 4 + (cardIndex - 1)].price_customer)"></p>
+                                                            
+                                                            <div class="block w-full text-center bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white text-xs font-bold py-2 px-3 rounded-lg shadow-md hover:shadow-lg transition-all transform active:scale-95 duration-200">
+                                                                BELI SEKARANG
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+
+                        <!-- Indicators -->
+                        <div class="flex justify-center gap-2 mt-6">
+                            <template x-for="(slide, index) in totalSlides" :key="index">
+                                <button @click="currentSlide = index" 
+                                        class="w-2 h-2 rounded-full transition-all"
+                                        :class="currentSlide === index ? 'bg-emerald-600 w-8' : 'bg-gray-300'">
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Checkout Modal Popup (Inside x-data scope) -->
+            <div x-show="showCheckoutModal" 
+                 x-cloak
+                 @click.self="closeCheckoutModal()"
+                 class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black bg-opacity-50"
+                 style="display: none;">
+                <div @click.stop 
+                     class="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] flex flex-col overflow-hidden"
+                     x-show="showCheckoutModal"
+                     x-transition:enter="transition ease-out duration-300"
+                     x-transition:enter-start="opacity-0 scale-90"
+                     x-transition:enter-end="opacity-100 scale-100"
+                     x-transition:leave="transition ease-in duration-200"
+                     x-transition:leave-start="opacity-100 scale-100"
+                     x-transition:leave-end="opacity-0 scale-90">
+                    
+                    <!-- Header (Fixed) -->
+                    <div class="bg-gradient-to-r from-emerald-600 to-emerald-500 p-6 relative flex-shrink-0">
+                        <button @click="closeCheckoutModal()" 
+                                class="absolute top-4 right-4 text-white hover:text-gray-200 transition-colors">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                        <h3 class="text-2xl font-bold text-white">Checkout Paket</h3>
+                        <p class="text-emerald-100 text-sm mt-1">Lengkapi data untuk melanjutkan</p>
+                    </div>
+
+                    <!-- Content (Scrollable) -->
+                    <div class="flex-1 overflow-y-auto p-6">
+                        <!-- Package Summary -->
+                        <template x-if="selectedPackage">
+                            <div class="mb-6">
+                                <h4 class="text-sm font-semibold text-gray-700 mb-3">Ringkasan Pesanan</h4>
+                                <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                                    <div class="flex items-start gap-3 mb-3">
+                                        <img :src="'/images/' + getProviderImage(selectedPackage.provider)" 
+                                             :alt="selectedPackage.provider"
+                                             class="w-16 h-16 object-cover rounded-lg">
+                                        <div class="flex-1">
+                                            <p class="text-xs text-gray-500 uppercase tracking-wide mb-1" x-text="getProviderName(selectedPackage.provider)"></p>
+                                            <h5 class="font-bold text-sm text-gray-900 leading-tight" x-text="getPackageTitle(selectedPackage)"></h5>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="border-t border-gray-200 pt-3 space-y-2">
+                                        <div class="flex justify-between text-sm">
+                                            <span class="text-gray-600">Kuota</span>
+                                            <span class="font-medium text-gray-900" x-text="selectedPackage.quota + ' Kuota Arab'"></span>
+                                        </div>
+                                        <template x-if="selectedPackage.bonus">
+                                            <div class="flex justify-between text-sm">
+                                                <span class="text-gray-600">Kuota Transit</span>
+                                                <span class="font-medium text-gray-900" x-text="selectedPackage.bonus"></span>
+                                            </div>
+                                        </template>
+                                        <div class="flex justify-between text-sm">
+                                            <span class="text-gray-600">Masa Aktif</span>
+                                            <span class="font-medium text-gray-900" x-text="selectedPackage.days + ' Hari'"></span>
+                                        </div>
+                                        <template x-if="selectedPackage.price_app > selectedPackage.price_customer">
+                                            <div class="flex justify-between text-sm">
+                                                <span class="text-gray-600">Harga Normal</span>
+                                                <span class="text-gray-400 line-through" x-text="formatRupiah(selectedPackage.price_app)"></span>
+                                            </div>
+                                        </template>
+                                        <div class="flex justify-between text-base font-bold border-t border-gray-200 pt-2">
+                                            <span class="text-gray-900">Total Bayar</span>
+                                            <span class="text-emerald-600" x-text="formatRupiah(selectedPackage.price_customer)"></span>
+                                        </div>
+                                        <template x-if="selectedPackage.price_app > selectedPackage.price_customer">
+                                            <div class="bg-red-50 text-red-600 text-xs px-3 py-1.5 rounded-lg inline-block">
+                                                <span class="font-semibold">Hemat </span>
+                                                <span x-text="formatRupiah(selectedPackage.price_app - selectedPackage.price_customer)"></span>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- Phone Number Input -->
+                        <div class="mb-6">
+                            <label for="phoneNumber" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Nomor Telepon <span class="text-red-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                                    </svg>
+                                </div>
+                                <input type="tel" 
+                                       id="phoneNumber"
+                                       x-model="phoneNumber"
+                                       :placeholder="getPhonePlaceholder(selectedPackage?.provider)"
+                                       class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                                       maxlength="15"
+                                       pattern="[0-9]*"
+                                       inputmode="numeric">
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2" x-text="getPhoneHint(selectedPackage?.provider)"></p>
+                        </div>
+                    </div>
+
+                    <!-- Footer (Fixed) -->
+                    <div class="p-6 border-t border-gray-200 bg-white flex-shrink-0">
+                        <button @click="proceedToCheckout()"
+                                class="w-full bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white font-bold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+                            </svg>
+                            <span>Lanjut ke Checkout</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Custom Alert Modal -->
+            <div x-show="showAlertModal" 
+                 x-cloak
+                 @click.self="showAlertModal = false"
+                 class="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black bg-opacity-50"
+                 style="display: none;">
+                <div @click.stop 
+                     class="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden"
+                     x-show="showAlertModal"
+                     x-transition:enter="transition ease-out duration-300"
+                     x-transition:enter-start="opacity-0 scale-90"
+                     x-transition:enter-end="opacity-100 scale-100"
+                     x-transition:leave="transition ease-in duration-200"
+                     x-transition:leave-start="opacity-100 scale-100"
+                     x-transition:leave-end="opacity-0 scale-90">
+                    
+                    <!-- Icon -->
+                    <div class="bg-red-50 p-6 flex justify-center">
+                        <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                            <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- Content -->
+                    <div class="p-6 text-center">
+                        <h3 class="text-xl font-bold text-gray-900 mb-3" x-text="alertTitle"></h3>
+                        <p class="text-gray-600 whitespace-pre-line" x-text="alertMessage"></p>
+                    </div>
+
+                    <!-- Button -->
+                    <div class="p-6 pt-0">
+                        <button @click="showAlertModal = false"
+                                class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-xl transition-colors">
+                            OK
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
 
         <!-- Provider Selection Section -->
@@ -973,20 +755,359 @@
                 currentSlide: 0,
                 totalSlides: 4,
                 interval: null,
+                promoPackages: [],
+                loading: true,
+                showCheckoutModal: false,
+                selectedPackage: null,
+                phoneNumber: '',
                 
-                init() {
+                openCheckoutModal(pkg) {
+                    console.log('Opening checkout modal with package:', pkg);
+                    this.selectedPackage = pkg;
+                    this.phoneNumber = '';
+                    this.showCheckoutModal = true;
+                    this.stopAutoSlide();
+                    console.log('Modal state:', this.showCheckoutModal);
+                },
+                
+                closeCheckoutModal() {
+                    this.showCheckoutModal = false;
+                    this.selectedPackage = null;
+                    this.phoneNumber = '';
+                    this.startAutoSlide();
+                },
+                
+                proceedToCheckout() {
+                    // Validasi nomor telepon
+                    if (!this.phoneNumber || this.phoneNumber.length < 10) {
+                        this.showAlert('Perhatian', 'Mohon masukkan nomor telepon yang valid (minimal 10 digit)');
+                        return;
+                    }
+                    
+                    // Validasi nomor sesuai provider
+                    const provider = this.selectedPackage.provider.toUpperCase();
+                    const phone = this.phoneNumber;
+                    const validationResult = this.validatePhoneByProvider(provider, phone);
+                    
+                    if (!validationResult.valid) {
+                        this.showAlert('Nomor Tidak Sesuai', validationResult.message);
+                        return;
+                    }
+                    
+                    // Format data untuk checkout page
+                    const pkg = this.selectedPackage;
+                    const packageName = `${this.getProviderName(pkg.provider)} - ${this.getPackageTitle(pkg)}`;
+                    
+                    const orderData = {
+                        items: [{
+                            packageId: pkg.id,
+                            package_id: pkg.id,
+                            packageName: packageName,
+                            price: pkg.price_customer,
+                            msisdn: this.phoneNumber,
+                            phoneNumber: this.phoneNumber,
+                            quota: pkg.quota,
+                            bonus: pkg.bonus || '',
+                            days: pkg.days,
+                            provider: pkg.provider
+                        }],
+                        subtotal: pkg.price_customer,
+                        total: pkg.price_customer,
+                        platformFee: 0,
+                        uniqueCode: 0,
+                        paymentMethod: 'qris',
+                        refCode: 'kuotaumroh',
+                        scheduleDate: null,
+                        isBulk: false
+                    };
+                    
+                    // Simpan ke localStorage
+                    localStorage.setItem('pendingOrder', JSON.stringify(orderData));
+                    console.log('💾 Order data saved:', orderData);
+                    
+                    // Redirect ke halaman checkout public
+                    window.location.href = '{{ route("checkout") }}';
+                },
+                
+                // --- Custom Alert ---
+                showAlertModal: false,
+                alertTitle: '',
+                alertMessage: '',
+                
+                showAlert(title, message) {
+                    this.alertTitle = title;
+                    this.alertMessage = message;
+                    this.showAlertModal = true;
+                },
+
+                // --- Helper Functions ---
+                formatRupiah(number) {
+                    return new Intl.NumberFormat('id-ID', { 
+                        style: 'currency', 
+                        currency: 'IDR',
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0
+                    }).format(number);
+                },
+                
+                getProviderImage(provider) {
+                    const images = {
+                        'TELKOMSEL': 'telkomsel.png',
+                        'XL': 'xl.png',
+                        'INDOSAT': 'indosat.png',
+                        'AXIS': 'axis.png',
+                        'TRI': 'tri.png',
+                        'SMARTFREN': 'smartfren.png',
+                        'BYU': 'byu.png'
+                    };
+                    return images[provider?.toUpperCase()] || 'default.png';
+                },
+                
+                getProviderName(provider) {
+                    const names = {
+                        'TELKOMSEL': 'Telkomsel',
+                        'XL': 'XL Axiata',
+                        'INDOSAT': 'Indosat Ooredoo',
+                        'AXIS': 'Axis',
+                        'TRI': 'Tri (3)',
+                        'SMARTFREN': 'Smartfren',
+                        'BYU': 'by.U'
+                    };
+                    return names[provider?.toUpperCase()] || provider;
+                },
+                
+                getPhonePlaceholder(provider) {
+                    if (!provider) return 'Contoh: 08123456789';
+                    
+                    const placeholders = {
+                        'TELKOMSEL': 'Contoh: 0811xxxxxxxx',
+                        'XL': 'Contoh: 0817xxxxxxxx',
+                        'INDOSAT': 'Contoh: 0814xxxxxxxx',
+                        'AXIS': 'Contoh: 0831xxxxxxxx',
+                        'TRI': 'Contoh: 0895xxxxxxxx',
+                        'SMARTFREN': 'Contoh: 0881xxxxxxxx',
+                        'BYU': 'Contoh: 0851xxxxxxxx'
+                    };
+                    
+                    return placeholders[provider.toUpperCase()] || 'Contoh: 08123456789';
+                },
+                
+                getPhoneHint(provider) {
+                    if (!provider) return 'Nomor yang akan diaktifkan paketnya';
+                    
+                    const hints = {
+                        'TELKOMSEL': 'Gunakan nomor Telkomsel (0811/0812/0813/0821/0822/0823/0852/0853)',
+                        'XL': 'Gunakan nomor XL (0817/0818/0819/0859/0877/0878)',
+                        'INDOSAT': 'Gunakan nomor Indosat (0814/0815/0816/0855/0856/0857/0858)',
+                        'AXIS': 'Gunakan nomor Axis (0831/0832/0833/0838)',
+                        'TRI': 'Gunakan nomor Tri (0895/0896/0897/0898/0899)',
+                        'SMARTFREN': 'Gunakan nomor Smartfren (0881/0882/0883/0884/0885/0886/0887/0888/0889)',
+                        'BYU': 'Gunakan nomor by.U (0851)'
+                    };
+                    
+                    return hints[provider.toUpperCase()] || 'Nomor yang akan diaktifkan paketnya';
+                },
+                
+                validatePhoneByProvider(provider, phone) {
+                    // Mapping provider ke prefix nomor
+                    const providerPrefixes = {
+                        'TELKOMSEL': ['0811', '0812', '0813', '0821', '0822', '0823', '0852', '0853'],
+                        'XL': ['0817', '0818', '0819', '0859', '0877', '0878'],
+                        'INDOSAT': ['0814', '0815', '0816', '0855', '0856', '0857', '0858'],
+                        'AXIS': ['0831', '0832', '0833', '0838'],
+                        'TRI': ['0895', '0896', '0897', '0898', '0899'],
+                        'SMARTFREN': ['0881', '0882', '0883', '0884', '0885', '0886', '0887', '0888', '0889'],
+                        'BYU': ['0851']  // by.U menggunakan prefix Telkomsel
+                    };
+                    
+                    const prefixes = providerPrefixes[provider];
+                    if (!prefixes) {
+                        return { valid: true };
+                    }
+                    
+                    const isValid = prefixes.some(prefix => phone.startsWith(prefix));
+                    
+                    if (!isValid) {
+                        const providerName = this.getProviderName(provider);
+                        const examplePrefix = prefixes[0];
+                        return {
+                            valid: false,
+                            message: `Nomor telepon tidak sesuai dengan provider ${providerName}.\n\nGunakan nomor yang dimulai dengan: ${prefixes.join(', ')}\n\nContoh: ${examplePrefix}xxxxxxxx`
+                        };
+                    }
+                    
+                    return { valid: true };
+                },
+
+                // --- Carousel Logic ---
+                startX: 0,
+                isDragging: false,
+                
+                handleTouchStart(e) {
+                    this.startX = e.touches[0].clientX;
+                    this.isDragging = true;
+                    this.stopAutoSlide();
+                },
+                
+                handleTouchMove(e) {
+                    if (!this.isDragging) return;
+                },
+                
+                handleTouchEnd(e) {
+                    if (!this.isDragging) return;
+                    
+                    const endX = e.changedTouches[0].clientX;
+                    const diffX = this.startX - endX;
+                    
+                    if (Math.abs(diffX) > 50) { // Threshold 50px
+                        if (diffX > 0) {
+                            this.nextSlide();
+                        } else {
+                            this.prevSlide();
+                        }
+                    }
+                    
+                    this.isDragging = false;
+                    this.startAutoSlide();
+                },
+
+                async init() {
                     this.updateTotalSlides();
                     window.addEventListener('resize', () => {
                         this.updateTotalSlides();
                     });
+                    
+                    // Load promo packages from API
+                    await this.loadPromoPackages();
+                    
                     this.startAutoSlide();
                 },
                 
+                async loadPromoPackages() {
+                    try {
+                        this.loading = true;
+                        const response = await fetch(`${API_BASE_URL}/api/proxy/umroh/package?ref_code=0`);
+                        if (!response.ok) throw new Error('Failed to fetch packages');
+                        
+                        const data = await response.json();
+                        
+                        if (Array.isArray(data)) {
+                            // Map packages sama seperti di store.blade.php
+                            const allPackages = data.map(pkg => {
+                                const priceApp = parseInt(pkg.price_app) || 0;
+                                const priceCustomer = parseInt(pkg.price_customer) || 0;
+                                
+                                // Logic Harga Coret: Pastikan semua paket punya harga coret
+                                // Jika price_app <= price_customer, markup 15% dari price_customer
+                                let finalPriceApp = priceApp;
+                                if (priceApp <= priceCustomer) {
+                                    finalPriceApp = Math.round(priceCustomer * 1.15);
+                                }
+                                
+                                return {
+                                    id: pkg.id,
+                                    name: pkg.name,
+                                    provider: pkg.type,
+                                    days: parseInt(pkg.days) || 0,
+                                    quota: pkg.quota || '',
+                                    bonus: pkg.bonus || '',
+                                    price_app: finalPriceApp,
+                                    price_customer: priceCustomer,
+                                    subType: pkg.sub_type || '',
+                                    promo: pkg.promo || null,
+                                };
+                            });
+            
+                            // Ambil paket dari provider tertentu untuk carousel (2 paket per provider)
+                            const providers = ['TELKOMSEL', 'XL', 'INDOSAT', 'AXIS', 'TRI', 'BYU'];
+                            this.promoPackages = [];
+                            
+                            providers.forEach(provider => {
+                                const providerPackages = allPackages.filter(pkg => 
+                                    pkg.provider.toUpperCase() === provider
+                                );
+                                
+                                // Ambil 2 paket per provider
+                                let count = 0;
+                                for (const pkg of providerPackages) {
+                                    if (count < 2) {
+                                        this.promoPackages.push(pkg);
+                                        count++;
+                                    } else {
+                                        break;
+                                    }
+                                }
+                            });
+                            
+                            this.updateTotalSlides();
+                        }
+                        
+                        this.loading = false;
+                    } catch (error) {
+                        console.error('Error loading promo packages:', error);
+                        this.loading = false;
+                    }
+                },
+                
+                getPackageTitle(pkg) {
+                    const quotaStr = String(pkg.quota || '');
+                    const bonusStr = String(pkg.bonus || '');
+                    const days = pkg.days || 0;
+                    
+                    // Extract numbers from quota and bonus
+                    const extractNumber = (str) => {
+                        const match = str.match(/(\d+(?:\.\d+)?)/);
+                        return match ? parseFloat(match[1]) : 0;
+                    };
+                    
+                    let totalGB = 0;
+                    if (quotaStr) totalGB += extractNumber(quotaStr);
+                    if (bonusStr) totalGB += extractNumber(bonusStr);
+                    
+                    return totalGB > 0 ? `Kuota ${totalGB}GB - ${days} Hari` : `${pkg.name}`;
+                },
+                
+                getProviderImage(provider) {
+                    const providerMap = {
+                        'TELKOMSEL': 'Telkomsel.png',
+                        'XL': 'XL.png',
+                        'INDOSAT': 'Indosat.png',
+                        'AXIS': 'AXIS.png',
+                        'TRI': '3.png',
+                        'BYU': 'ByU.png'
+                    };
+                    return providerMap[provider.toUpperCase()] || 'Telkomsel.png';
+                },
+                
+                getProviderName(provider) {
+                    const nameMap = {
+                        'TELKOMSEL': 'TELKOMSEL',
+                        'XL': 'XL AXIATA',
+                        'INDOSAT': 'INDOSAT OOREDOO',
+                        'AXIS': 'AXIS',
+                        'TRI': 'TRI',
+                        'BYU': 'BY.U'
+                    };
+                    return nameMap[provider.toUpperCase()] || provider;
+                },
+                
+                formatRupiah(amount) {
+                    return new Intl.NumberFormat('id-ID', {
+                        style: 'currency',
+                        currency: 'IDR',
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0
+                    }).format(amount);
+                },
+                
                 updateTotalSlides() {
+                    const packagesCount = this.promoPackages.length;
                     if (window.innerWidth >= 768) {
-                        this.totalSlides = 2;
+                        // Desktop: 4 cards per slide
+                        this.totalSlides = packagesCount > 0 ? Math.ceil(packagesCount / 4) : 2;
                     } else {
-                        this.totalSlides = 4;
+                        // Mobile: 3 cards per slide
+                        this.totalSlides = packagesCount > 0 ? Math.ceil(packagesCount / 3) : 4;
                     }
                     if (this.currentSlide >= this.totalSlides) {
                         this.currentSlide = 0;
