@@ -585,9 +585,7 @@ function checkoutApp() {
         // Error Modal
         errorModalCountdown: 5,
         
-        // Exit Confirmation Modal
-        showExitModal: false,
-        isForceExit: false,
+        isCreatingPayment: false,
 
         // Intervals
         timerInterval: null,
@@ -709,6 +707,13 @@ function checkoutApp() {
             if (savedOrder) {
                 const orderData = JSON.parse(savedOrder);
                 orderData.paymentStatus = this.paymentStatus === 'pending' ? 'verifying' : this.paymentStatus;
+                
+                // PENTING: Jangan overwrite paymentId jika sudah ada di state tapi belum ada di LS
+                if (this.paymentId && !orderData.paymentId) {
+                    orderData.paymentId = this.paymentId;
+                    orderData.batchId = this.batchId;
+                }
+                
                 localStorage.setItem('pendingOrder', JSON.stringify(orderData));
                 console.log('💾 Payment status saved:', orderData.paymentStatus);
             }
@@ -923,6 +928,8 @@ function checkoutApp() {
         },
 
         async createPayment() {
+            if (this.isCreatingPayment) return;
+            this.isCreatingPayment = true;
             try {
                 const batchId = 'BATCH_' + Date.now();
                 const batchName = 'ORDER_' + new Date().toISOString().slice(0,10).replace(/-/g,'');
