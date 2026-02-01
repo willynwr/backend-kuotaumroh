@@ -106,6 +106,16 @@ Route::prefix('umroh')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
+| Payment Tracking Routes
+|--------------------------------------------------------------------------
+|
+| Public routes untuk tracking pembayaran dengan external_payment_id
+|
+*/
+Route::get('/pembayaran/{external_payment_id}/status', [UmrohPaymentController::class, 'getPaymentStatusByExternalId']);
+
+/*
+|--------------------------------------------------------------------------
 | Agent Dashboard API Routes
 |--------------------------------------------------------------------------
 |

@@ -596,4 +596,57 @@ class UmrohPaymentController extends Controller
             'message' => 'Invalid callback data',
         ], 400);
     }
+
+    /**
+     * GET /api/pembayaran/{external_payment_id}/status
+     * 
+     * Get payment status by external_payment_id (for tracking order)
+     * 
+     * @param string $externalPaymentId
+     * @return JsonResponse
+     */
+    public function getPaymentStatusByExternalId(string $externalPaymentId): JsonResponse
+    {
+        try {
+            Log::info('Tracking payment by external_payment_id', [
+                'external_payment_id' => $externalPaymentId
+            ]);
+
+            // Find payment by external_payment_id
+            $payment = \App\Models\Pembayaran::where('external_payment_id', $externalPaymentId)->first();
+
+            if (!$payment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pembayaran tidak ditemukan',
+                ], 404);
+            }
+
+            // Return payment status
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'id' => $payment->id,
+                    'external_payment_id' => $payment->external_payment_id,
+                    'status' => $payment->status,
+                    'status_pembayaran' => $payment->status_pembayaran,
+                    'metode_pembayaran' => $payment->metode_pembayaran,
+                    'total_pembayaran' => $payment->total_pembayaran,
+                    'created_at' => $payment->created_at,
+                ],
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error tracking payment', [
+                'external_payment_id' => $externalPaymentId,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal melacak pembayaran',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
 }
