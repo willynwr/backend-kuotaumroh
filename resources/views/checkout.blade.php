@@ -706,8 +706,6 @@
                 errorModalVisible: false,
                 errorModalTitle: '',
                 errorModalMessage: '',
-                errorModalTitle: '',
-                errorModalMessage: '',
                 errorModalCountdown: 5,
                 
                 // Exit Confirmation Modal
@@ -1607,6 +1605,17 @@
                 formatNumber(num) {
                     if (!num) return '0';
                     return new Intl.NumberFormat('id-ID').format(num);
+                },
+
+                // Format number dengan Rp
+                formatRupiah(amount) {
+                    if (!amount) return 'Rp 0';
+                    return new Intl.NumberFormat('id-ID', {
+                        style: 'currency',
+                        currency: 'IDR',
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0
+                    }).format(amount);
                 }
             }
         }

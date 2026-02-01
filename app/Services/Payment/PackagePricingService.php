@@ -88,6 +88,37 @@ class PackagePricingService
     }
 
     /**
+     * Generate nama paket dari data VIEW
+     * Format: "Provider TotalKuota - MasaAktif Hari" atau "Provider TipePaket - MasaAktif Hari"
+     * 
+     * @param array $row Data dari VIEW
+     * @return string Nama paket yang di-generate
+     */
+    protected function generatePackageName(array $row): string
+    {
+        $provider = $row['provider'] ?? 'Unknown';
+        $totalKuota = $row['total_kuota'] ?? null;
+        $tipePaket = $row['tipe_paket'] ?? $row['sub_type'] ?? null;
+        $masaAktif = $row['masa_aktif'] ?? $row['days'] ?? null;
+        
+        $nameParts = [$provider];
+        
+        // Tambah kuota atau tipe paket
+        if ($totalKuota) {
+            $nameParts[] = $totalKuota;
+        } elseif ($tipePaket) {
+            $nameParts[] = $tipePaket;
+        }
+        
+        // Tambah masa aktif
+        if ($masaAktif) {
+            $nameParts[] = "{$masaAktif} Hari";
+        }
+        
+        return implode(' - ', $nameParts);
+    }
+
+    /**
      * Map row data dari VIEW ke format response catalog
      * Untuk context BULK (affiliate, agent, admin)
      * 
@@ -97,23 +128,29 @@ class PackagePricingService
      */
     protected function mapBulkCatalogRow(array $row, string $role): array
     {
+        // Generate name jika tidak ada di VIEW
+        $generatedName = $this->generatePackageName($row);
+        
         $mapped = [
             'id' => $row['produk_id'] ?? $row['package_id'] ?? $row['id'] ?? null,
             'package_id' => $row['produk_id'] ?? $row['package_id'] ?? $row['id'] ?? null,
-            'name' => $row['nama_paket'] ?? $row['package_name'] ?? null,
-            'packageName' => $row['nama_paket'] ?? $row['package_name'] ?? null,
+            'name' => $row['nama_paket'] ?? $row['package_name'] ?? $generatedName,
+            'packageName' => $row['nama_paket'] ?? $row['package_name'] ?? $generatedName,
             'type' => $row['provider'] ?? $row['type'] ?? null,
             'provider' => $row['provider'] ?? $row['type'] ?? null,
-            'sub_type' => $row['sub_type'] ?? $row['tipe_paket'] ?? null,
-            'tipe_paket' => $row['sub_type'] ?? $row['tipe_paket'] ?? null,
-            'days' => $row['days'] ?? $row['masa_aktif'] ?? null,
-            'masa_aktif' => $row['days'] ?? $row['masa_aktif'] ?? null,
-            'quota' => $row['quota'] ?? $row['total_kuota'] ?? null,
-            'total_kuota' => $row['quota'] ?? $row['total_kuota'] ?? null,
+            'sub_type' => $row['tipe_paket'] ?? $row['sub_type'] ?? null,
+            'tipe_paket' => $row['tipe_paket'] ?? $row['sub_type'] ?? null,
+            'days' => $row['masa_aktif'] ?? $row['days'] ?? null,
+            'masa_aktif' => $row['masa_aktif'] ?? $row['days'] ?? null,
+            // PENTING: quota = kuota_utama (49 GB), BUKAN total_kuota (50 GB)
+            'quota' => $row['kuota_utama'] ?? $row['quota'] ?? null,
+            'kuota_utama' => $row['kuota_utama'] ?? null,
+            'total_kuota' => $row['total_kuota'] ?? null,
             'telp' => $row['telp'] ?? null,
             'sms' => $row['sms'] ?? null,
-            'bonus' => $row['bonus'] ?? $row['kuota_bonus'] ?? null,
-            'kuota_bonus' => $row['bonus'] ?? $row['kuota_bonus'] ?? null,
+            // PENTING: bonus = kuota_bonus (1 GB Transit)
+            'bonus' => $row['kuota_bonus'] ?? $row['bonus'] ?? null,
+            'kuota_bonus' => $row['kuota_bonus'] ?? null,
             'is_active' => '1',
             
             // ===== BULK PRICING FIELDS =====
@@ -125,17 +162,18 @@ class PackagePricingService
             'price' => (int) ($row['bulk_harga_beli'] ?? 0),
             'bulk_harga_beli' => (int) ($row['bulk_harga_beli'] ?? 0),
             
+            // Potensi Profit (PENTING: harus ada untuk semua role)
+            'bulk_potensi_profit' => (int) ($row['bulk_potensi_profit'] ?? 0),
+            'profit' => (int) ($row['bulk_potensi_profit'] ?? 0),
+            
             // Legacy field mapping for compatibility
             'price_bulk' => (int) ($row['bulk_harga_beli'] ?? 0),
             'price_customer' => (int) ($row['bulk_harga_rekomendasi'] ?? 0),
             'harga' => (int) ($row['bulk_harga_beli'] ?? 0),
         ];
         
-        // Tambah profit field untuk affiliate/agent (tapi bukan admin)
+        // Tambah role-specific profit naming untuk affiliate/agent (tapi bukan admin)
         if ($role !== 'admin' && isset($row['bulk_potensi_profit'])) {
-            $mapped['bulk_potensi_profit'] = (int) $row['bulk_potensi_profit'];
-            $mapped['profit'] = (int) $row['bulk_potensi_profit'];
-            
             // Role-specific profit naming
             if ($role === 'affiliate') {
                 $mapped['profit_affiliate'] = (int) $row['bulk_potensi_profit'];
@@ -161,23 +199,29 @@ class PackagePricingService
      */
     protected function mapStoreCatalogRow(array $row): array
     {
+        // Generate name jika tidak ada di VIEW
+        $generatedName = $this->generatePackageName($row);
+        
         $mapped = [
             'id' => $row['produk_id'] ?? $row['package_id'] ?? $row['id'] ?? null,
             'package_id' => $row['produk_id'] ?? $row['package_id'] ?? $row['id'] ?? null,
-            'name' => $row['nama_paket'] ?? $row['package_name'] ?? null,
-            'packageName' => $row['nama_paket'] ?? $row['package_name'] ?? null,
+            'name' => $row['nama_paket'] ?? $row['package_name'] ?? $generatedName,
+            'packageName' => $row['nama_paket'] ?? $row['package_name'] ?? $generatedName,
             'type' => $row['provider'] ?? $row['type'] ?? null,
             'provider' => $row['provider'] ?? $row['type'] ?? null,
-            'sub_type' => $row['sub_type'] ?? $row['tipe_paket'] ?? null,
-            'tipe_paket' => $row['sub_type'] ?? $row['tipe_paket'] ?? null,
-            'days' => $row['days'] ?? $row['masa_aktif'] ?? null,
-            'masa_aktif' => $row['days'] ?? $row['masa_aktif'] ?? null,
-            'quota' => $row['quota'] ?? $row['total_kuota'] ?? null,
-            'total_kuota' => $row['quota'] ?? $row['total_kuota'] ?? null,
+            'sub_type' => $row['tipe_paket'] ?? $row['sub_type'] ?? null,
+            'tipe_paket' => $row['tipe_paket'] ?? $row['sub_type'] ?? null,
+            'days' => $row['masa_aktif'] ?? $row['days'] ?? null,
+            'masa_aktif' => $row['masa_aktif'] ?? $row['days'] ?? null,
+            // PENTING: quota = kuota_utama (49 GB), BUKAN total_kuota (50 GB)
+            'quota' => $row['kuota_utama'] ?? $row['quota'] ?? null,
+            'kuota_utama' => $row['kuota_utama'] ?? null,
+            'total_kuota' => $row['total_kuota'] ?? null,
             'telp' => $row['telp'] ?? null,
             'sms' => $row['sms'] ?? null,
-            'bonus' => $row['bonus'] ?? $row['kuota_bonus'] ?? null,
-            'kuota_bonus' => $row['bonus'] ?? $row['kuota_bonus'] ?? null,
+            // PENTING: bonus = kuota_bonus (1 GB Transit)
+            'bonus' => $row['kuota_bonus'] ?? $row['bonus'] ?? null,
+            'kuota_bonus' => $row['kuota_bonus'] ?? null,
             'is_active' => '1',
             
             // ===== STORE PRICING FIELDS (INDIVIDU VIA TOKO) =====

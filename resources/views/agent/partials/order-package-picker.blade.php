@@ -88,7 +88,7 @@
 
       <!-- Package Grid -->
       <div x-show="getFilteredPackages().length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <template x-for="pkg in getFilteredPackages()" :key="pkg.id">
+        <template x-for="(pkg, index) in getFilteredPackages()" :key="`${pkg.id}-${pkg.type}-${index}`">
           <div class="border rounded-lg p-4 hover:shadow-md transition-shadow bg-white flex flex-col h-full">
             <!-- Provider with Badge -->
             <div class="flex items-center justify-between mb-3">
@@ -115,7 +115,7 @@
                   <svg class="h-4 w-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
                   </svg>
-                  <span x-text="pkg.quota + ' Kuota Arab'"></span>
+                  <span x-text="getQuotaDisplay(pkg)"></span>
                 </div>
               </template>
 
@@ -125,7 +125,7 @@
                   <svg class="h-4 w-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
                   </svg>
-                  <span x-text="pkg.bonus"></span>
+                  <span x-text="getBonusDisplay(pkg)"></span>
                 </div>
               </template>
 
@@ -162,27 +162,27 @@
 
             <!-- Pricing Section -->
             <div class="space-y-2 mb-4 mt-auto">
-              <!-- Harga Coret (Price App) -->
+              <!-- Harga Coret (Price App / Harga Rekomendasi) -->
               <template x-if="pkg.price_app && pkg.price_app > 0">
                 <div class="text-xs text-gray-400 line-through mb-1" x-text="formatRupiah(pkg.price_app)"></div>
               </template>
 
-              <!-- Harga Beli (Highlighted) -->
+              <!-- Harga Beli (Highlighted) - dari bulk_harga_beli -->
               <div class="bg-primary/10 rounded-lg p-2.5">
                 <p class="text-xs text-gray-600 mb-0.5">Harga Beli</p>
-                <p class="text-xl font-bold text-primary" x-text="formatRupiah(pkg.price)"></p>
+                <p class="text-xl font-bold text-primary" x-text="formatRupiah(pkg.price_bulk || pkg.price)"></p>
               </div>
 
-              <!-- Harga Customer -->
+              <!-- Harga Customer / Rekomendasi -->
               <div class="flex items-center justify-between">
-                <span class="text-xs text-gray-600">Harga Customer:</span>
-                <span class="text-sm font-semibold text-gray-900" x-text="formatRupiah(pkg.sellPrice)"></span>
+                <span class="text-xs text-gray-600">Harga Rekomendasi:</span>
+                <span class="text-sm font-semibold text-gray-900" x-text="formatRupiah(pkg.price_customer || pkg.sellPrice)"></span>
               </div>
 
               <!-- Potensi Profit -->
               <div class="flex items-center justify-between">
                 <span class="text-xs text-gray-600">Potensi Profit:</span>
-                <span class="text-sm font-bold text-green-600" x-text="formatRupiah(pkg.sellPrice - pkg.price)"></span>
+                <span class="text-sm font-bold text-green-600" x-text="formatRupiah(pkg.profit || (pkg.price_customer - pkg.price_bulk))"></span>
               </div>
             </div>
 
