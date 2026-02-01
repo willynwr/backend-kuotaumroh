@@ -984,6 +984,7 @@
                         scheduledTime: this.scheduledTime,
                         refCode: STORE_CONFIG.link_referal,  // ref_code=link_referal untuk Agent/Referral
                         linkReferal: STORE_CONFIG.link_referal || 'kuotaumroh',
+                        agent_id: STORE_CONFIG.agent_id || null,  // Add agent_id for payment
                         mode: 'store',
                         isBulk: false,  // Flag untuk INDIVIDUAL payment (Store mode tanpa login)
                         createdAt: new Date().toISOString(),
