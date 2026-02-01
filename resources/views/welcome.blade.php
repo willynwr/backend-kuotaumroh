@@ -48,6 +48,16 @@
     <!-- Shared Scripts -->
     <script src="{{ asset('shared/utils.js') }}?v={{ time() }}"></script>
 
+    <!-- Store Config (untuk pricing sesuai agent/role) -->
+    <script>
+        const STORE_CONFIG = {
+            agent_id: @json($agent->id ?? ''),
+            catalog_ref_code: @json($agent->link_referal ?? 'kuotaumroh'),
+            link_referal: @json($agent->link_referal ?? 'kuotaumroh'),
+            is_individual: true,
+        };
+    </script>
+
     <style>
         [x-cloak] { display: none !important; }
     </style>
@@ -170,7 +180,14 @@
                         <div class="text-center py-12 text-gray-500">Memuat paket promo...</div>
                     </template>
                     
-                    <template x-if="!loading">
+                    <template x-if="!loading && promoPackages.length === 0">
+                        <div class="text-center py-12 text-gray-500">
+                            <p class="mb-2">📦 Paket promo sedang tidak tersedia</p>
+                            <p class="text-sm">Silakan cek halaman toko untuk melihat semua paket</p>
+                        </div>
+                    </template>
+                    
+                    <template x-if="!loading && promoPackages.length > 0">
                         <div class="flex" 
                              :class="{ 'transition-transform duration-500 ease-out': !isDragging }"
                              :style="`transform: translateX(calc(-${currentSlide * 100}% + ${touchOffset}px))`"
@@ -843,7 +860,8 @@
                         platformFee: 0,
                         uniqueCode: 0,
                         paymentMethod: 'qris',
-                        refCode: 'kuotaumroh',
+                        refCode: STORE_CONFIG?.link_referal || 'kuotaumroh',
+                        agent_id: STORE_CONFIG?.agent_id || null, // Add agent_id for payment
                         scheduleDate: null,
                         isBulk: false
                     };
@@ -1015,58 +1033,66 @@
                 async loadPromoPackages() {
                     try {
                         this.loading = true;
-                        const response = await fetch(`${API_BASE_URL}/api/proxy/umroh/package?ref_code=0`);
+                        const baseUrl = `${API_BASE_URL}/api/proxy/umroh/package`;
+                        const agentId = STORE_CONFIG?.agent_id;
+                        let apiUrl = baseUrl;
+
+                        console.log('🎪 Carousel: Loading packages for agent:', agentId);
+
+                        // Samakan logic dengan pengambilan paket data (agent store => VIEW pricing)
+                        if (agentId && String(agentId).startsWith('AGT')) {
+                            apiUrl = `${baseUrl}?agent_id=${encodeURIComponent(agentId)}&context=store`;
+                            console.log('🎪 Carousel: Using agent pricing (store context)');
+                        } else {
+                            const catalogRefCode = STORE_CONFIG?.catalog_ref_code || '0';
+                            apiUrl = `${baseUrl}?ref_code=${encodeURIComponent(catalogRefCode)}`;
+                            console.log('🎪 Carousel: Using catalog pricing with ref_code:', catalogRefCode);
+                        }
+
+                        console.log('🎪 Carousel: Fetching from:', apiUrl);
+                        const response = await fetch(apiUrl);
                         if (!response.ok) throw new Error('Failed to fetch packages');
                         
                         const data = await response.json();
+                        console.log('🎪 Carousel: Received', data.length, 'packages from API');
                         
                         if (Array.isArray(data)) {
-                            // Map packages sama seperti di store.blade.php
-                            const allPackages = data.map(pkg => {
-                                const priceApp = parseInt(pkg.price_app) || 0;
-                                const priceCustomer = parseInt(pkg.price_customer) || 0;
-                                
-                                // Logic Harga Coret: Pastikan semua paket punya harga coret
-                                // Jika price_app <= price_customer, markup 15% dari price_customer
-                                let finalPriceApp = priceApp;
-                                if (priceApp <= priceCustomer) {
-                                    finalPriceApp = Math.round(priceCustomer * 1.15);
-                                }
-                                
-                                return {
-                                    id: pkg.id,
-                                    name: pkg.name,
-                                    provider: pkg.type,
-                                    days: parseInt(pkg.days) || 0,
-                                    quota: pkg.quota || '',
-                                    bonus: pkg.bonus || '',
-                                    price_app: finalPriceApp,
-                                    price_customer: priceCustomer,
-                                    subType: pkg.sub_type || '',
-                                    promo: pkg.promo || null,
-                                };
-                            });
-            
-                            // Ambil paket dari provider tertentu untuk carousel (2 paket per provider)
-                            const providers = ['TELKOMSEL', 'XL', 'INDOSAT', 'AXIS', 'TRI', 'BYU'];
-                            this.promoPackages = [];
+                            // Map packages - ambil pricing dari VIEW (store context)
+                            const allPackages = data
+                                .filter(pkg => {
+                                    // HANYA tampilkan paket dengan promo "PROMO TERBAIK"
+                                    return pkg.promo === 'PROMO TERBAIK';
+                                })
+                                .map(pkg => {
+                                    // UNTUK CAROUSEL: Gunakan toko_harga_coret dan toko_harga_jual (individual/store pricing)
+                                    const tokoHargaCoret = parseInt(pkg.toko_harga_coret) || 0;
+                                    const tokoHargaJual = parseInt(pkg.toko_harga_jual) || parseInt(pkg.price) || 0;
+                                    
+                                    return {
+                                        id: pkg.id || pkg.package_id,
+                                        name: pkg.name || pkg.packageName || pkg.nama_paket || '',
+                                        provider: pkg.type || pkg.provider || '',
+                                        days: parseInt(pkg.days) || parseInt(pkg.masa_aktif) || 0,
+                                        quota: pkg.quota || pkg.total_kuota || '',
+                                        bonus: pkg.bonus || pkg.kuota_bonus || '',
+                                        price_app: tokoHargaCoret, // Harga coret dari VIEW (0 = tidak ada harga coret)
+                                        price_customer: tokoHargaJual, // Harga jual final
+                                        subType: pkg.sub_type || pkg.tipe_paket || '',
+                                        promo: pkg.promo || null,
+                                    };
+                                })
+                                .filter(pkg => {
+                                    // Filter out packages with invalid pricing (price_customer must be > 0)
+                                    return pkg.price_customer > 0;
+                                });
                             
-                            providers.forEach(provider => {
-                                const providerPackages = allPackages.filter(pkg => 
-                                    pkg.provider.toUpperCase() === provider
-                                );
-                                
-                                // Ambil 2 paket per provider
-                                let count = 0;
-                                for (const pkg of providerPackages) {
-                                    if (count < 2) {
-                                        this.promoPackages.push(pkg);
-                                        count++;
-                                    } else {
-                                        break;
-                                    }
-                                }
-                            });
+                            console.log('🎪 Carousel: After filtering valid prices:', allPackages.length, 'packages');
+            
+                            // Ambil SEMUA paket dengan "PROMO TERBAIK" (sudah difilter di atas)
+                            this.promoPackages = allPackages;
+                            
+                            console.log('🎪 Carousel: Final promo packages:', this.promoPackages.length, 'packages');
+                            console.log('🎪 Carousel: Package details:', this.promoPackages);
                             
                             this.updateTotalSlides();
                         }
