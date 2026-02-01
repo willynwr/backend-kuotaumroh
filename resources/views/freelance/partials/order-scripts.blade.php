@@ -43,21 +43,10 @@ function orderApp() {
     // Individual input
     individualItems: [{ id: '1', msisdn: '', packageId: '', provider: null }],
 
-    // Packages from database
-    packages: @json($packages ?? []).map(pkg => ({
-      id: pkg.id,
-      type: pkg.provider,
-      name: pkg.nama_paket,
-      price: parseInt(pkg.harga_modal) || 0,
-      sellPrice: parseInt(pkg.harga_eup) || 0,
-      days: parseInt(pkg.masa_aktif) || 0,
-      quota: pkg.total_kuota || 0,
-      subType: pkg.tipe_paket || 'INTERNET',
-      telp: pkg.telp || 0,
-      sms: pkg.sms || 0,
-      bonus: pkg.kuota_bonus || 0
-    })),
-    packagesLoading: false,
+    // Packages from API (loaded dynamically)
+    packages: [],
+    allPackages: [],
+    packagesLoading: true,
 
     // Checkout
     activationTime: 'now',
@@ -203,7 +192,18 @@ function orderApp() {
     },
 
     // Lifecycle
-    init() {
+    async init() {
+      // Watch for agent selection changes
+      this.$watch('selectedAgentId', async (newAgentId) => {
+        if (newAgentId && newAgentId.startsWith('AGT')) {
+          console.log('🔄 Agent changed, reloading packages for:', newAgentId);
+          await this.loadAllPackages();
+        }
+      });
+      
+      // Load packages from API when component initializes
+      await this.loadAllPackages();
+      
       // Clear previous completed order if exists
       const savedOrder = localStorage.getItem('pendingOrder');
       if (savedOrder) {
@@ -217,9 +217,96 @@ function orderApp() {
           localStorage.removeItem('pendingOrder');
         }
       }
-      
-      // Load packages from API when component initializes
-      // this.loadPackages();
+    },
+
+    // Load all packages from API
+    async loadAllPackages() {
+      try {
+        this.packagesLoading = true;
+        
+        // Get freelance link from URL
+        const pathParts = window.location.pathname.split('/');
+        const linkReferral = pathParts[2]; // /dash/{linkReferral}/order
+        
+        // Determine API URL based on selected agent
+        let apiUrl;
+        
+        // If agent is selected (freelance choosing agent)
+        if (this.selectedAgentId && this.selectedAgentId.startsWith('AGT')) {
+          apiUrl = `${API_BASE_URL}/api/proxy/umroh/package?agent_id=${this.selectedAgentId}`;
+          console.log('📦 Loading packages for agent:', this.selectedAgentId);
+        } 
+        // Otherwise use ref_code based on link (legacy for now)
+        else {
+          apiUrl = `${API_BASE_URL}/api/proxy/umroh/package?ref_code=${linkReferral}`;
+          console.log('📦 Loading packages with ref_code:', linkReferral);
+        }
+
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+          throw new Error('Failed to fetch packages');
+        }
+        
+        const data = await response.json();
+        console.log('📦 API Response:', data);
+
+        this.processPackagesData(data);
+        this.packagesLoading = false;
+      } catch (error) {
+        console.error('Error loading packages:', error);
+        this.packages = [];
+        this.allPackages = [];
+        this.packagesLoading = false;
+      }
+    },
+
+    processPackagesData(data) {
+        // Response langsung array, tidak wrapped
+        if (Array.isArray(data)) {
+          this.allPackages = data.map(pkg => {
+            // Parse harga dengan fallback
+            const priceBulk = parseInt(pkg.price_bulk) || parseInt(pkg.bulk_harga_beli) || parseInt(pkg.price) || 0;
+            const priceCustomer = parseInt(pkg.price_customer) || parseInt(pkg.bulk_harga_rekomendasi) || priceBulk;
+            const priceApp = parseInt(pkg.price_app) || parseInt(pkg.bulk_harga_rekomendasi) || 0;
+            const profit = parseInt(pkg.bulk_potensi_profit) || parseInt(pkg.profit) || (priceCustomer - priceBulk);
+            
+            return {
+              id: pkg.id,
+              package_id: pkg.id,
+              packageId: pkg.id,
+              name: pkg.name,
+              packageName: pkg.name,
+              type: pkg.type || pkg.provider,
+              provider: pkg.type || pkg.provider,
+              days: parseInt(pkg.days) || parseInt(pkg.masa_aktif) || 0,
+              masa_aktif: parseInt(pkg.days) || parseInt(pkg.masa_aktif) || 0,
+              quota: pkg.quota || pkg.kuota_utama || '',
+              kuota_utama: pkg.kuota_utama || pkg.quota || '',
+              total_kuota: pkg.total_kuota || pkg.quota || '',
+              kuota_bonus: pkg.kuota_bonus || pkg.bonus || '',
+              bonus: pkg.bonus || pkg.kuota_bonus || '',
+              telp: pkg.telp || '',
+              sms: pkg.sms || '',
+              price: priceBulk,
+              harga: priceBulk,
+              sellPrice: priceCustomer,
+              displayPrice: priceCustomer,
+              price_bulk: priceBulk,
+              price_customer: priceCustomer,
+              price_app: priceApp,
+              profit: profit,
+              bulk_harga_beli: priceBulk,
+              bulk_harga_rekomendasi: priceCustomer,
+              bulk_potensi_profit: profit,
+              subType: pkg.sub_type || pkg.tipe_paket || '',
+              tipe_paket: pkg.sub_type || pkg.tipe_paket || '',
+              is_active: pkg.is_active,
+              promo: pkg.promo || null,
+            };
+          });
+          this.packages = this.allPackages;
+          console.log('📦 Mapped packages:', this.packages.length);
+        }
     },
 
     // Methods

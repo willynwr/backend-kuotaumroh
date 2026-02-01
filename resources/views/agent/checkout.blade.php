@@ -583,7 +583,14 @@ function checkoutApp() {
         toastMessage: '',
 
         // Error Modal
+        errorModalVisible: false,
+        errorModalTitle: '',
+        errorModalMessage: '',
         errorModalCountdown: 5,
+        
+        // Exit Modal
+        showExitModal: false,
+        isForceExit: false,
         
         isCreatingPayment: false,
 
@@ -642,7 +649,7 @@ function checkoutApp() {
                 total: parsedData.subtotal || parsedData.total || 0,
                 platformFee: parsedData.platformFee || 0,
                 paymentMethod: parsedData.paymentMethod || 'qris',
-                refCode: parsedData.refCode || '{{ $agent->id ?? 1 }}',
+                refCode: parsedData.refCode || '{{ auth()->user()->id ?? "AGT00001" }}',
                 scheduleDate: parsedData.scheduleDate || null,
                 isBulk: true,
             };
@@ -949,7 +956,8 @@ function checkoutApp() {
                     batch_name: batchName,
                     payment_method: 'QRIS',
                     detail: this.orderData.scheduleDate ? `{date: ${this.orderData.scheduleDate}}` : null,
-                    ref_code: this.orderData.refCode || '{{ $agent->id ?? 1 }}',
+                    ref_code: this.orderData.refCode || '{{ auth()->user()->link_referral ?? "testing-tower-1" }}',
+                    agent_id: '{{ auth()->user()->id ?? "AGT00001" }}',
                     msisdn: msisdnList,
                     package_id: packageIdList,
                     price: priceList,
