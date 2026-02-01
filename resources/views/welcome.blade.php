@@ -48,6 +48,16 @@
     <!-- Shared Scripts -->
     <script src="{{ asset('shared/utils.js') }}?v={{ time() }}"></script>
 
+    <!-- Store Config (untuk pricing sesuai agent/role) -->
+    <script>
+        const STORE_CONFIG = {
+            agent_id: @json($agent->id ?? ''),
+            catalog_ref_code: @json($agent->link_referal ?? 'kuotaumroh'),
+            link_referal: @json($agent->link_referal ?? 'kuotaumroh'),
+            is_individual: true,
+        };
+    </script>
+
     <style>
         [x-cloak] { display: none !important; }
     </style>
@@ -84,7 +94,7 @@
     </script>
 </head>
 
-<body class="min-h-screen bg-background">
+<body class="min-h-screen bg-background" x-data="trackingOrder()">
     
     <!-- Header -->
     <header class="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
@@ -93,8 +103,122 @@
                 <img src="{{ asset('images/LOGO.png') }}" alt="Kuotaumroh.id" class="h-9 w-9 object-contain">
                 <span class="text-xl font-semibold">Kuotaumroh.id</span>
             </div>
+            
+            <!-- Tracking Order Button -->
+            <button @click="openTrackingModal()" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 hover:text-primary border border-gray-300 rounded-lg hover:border-primary transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+                </svg>
+                <span class="hidden sm:inline">Lacak Pesanan</span>
+            </button>
         </div>
     </header>
+    
+    <!-- Tracking Order Modal -->
+    <div x-show="showTrackingModal" 
+         x-cloak
+         @click.self="closeTrackingModal()"
+         class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden"
+             @click.stop
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95">
+            
+            <!-- Modal Header -->
+            <div class="bg-gradient-to-r from-primary to-teal-600 px-6 py-4 text-white">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold">Lacak Pesanan</h3>
+                            <p class="text-xs text-white/80">Masukkan ID Pembayaran Anda</p>
+                        </div>
+                    </div>
+                    <button @click="closeTrackingModal()" class="text-white/80 hover:text-white transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Modal Body -->
+            <div class="p-6">
+                <!-- Info Banner -->
+                <div class="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <div class="flex gap-2">
+                        <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <div class="text-sm text-blue-800">
+                            <p class="font-medium mb-1">Dimana menemukan ID Pembayaran?</p>
+                            <p class="text-xs text-blue-600">ID Pembayaran dapat ditemukan di email konfirmasi atau struk pembayaran yang Anda terima setelah melakukan transaksi.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Input Form -->
+                <form @submit.prevent="trackOrder()" class="space-y-4">
+                    <div>
+                        <label for="payment_id" class="block text-sm font-medium text-gray-700 mb-2">
+                            ID Pembayaran <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" 
+                               id="payment_id"
+                               x-model="paymentId"
+                               placeholder="Contoh: PAY-20240201-ABC123"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                               required>
+                        <p class="mt-1.5 text-xs text-gray-500">Masukkan ID Pembayaran yang tertera di email/struk konfirmasi</p>
+                    </div>
+                    
+                    <!-- Error Message -->
+                    <div x-show="errorMessage" 
+                         x-transition
+                         class="bg-red-50 border border-red-200 rounded-lg p-3">
+                        <div class="flex gap-2">
+                            <svg class="w-5 h-5 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <p class="text-sm text-red-800" x-text="errorMessage"></p>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="flex gap-3 pt-2">
+                        <button type="button"
+                                @click="closeTrackingModal()"
+                                class="flex-1 px-4 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                            Batal
+                        </button>
+                        <button type="submit"
+                                :disabled="loading || !paymentId"
+                                class="flex-1 px-4 py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                            <svg x-show="loading" class="animate-spin w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span x-text="loading ? 'Mencari...' : 'Lacak Pesanan'"></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <!-- Hero Background Image -->
     <div class="relative w-full min-h-[400px] lg:min-h-[600px] overflow-hidden bg-gradient-to-br from-teal-50 via-blue-50 to-cyan-50">
@@ -170,7 +294,14 @@
                         <div class="text-center py-12 text-gray-500">Memuat paket promo...</div>
                     </template>
                     
-                    <template x-if="!loading">
+                    <template x-if="!loading && promoPackages.length === 0">
+                        <div class="text-center py-12 text-gray-500">
+                            <p class="mb-2">📦 Paket promo sedang tidak tersedia</p>
+                            <p class="text-sm">Silakan cek halaman toko untuk melihat semua paket</p>
+                        </div>
+                    </template>
+                    
+                    <template x-if="!loading && promoPackages.length > 0">
                         <div class="flex" 
                              :class="{ 'transition-transform duration-500 ease-out': !isDragging }"
                              :style="`transform: translateX(calc(-${currentSlide * 100}% + ${touchOffset}px))`"
@@ -843,7 +974,8 @@
                         platformFee: 0,
                         uniqueCode: 0,
                         paymentMethod: 'qris',
-                        refCode: '{{ optional($agent ?? null)->link_referal ?? "kuotaumroh" }}',
+                        refCode: STORE_CONFIG?.link_referal || 'kuotaumroh',
+                        agent_id: STORE_CONFIG?.agent_id || null, // Add agent_id for payment
                         scheduleDate: null,
                         isBulk: false
                     };
@@ -1015,58 +1147,66 @@
                 async loadPromoPackages() {
                     try {
                         this.loading = true;
-                        const response = await fetch(`${API_BASE_URL}/api/proxy/umroh/package?ref_code=0`);
+                        const baseUrl = `${API_BASE_URL}/api/proxy/umroh/package`;
+                        const agentId = STORE_CONFIG?.agent_id;
+                        let apiUrl = baseUrl;
+
+                        console.log('🎪 Carousel: Loading packages for agent:', agentId);
+
+                        // Samakan logic dengan pengambilan paket data (agent store => VIEW pricing)
+                        if (agentId && String(agentId).startsWith('AGT')) {
+                            apiUrl = `${baseUrl}?agent_id=${encodeURIComponent(agentId)}&context=store`;
+                            console.log('🎪 Carousel: Using agent pricing (store context)');
+                        } else {
+                            const catalogRefCode = STORE_CONFIG?.catalog_ref_code || '0';
+                            apiUrl = `${baseUrl}?ref_code=${encodeURIComponent(catalogRefCode)}`;
+                            console.log('🎪 Carousel: Using catalog pricing with ref_code:', catalogRefCode);
+                        }
+
+                        console.log('🎪 Carousel: Fetching from:', apiUrl);
+                        const response = await fetch(apiUrl);
                         if (!response.ok) throw new Error('Failed to fetch packages');
                         
                         const data = await response.json();
+                        console.log('🎪 Carousel: Received', data.length, 'packages from API');
                         
                         if (Array.isArray(data)) {
-                            // Map packages sama seperti di store.blade.php
-                            const allPackages = data.map(pkg => {
-                                const priceApp = parseInt(pkg.price_app) || 0;
-                                const priceCustomer = parseInt(pkg.price_customer) || 0;
-                                
-                                // Logic Harga Coret: Pastikan semua paket punya harga coret
-                                // Jika price_app <= price_customer, markup 15% dari price_customer
-                                let finalPriceApp = priceApp;
-                                if (priceApp <= priceCustomer) {
-                                    finalPriceApp = Math.round(priceCustomer * 1.15);
-                                }
-                                
-                                return {
-                                    id: pkg.id,
-                                    name: pkg.name,
-                                    provider: pkg.type,
-                                    days: parseInt(pkg.days) || 0,
-                                    quota: pkg.quota || '',
-                                    bonus: pkg.bonus || '',
-                                    price_app: finalPriceApp,
-                                    price_customer: priceCustomer,
-                                    subType: pkg.sub_type || '',
-                                    promo: pkg.promo || null,
-                                };
-                            });
-            
-                            // Ambil paket dari provider tertentu untuk carousel (2 paket per provider)
-                            const providers = ['TELKOMSEL', 'XL', 'INDOSAT', 'AXIS', 'TRI', 'BYU'];
-                            this.promoPackages = [];
+                            // Map packages - ambil pricing dari VIEW (store context)
+                            const allPackages = data
+                                .filter(pkg => {
+                                    // HANYA tampilkan paket dengan promo "PROMO TERBAIK"
+                                    return pkg.promo === 'PROMO TERBAIK';
+                                })
+                                .map(pkg => {
+                                    // UNTUK CAROUSEL: Gunakan toko_harga_coret dan toko_harga_jual (individual/store pricing)
+                                    const tokoHargaCoret = parseInt(pkg.toko_harga_coret) || 0;
+                                    const tokoHargaJual = parseInt(pkg.toko_harga_jual) || parseInt(pkg.price) || 0;
+                                    
+                                    return {
+                                        id: pkg.id || pkg.package_id,
+                                        name: pkg.name || pkg.packageName || pkg.nama_paket || '',
+                                        provider: pkg.type || pkg.provider || '',
+                                        days: parseInt(pkg.days) || parseInt(pkg.masa_aktif) || 0,
+                                        quota: pkg.quota || pkg.total_kuota || '',
+                                        bonus: pkg.bonus || pkg.kuota_bonus || '',
+                                        price_app: tokoHargaCoret, // Harga coret dari VIEW (0 = tidak ada harga coret)
+                                        price_customer: tokoHargaJual, // Harga jual final
+                                        subType: pkg.sub_type || pkg.tipe_paket || '',
+                                        promo: pkg.promo || null,
+                                    };
+                                })
+                                .filter(pkg => {
+                                    // Filter out packages with invalid pricing (price_customer must be > 0)
+                                    return pkg.price_customer > 0;
+                                });
                             
-                            providers.forEach(provider => {
-                                const providerPackages = allPackages.filter(pkg => 
-                                    pkg.provider.toUpperCase() === provider
-                                );
-                                
-                                // Ambil 2 paket per provider
-                                let count = 0;
-                                for (const pkg of providerPackages) {
-                                    if (count < 2) {
-                                        this.promoPackages.push(pkg);
-                                        count++;
-                                    } else {
-                                        break;
-                                    }
-                                }
-                            });
+                            console.log('🎪 Carousel: After filtering valid prices:', allPackages.length, 'packages');
+            
+                            // Ambil SEMUA paket dengan "PROMO TERBAIK" (sudah difilter di atas)
+                            this.promoPackages = allPackages;
+                            
+                            console.log('🎪 Carousel: Final promo packages:', this.promoPackages.length, 'packages');
+                            console.log('🎪 Carousel: Package details:', this.promoPackages);
                             
                             this.updateTotalSlides();
                         }
@@ -1166,6 +1306,67 @@
                 }
             }));
         });
+        
+        // Tracking Order Alpine Component
+        function trackingOrder() {
+            return {
+                showTrackingModal: false,
+                paymentId: '',
+                loading: false,
+                errorMessage: '',
+                
+                openTrackingModal() {
+                    this.showTrackingModal = true;
+                    this.paymentId = '';
+                    this.errorMessage = '';
+                    // Focus input after modal opens
+                    this.$nextTick(() => {
+                        document.getElementById('payment_id')?.focus();
+                    });
+                },
+                
+                closeTrackingModal() {
+                    this.showTrackingModal = false;
+                    this.paymentId = '';
+                    this.errorMessage = '';
+                },
+                
+                async trackOrder() {
+                    if (!this.paymentId || this.paymentId.trim() === '') {
+                        this.errorMessage = 'Mohon masukkan ID Pembayaran';
+                        return;
+                    }
+                    
+                    try {
+                        this.loading = true;
+                        this.errorMessage = '';
+                        
+                        console.log('🔍 Tracking payment ID:', this.paymentId);
+                        
+                        // Validate payment exists via API
+                        const response = await fetch(`${API_BASE_URL}/api/pembayaran/${this.paymentId}/status`);
+                        
+                        if (!response.ok) {
+                            if (response.status === 404) {
+                                throw new Error('ID Pembayaran tidak ditemukan. Mohon periksa kembali ID yang Anda masukkan.');
+                            }
+                            throw new Error('Gagal memeriksa status pembayaran. Silakan coba lagi.');
+                        }
+                        
+                        const data = await response.json();
+                        console.log('✅ Payment found:', data);
+                        
+                        // Redirect to invoice page
+                        window.location.href = `/invoice/${this.paymentId}`;
+                        
+                    } catch (error) {
+                        console.error('❌ Tracking error:', error);
+                        this.errorMessage = error.message || 'Terjadi kesalahan saat melacak pesanan. Silakan coba lagi.';
+                        this.loading = false;
+                    }
+                }
+            }
+        }
     </script>
 </body>
 
