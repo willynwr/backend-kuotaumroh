@@ -494,12 +494,12 @@
                                     <div class="border-t border-gray-200 pt-3 space-y-2">
                                         <div class="flex justify-between text-sm">
                                             <span class="text-gray-600">Kuota</span>
-                                            <span class="font-medium text-gray-900" x-text="selectedPackage.quota + ' Kuota Arab'"></span>
+                                            <span class="font-medium text-gray-900" x-text="getQuotaDisplay(selectedPackage)"></span>
                                         </div>
-                                        <template x-if="selectedPackage.bonus">
+                                        <template x-if="getBonusDisplay(selectedPackage)">
                                             <div class="flex justify-between text-sm">
                                                 <span class="text-gray-600">Kuota Transit</span>
-                                                <span class="font-medium text-gray-900" x-text="selectedPackage.bonus"></span>
+                                                <span class="font-medium text-gray-900" x-text="getBonusDisplay(selectedPackage)"></span>
                                             </div>
                                         </template>
                                         <div class="flex justify-between text-sm">
@@ -1187,8 +1187,11 @@
                                         name: pkg.name || pkg.packageName || pkg.nama_paket || '',
                                         provider: pkg.type || pkg.provider || '',
                                         days: parseInt(pkg.days) || parseInt(pkg.masa_aktif) || 0,
-                                        quota: pkg.quota || pkg.total_kuota || '',
+                                        quota: pkg.quota || pkg.kuota_utama || '',
+                                        kuota_utama: pkg.kuota_utama || pkg.quota || '',
+                                        total_kuota: pkg.total_kuota || '',
                                         bonus: pkg.bonus || pkg.kuota_bonus || '',
+                                        kuota_bonus: pkg.kuota_bonus || pkg.bonus || '',
                                         price_app: tokoHargaCoret, // Harga coret dari VIEW (0 = tidak ada harga coret)
                                         price_customer: tokoHargaJual, // Harga jual final
                                         subType: pkg.sub_type || pkg.tipe_paket || '',
@@ -1234,6 +1237,42 @@
                     if (bonusStr) totalGB += extractNumber(bonusStr);
                     
                     return totalGB > 0 ? `Kuota ${totalGB}GB - ${days} Hari` : `${pkg.name}`;
+                },
+
+                getQuotaDisplay(pkg) {
+                    const quotaStr = String(pkg.quota || '');
+                    const bonusStr = String(pkg.bonus || '');
+                    
+                    // Extract numbers from quota and bonus
+                    const extractNumber = (str) => {
+                        const match = str.match(/(\d+(?:\.\d+)?)/);
+                        return match ? parseFloat(match[1]) : 0;
+                    };
+                    
+                    const quotaNum = extractNumber(quotaStr);
+                    const bonusNum = extractNumber(bonusStr);
+                    
+                    if (quotaNum === 0 && bonusNum === 0) return '';
+                    
+                    // Format: "49 GB Kuota Arab" if quota exists
+                    return quotaNum > 0 ? `${quotaNum} GB Kuota Arab` : '';
+                },
+
+                getBonusDisplay(pkg) {
+                    const bonusStr = String(pkg.bonus || '');
+                    
+                    // Extract numbers from bonus
+                    const extractNumber = (str) => {
+                        const match = str.match(/(\d+(?:\.\d+)?)/);
+                        return match ? parseFloat(match[1]) : 0;
+                    };
+                    
+                    const bonusNum = extractNumber(bonusStr);
+                    
+                    if (bonusNum === 0) return '';
+                    
+                    // Format: "1 GB Kuota Transit"
+                    return `${bonusNum} GB Kuota Transit`;
                 },
                 
                 getProviderImage(provider) {

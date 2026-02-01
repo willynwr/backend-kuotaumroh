@@ -718,6 +718,7 @@ function checkoutApp() {
                     payment_method: 'QRIS', 
                     detail: this.orderData.scheduleDate ? `{date: ${this.orderData.scheduleDate}}` : null, 
                     ref_code: this.orderData.refCode, 
+                    affiliate_id: '{{ auth()->user()->id ?? "AFT00001" }}',
                     msisdn: msisdns, 
                     package_id: pkgs,
                     price: prices 

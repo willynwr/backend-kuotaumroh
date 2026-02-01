@@ -215,35 +215,31 @@ function orderApp() {
       try {
         this.packagesLoading = true;
         
-        // Check Session Storage first to avoid 429
-        const cachedPackages = sessionStorage.getItem('cachedPackages');
-        if (cachedPackages) {
-            const { timestamp, data } = JSON.parse(cachedPackages);
-            const now = Date.now();
-            // Cache valid for 5 minutes
-            if (now - timestamp < 5 * 60 * 1000) {
-                console.log('📦 Using cached packages');
-                this.processPackagesData(data);
-                this.packagesLoading = false;
-                return;
-            }
+        // PENTING: Gunakan agent_id untuk dapat data dari VIEW v_pembelian_paket_agent_travel
+        // Bukan ref_code=bulk_umroh yang fallback ke BulkPaymentService lama
+        const agentId = typeof STORE_CONFIG !== 'undefined' ? STORE_CONFIG.agent_id : null;
+        
+        // Build API URL dengan agent_id jika tersedia
+        let apiUrl;
+        if (agentId && agentId.startsWith('AGT')) {
+            // Gunakan PackagePricingService via agent_id
+            apiUrl = `${API_BASE_URL}/api/proxy/umroh/package?agent_id=${agentId}`;
+            console.log('📦 Loading packages for agent:', agentId);
+            // Clear cache karena beda per agent
+            sessionStorage.removeItem('cachedPackages');
+        } else {
+            // Fallback ke legacy ref_code
+            apiUrl = `${API_BASE_URL}/api/proxy/umroh/package?ref_code=bulk_umroh`;
+            console.log('📦 Loading packages with legacy ref_code');
         }
 
-        // Selalu gunakan bulk_umroh untuk dapat harga bulk
-        const catalogRefCode = 'bulk_umroh';
-        const response = await fetch(`${API_BASE_URL}/api/proxy/umroh/package?ref_code=${catalogRefCode}`);
+        const response = await fetch(apiUrl);
         if (!response.ok) {
           throw new Error('Failed to fetch packages');
         }
         
         const data = await response.json();
         console.log('📦 API Response:', data);
-        
-        // Save to cache
-        sessionStorage.setItem('cachedPackages', JSON.stringify({
-            timestamp: Date.now(),
-            data: data
-        }));
 
         this.processPackagesData(data);
         this.packagesLoading = false;
@@ -261,9 +257,10 @@ function orderApp() {
         if (Array.isArray(data)) {
           this.allPackages = data.map(pkg => {
             // Parse harga dengan fallback
-            const priceBulk = parseInt(pkg.price_bulk) || 0;
-            const priceCustomer = parseInt(pkg.price_customer) || priceBulk;
-            const priceApp = parseInt(pkg.price_app) || 0;
+            const priceBulk = parseInt(pkg.price_bulk) || parseInt(pkg.bulk_harga_beli) || 0;
+            const priceCustomer = parseInt(pkg.price_customer) || parseInt(pkg.bulk_harga_rekomendasi) || priceBulk;
+            const priceApp = parseInt(pkg.price_app) || parseInt(pkg.bulk_harga_rekomendasi) || 0;
+            const profit = parseInt(pkg.bulk_potensi_profit) || parseInt(pkg.profit) || (priceCustomer - priceBulk);
             
             return {
               id: pkg.id,
@@ -275,11 +272,11 @@ function orderApp() {
               provider: pkg.type,
               days: parseInt(pkg.days) || 0,
               masa_aktif: parseInt(pkg.days) || 0,
-              quota: pkg.quota || '',
-              total_kuota: pkg.quota || '',
-              kuota_utama: pkg.quota || '',
-              kuota_bonus: pkg.bonus || '',
-              bonus: pkg.bonus || '',
+              quota: pkg.quota || pkg.kuota_utama || '',
+              kuota_utama: pkg.kuota_utama || pkg.quota || '',
+              total_kuota: pkg.total_kuota || pkg.quota || '',
+              kuota_bonus: pkg.kuota_bonus || pkg.bonus || '',
+              bonus: pkg.bonus || pkg.kuota_bonus || '',
               telp: pkg.telp || '',
               sms: pkg.sms || '',
               price: priceBulk,              // Harga modal (untuk agent)
@@ -289,7 +286,10 @@ function orderApp() {
               price_bulk: priceBulk,
               price_customer: priceCustomer,
               price_app: priceApp,           // Harga Coret
-              profit: priceCustomer - priceBulk,
+              profit: profit,                // Potensi profit dari API (JANGAN hitung sendiri!)
+              bulk_harga_beli: priceBulk,
+              bulk_harga_rekomendasi: priceCustomer,
+              bulk_potensi_profit: profit,
               subType: pkg.sub_type || '',
               tipe_paket: pkg.sub_type || '',
               is_active: pkg.is_active,
@@ -693,6 +693,40 @@ function orderApp() {
       if (pkg.quota) parts.push(pkg.quota);
       if (days) parts.push(`${days} Hari`);
       return parts.join(' - ') || 'Paket';
+    },
+
+    getQuotaDisplay(pkg) {
+      const quotaStr = String(pkg.quota || '');
+      
+      // Extract numbers from quota
+      const extractNumber = (str) => {
+        const match = str.match(/(\d+(?:\.\d+)?)/);
+        return match ? parseFloat(match[1]) : 0;
+      };
+      
+      const quotaNum = extractNumber(quotaStr);
+      
+      if (quotaNum === 0) return '';
+      
+      // Format: "49 GB Kuota Arab" if quota exists
+      return `${quotaNum} GB Kuota Arab`;
+    },
+
+    getBonusDisplay(pkg) {
+      const bonusStr = String(pkg.bonus || '');
+      
+      // Extract numbers from bonus
+      const extractNumber = (str) => {
+        const match = str.match(/(\d+(?:\.\d+)?)/);
+        return match ? parseFloat(match[1]) : 0;
+      };
+      
+      const bonusNum = extractNumber(bonusStr);
+      
+      if (bonusNum === 0) return '';
+      
+      // Format: "1 GB Kuota Transit"
+      return `${bonusNum} GB Kuota Transit`;
     },
 
     isFieldBold(pkg, field) {

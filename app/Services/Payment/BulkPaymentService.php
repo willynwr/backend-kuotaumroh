@@ -728,7 +728,21 @@ class BulkPaymentService
 
             // Handle error response from external API
             $error = $response->json();
-            throw new \Exception($error['message'] ?? 'Gagal membuat pembayaran: ' . $response->status());
+            $errorMessage = $error['message'] ?? 'Gagal membuat pembayaran: ' . $response->status();
+            
+            // Log detailed error
+            Log::error('External API returned error', [
+                'status' => $response->status(),
+                'error_body' => $error,
+                'request' => $requestBody,
+            ]);
+            
+            // Provide more helpful error message
+            if ($response->status() === 500 && str_contains($errorMessage, '00.00 WIB')) {
+                throw new \Exception('Server pembayaran sedang mengalami kendala teknis. Ini biasanya terjadi karena limit transaksi harian telah tercapai. Silakan coba lagi setelah pukul 00.00 WIB atau hubungi admin.');
+            }
+            
+            throw new \Exception($errorMessage);
 
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             Log::error('Connection error to external API: ' . $e->getMessage());

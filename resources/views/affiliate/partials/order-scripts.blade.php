@@ -43,21 +43,10 @@ function orderApp() {
     // Individual input
     individualItems: [{ id: '1', msisdn: '', packageId: '', provider: null }],
 
-    // Packages from database
-    packages: @json($packages ?? []).map(pkg => ({
-      id: pkg.id,
-      type: pkg.provider,
-      name: pkg.nama_paket,
-      price: parseInt(pkg.harga_komersial) || 0,
-      sellPrice: parseInt(pkg.price_bulk) || 0,
-      days: parseInt(pkg.masa_aktif) || 0,
-      quota: pkg.total_kuota || 0,
-      subType: pkg.tipe_paket || 'INTERNET',
-      telp: pkg.telp || 0,
-      sms: pkg.sms || 0,
-      bonus: pkg.kuota_bonus || 0
-    })),
-    packagesLoading: false,
+    // Packages from API (loaded dynamically)
+    packages: [],
+    allPackages: [],
+    packagesLoading: true,
 
     // Checkout
     activationTime: 'now',
@@ -203,9 +192,102 @@ function orderApp() {
     },
 
     // Lifecycle
-    init() {
+    async init() {
+      // For affiliate: agent selector is only for order routing, NOT for package pricing
+      // Package pricing always uses affiliate_id from v_pembelian_paket_affiliate
+      
       // Load packages from API when component initializes
-      // this.loadPackages();
+      await this.loadAllPackages();
+    },
+
+    // Load all packages from API (Affiliate always uses v_pembelian_paket_affiliate)
+    async loadAllPackages() {
+      try {
+        this.packagesLoading = true;
+        
+        // For Affiliate: ALWAYS use affiliate_id for pricing
+        // The agent selector is only for routing orders, not for package prices
+        let apiUrl;
+        
+        if (typeof STORE_CONFIG !== 'undefined' && STORE_CONFIG.affiliate_id && STORE_CONFIG.affiliate_id.startsWith('AFT')) {
+          apiUrl = `${API_BASE_URL}/api/proxy/umroh/package?affiliate_id=${STORE_CONFIG.affiliate_id}`;
+          console.log('📦 [Affiliate] Loading packages with affiliate_id:', STORE_CONFIG.affiliate_id);
+        }
+        // Fallback to ref_code from URL
+        else {
+          const pathParts = window.location.pathname.split('/');
+          const linkReferral = pathParts[2]; // /dash/{linkReferral}/order
+          apiUrl = `${API_BASE_URL}/api/proxy/umroh/package?ref_code=${linkReferral}`;
+          console.log('📦 [Affiliate] Loading packages with legacy ref_code:', linkReferral);
+        }
+
+        console.log('📦 [Affiliate] API URL:', apiUrl);
+
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+          throw new Error('Failed to fetch packages');
+        }
+        
+        const data = await response.json();
+        console.log('📦 [Affiliate] API Response:', data);
+
+        this.processPackagesData(data);
+        this.packagesLoading = false;
+      } catch (error) {
+        console.error('Error loading packages:', error);
+        this.packages = [];
+        this.allPackages = [];
+        this.packagesLoading = false;
+      }
+    },
+
+    processPackagesData(data) {
+        // Response langsung array, tidak wrapped
+        if (Array.isArray(data)) {
+          this.allPackages = data.map(pkg => {
+            // Parse harga dengan fallback
+            const priceBulk = parseInt(pkg.price_bulk) || parseInt(pkg.bulk_harga_beli) || parseInt(pkg.price) || 0;
+            const priceCustomer = parseInt(pkg.price_customer) || parseInt(pkg.bulk_harga_rekomendasi) || priceBulk;
+            const priceApp = parseInt(pkg.price_app) || parseInt(pkg.bulk_harga_rekomendasi) || 0;
+            const profit = parseInt(pkg.bulk_potensi_profit) || parseInt(pkg.profit) || (priceCustomer - priceBulk);
+            
+            return {
+              id: pkg.id,
+              package_id: pkg.id,
+              packageId: pkg.id,
+              name: pkg.name,
+              packageName: pkg.name,
+              type: pkg.type || pkg.provider,
+              provider: pkg.type || pkg.provider,
+              days: parseInt(pkg.days) || parseInt(pkg.masa_aktif) || 0,
+              masa_aktif: parseInt(pkg.days) || parseInt(pkg.masa_aktif) || 0,
+              quota: pkg.quota || pkg.kuota_utama || '',
+              kuota_utama: pkg.kuota_utama || pkg.quota || '',
+              total_kuota: pkg.total_kuota || pkg.quota || '',
+              kuota_bonus: pkg.kuota_bonus || pkg.bonus || '',
+              bonus: pkg.bonus || pkg.kuota_bonus || '',
+              telp: pkg.telp || '',
+              sms: pkg.sms || '',
+              price: priceBulk,
+              harga: priceBulk,
+              sellPrice: priceCustomer,
+              displayPrice: priceCustomer,
+              price_bulk: priceBulk,
+              price_customer: priceCustomer,
+              price_app: priceApp,
+              profit: profit,
+              bulk_harga_beli: priceBulk,
+              bulk_harga_rekomendasi: priceCustomer,
+              bulk_potensi_profit: profit,
+              subType: pkg.sub_type || pkg.tipe_paket || '',
+              tipe_paket: pkg.sub_type || pkg.tipe_paket || '',
+              is_active: pkg.is_active,
+              promo: pkg.promo || null,
+            };
+          });
+          this.packages = this.allPackages;
+          console.log('📦 Mapped packages:', this.packages.length);
+        }
     },
 
     // Methods
