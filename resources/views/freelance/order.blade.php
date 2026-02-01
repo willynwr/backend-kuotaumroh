@@ -36,7 +36,7 @@
                   class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 >
                   <option value="">-- Pilih Travel Agent --</option>
-                  @foreach($agents as $agent)
+                  @foreach($agents ?? [] as $agent)
                     <option value="{{ $agent->id }}">{{ $agent->nama_travel }}</option>
                   @endforeach
                 </select>
@@ -459,5 +459,14 @@
 @endsection
 
 @push('scripts')
+  <!-- Store Config for Freelance Order -->
+  <script>
+    const STORE_CONFIG = {
+      freelance_id: '{{ $user->id ?? "" }}',
+      link_referal: '{{ $linkReferral ?? "" }}',
+      portal_type: 'freelance',
+    };
+    console.log('[STORE_CONFIG] Freelance Order Config:', STORE_CONFIG);
+  </script>
   @include('freelance.partials.order-scripts')
 @endpush

@@ -404,9 +404,28 @@ class UmrohPaymentController extends Controller
 
         try {
             // ===== DETECT AGENT & GET STORE PRICING =====
-            $agentId = $request->input('agent_id') ?? $request->input('ref_code');
+            $agentIdInput = $request->input('agent_id');
+            $refCode = $request->input('ref_code');
             $packageId = $request->input('package_id');
             $storePricing = null;
+            
+            // Tentukan agent_id: bisa dari input langsung atau lookup dari ref_code (link_referal)
+            $agentId = null;
+            
+            if ($agentIdInput && str_starts_with($agentIdInput, 'AGT')) {
+                // Jika agent_id sudah dikirim dengan format benar, gunakan langsung
+                $agentId = $agentIdInput;
+            } elseif ($refCode) {
+                // Jika hanya ref_code (link_referal), lookup agent_id dari database
+                $agent = \App\Models\Agent::where('link_referal', $refCode)->first();
+                if ($agent) {
+                    $agentId = $agent->id; // Custom ID format AGTxxxxx
+                    Log::info('✅ Agent ID resolved from link_referal', [
+                        'ref_code' => $refCode,
+                        'agent_id' => $agentId,
+                    ]);
+                }
+            }
             
             // Jika agent_id valid (AGTxxx), ambil pricing dari VIEW
             if ($agentId && str_starts_with($agentId, 'AGT')) {
@@ -433,11 +452,10 @@ class UmrohPaymentController extends Controller
                         'error' => $e->getMessage(),
                     ], 500);
                 }
-            } elseif ($agentId && !str_starts_with($agentId, 'AGT')) {
-                // Jika ref_code/agent_id tidak valid tapi ada, warning saja (fallback ke client price)
-                Log::warning('⚠️ Invalid agent_id format for store pricing', [
-                    'agent_id' => $agentId,
-                    'expected' => 'AGTxxx',
+            } elseif (!$agentId && $refCode) {
+                // Jika agent tidak ditemukan dari ref_code, warning saja (fallback ke client price)
+                Log::warning('⚠️ Agent not found for ref_code, using client price', [
+                    'ref_code' => $refCode,
                 ]);
             }
 
@@ -577,5 +595,58 @@ class UmrohPaymentController extends Controller
             'success' => false,
             'message' => 'Invalid callback data',
         ], 400);
+    }
+
+    /**
+     * GET /api/pembayaran/{external_payment_id}/status
+     * 
+     * Get payment status by external_payment_id (for tracking order)
+     * 
+     * @param string $externalPaymentId
+     * @return JsonResponse
+     */
+    public function getPaymentStatusByExternalId(string $externalPaymentId): JsonResponse
+    {
+        try {
+            Log::info('Tracking payment by external_payment_id', [
+                'external_payment_id' => $externalPaymentId
+            ]);
+
+            // Find payment by external_payment_id
+            $payment = \App\Models\Pembayaran::where('external_payment_id', $externalPaymentId)->first();
+
+            if (!$payment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pembayaran tidak ditemukan',
+                ], 404);
+            }
+
+            // Return payment status
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'id' => $payment->id,
+                    'external_payment_id' => $payment->external_payment_id,
+                    'status' => $payment->status,
+                    'status_pembayaran' => $payment->status_pembayaran,
+                    'metode_pembayaran' => $payment->metode_pembayaran,
+                    'total_pembayaran' => $payment->total_pembayaran,
+                    'created_at' => $payment->created_at,
+                ],
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error tracking payment', [
+                'external_payment_id' => $externalPaymentId,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal melacak pembayaran',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 }

@@ -40,21 +40,10 @@ function orderApp() {
     // Individual input
     individualItems: [{ id: '1', msisdn: '', packageId: '', provider: null }],
 
-    // Packages from database
-    packages: @json($packages ?? []).map(pkg => ({
-      id: pkg.id,
-      type: pkg.provider,
-      name: pkg.nama_paket,
-      price: parseInt(pkg.harga_modal) || 0,
-      sellPrice: parseInt(pkg.harga_eup) || 0,
-      days: parseInt(pkg.masa_aktif) || 0,
-      quota: pkg.total_kuota || 0,
-      subType: pkg.tipe_paket || 'INTERNET',
-      telp: pkg.telp || 0,
-      sms: pkg.sms || 0,
-      bonus: pkg.kuota_bonus || 0
-    })),
-    packagesLoading: false,
+    // Packages from API (loaded dynamically)
+    packages: [],
+    allPackages: [],
+    packagesLoading: true,
 
     // Checkout
     activationTime: 'now',
@@ -200,7 +189,7 @@ function orderApp() {
     },
 
     // Lifecycle
-    init() {
+    async init() {
       // Clear previous completed order if exists
       const savedOrder = localStorage.getItem('pendingOrder');
       if (savedOrder) {
@@ -216,7 +205,107 @@ function orderApp() {
       }
 
       // Load packages from API when component initializes
-      // this.loadPackages();
+      await this.loadAllPackages();
+    },
+
+    // Load all packages from API (admin uses v_pembelian_paket_kuotaumroh view)
+    async loadAllPackages() {
+      console.log('📦 [Admin] Loading packages from API...');
+      this.packagesLoading = true;
+
+      try {
+        // Build API URL
+        const baseUrl = window.API_BASE_URL || '';
+        let apiUrl = `${baseUrl}/api/proxy/umroh/package`;
+
+        // Admin: use admin_id as agent_id parameter for v_pembelian_paket_kuotaumroh view
+        const adminId = typeof STORE_CONFIG !== 'undefined' ? STORE_CONFIG.admin_id : null;
+        if (adminId) {
+          apiUrl += `?agent_id=${adminId}`;
+          console.log('📦 [Admin] Loading packages with admin_id:', adminId);
+        } else {
+          console.warn('⚠️ [Admin] No admin_id in STORE_CONFIG, loading without user filter');
+        }
+
+        console.log('📦 [Admin] API URL:', apiUrl);
+
+        const response = await fetch(apiUrl, {
+          headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          credentials: 'same-origin'
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const json = await response.json();
+        console.log('📦 [Admin] API Response:', json);
+
+        // Process API response - handle both formats
+        let packagesData = [];
+        if (Array.isArray(json)) {
+          packagesData = json;
+        } else if (json.data && Array.isArray(json.data)) {
+          packagesData = json.data;
+        } else if (json.success && json.data && Array.isArray(json.data)) {
+          packagesData = json.data;
+        }
+
+        // Map packages from VIEW format to frontend format
+        this.allPackages = this.processPackagesData(packagesData);
+        this.packages = this.allPackages;
+
+        console.log(`✅ [Admin] Loaded ${this.packages.length} packages`);
+        if (this.packages.length > 0) {
+          console.log('📦 [Admin] Sample package:', this.packages[0]);
+        }
+
+      } catch (error) {
+        console.error('❌ [Admin] Failed to load packages:', error);
+        this.packages = [];
+        this.allPackages = [];
+      } finally {
+        this.packagesLoading = false;
+      }
+    },
+
+    // Process packages data from API response
+    processPackagesData(packagesData) {
+      return packagesData.map(pkg => ({
+        // Core identifiers
+        id: pkg.id || pkg.produk_id,
+        type: pkg.provider || pkg.type,
+
+        // Package info
+        name: pkg.nama_paket || pkg.name || this.generatePackageName(pkg),
+        subType: pkg.tipe_paket || pkg.subType || 'INTERNET',
+        days: parseInt(pkg.masa_aktif || pkg.days || 0),
+
+        // VIEW-based pricing (v_pembelian_paket_kuotaumroh for admin)
+        price: parseInt(pkg.bulk_harga_beli || pkg.price || 0),
+        sellPrice: parseInt(pkg.bulk_harga_rekomendasi || pkg.sellPrice || 0),
+        profit: parseInt(pkg.bulk_potensi_profit || pkg.profit || 0),
+
+        // Quota from VIEW
+        quota: parseInt(pkg.kuota_utama || pkg.quota || pkg.total_kuota || 0),
+        bonus: parseInt(pkg.kuota_bonus || pkg.bonus || 0),
+
+        // Additional fields
+        telp: parseInt(pkg.telp || 0),
+        sms: parseInt(pkg.sms || 0),
+        description: pkg.deskripsi || pkg.description || ''
+      }));
+    },
+
+    // Generate package name if not provided
+    generatePackageName(pkg) {
+      const quota = parseInt(pkg.kuota_utama || pkg.total_kuota || 0);
+      const days = parseInt(pkg.masa_aktif || pkg.days || 30);
+      const provider = pkg.provider || 'Unknown';
+      return `${provider} ${quota}GB ${days} Hari`;
     },
 
     // Methods

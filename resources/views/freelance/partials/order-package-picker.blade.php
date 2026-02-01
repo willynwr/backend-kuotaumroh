@@ -88,7 +88,7 @@
 
       <!-- Package Grid -->
       <div x-show="getFilteredPackages().length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <template x-for="pkg in getFilteredPackages()" :key="pkg.id">
+        <template x-for="(pkg, index) in getFilteredPackages()" :key="`${pkg.id}-${pkg.type}-${index}`">
           <div class="border rounded-lg p-4 hover:shadow-md transition-shadow bg-white flex flex-col h-full">
             <!-- Provider with Badge -->
             <div class="flex items-center justify-between mb-3">
@@ -162,22 +162,27 @@
 
             <!-- Pricing Section -->
             <div class="space-y-2 mb-4 mt-auto">
-              <!-- Harga Beli (Highlighted) -->
+              <!-- Harga Coret (Price App / Harga Rekomendasi) -->
+              <template x-if="pkg.price_app && pkg.price_app > 0">
+                <div class="text-xs text-gray-400 line-through mb-1" x-text="formatRupiah(pkg.price_app)"></div>
+              </template>
+
+              <!-- Harga Beli (Highlighted) - dari bulk_harga_beli -->
               <div class="bg-primary/10 rounded-lg p-2.5">
                 <p class="text-xs text-gray-600 mb-0.5">Harga Beli</p>
-                <p class="text-xl font-bold text-primary" x-text="formatRupiah(pkg.price)"></p>
+                <p class="text-xl font-bold text-primary" x-text="formatRupiah(pkg.price_bulk || pkg.price)"></p>
               </div>
 
-              <!-- Harga Customer -->
+              <!-- Harga Customer / Rekomendasi -->
               <div class="flex items-center justify-between">
-                <span class="text-xs text-gray-600">Harga Customer:</span>
-                <span class="text-sm font-semibold text-gray-900" x-text="formatRupiah(pkg.sellPrice)"></span>
+                <span class="text-xs text-gray-600">Harga Rekomendasi:</span>
+                <span class="text-sm font-semibold text-gray-900" x-text="formatRupiah(pkg.price_customer || pkg.sellPrice)"></span>
               </div>
 
               <!-- Potensi Profit -->
               <div class="flex items-center justify-between">
                 <span class="text-xs text-gray-600">Potensi Profit:</span>
-                <span class="text-sm font-bold text-green-600" x-text="formatRupiah(pkg.sellPrice - pkg.price)"></span>
+                <span class="text-sm font-bold text-green-600" x-text="formatRupiah(pkg.profit || (pkg.price_customer - pkg.price_bulk))"></span>
               </div>
             </div>
 

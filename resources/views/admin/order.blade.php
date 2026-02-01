@@ -437,5 +437,13 @@
 @endsection
 
 @push('scripts')
+  <!-- Store Config for Admin Bulk Order -->
+  <script>
+    const STORE_CONFIG = {
+      admin_id: '{{ auth()->guard("admin")->user()->id ?? "ADM00001" }}',
+      is_admin: true,
+    };
+    console.log('[STORE_CONFIG] Admin Order Config:', STORE_CONFIG);
+  </script>
   @include('admin.partials.order-scripts')
 @endpush

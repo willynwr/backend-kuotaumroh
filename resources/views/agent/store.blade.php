@@ -269,7 +269,7 @@
                                                                 <svg class="h-4 w-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
                                                                 </svg>
-                                                                <span x-text="pkg.quota + ' Kuota Arab'"></span>
+                                                                <span x-text="getQuotaDisplay(pkg)"></span>
                                                             </div>
                                                         </template>
 
@@ -305,7 +305,7 @@
                                                                 <svg class="h-4 w-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
                                                                 </svg>
-                                                                <span x-text="pkg.bonus + ' GB transit'"></span>
+                                                                <span x-text="getBonusDisplay(pkg)"></span>
                                                             </div>
                                                         </template>
 
@@ -675,10 +675,10 @@
                                     provider: pkg.type || pkg.provider,
                                     days: parseInt(pkg.days) || parseInt(pkg.masa_aktif) || 0,
                                     masa_aktif: parseInt(pkg.days) || parseInt(pkg.masa_aktif) || 0,
-                                    quota: pkg.quota || pkg.total_kuota || '',
-                                    total_kuota: pkg.quota || pkg.total_kuota || '',
-                                    kuota_utama: pkg.quota || '',
-                                    kuota_bonus: pkg.bonus || pkg.kuota_bonus || '',
+                                    quota: pkg.quota || pkg.kuota_utama || '',
+                                    kuota_utama: pkg.kuota_utama || pkg.quota || '',
+                                    total_kuota: pkg.total_kuota || pkg.quota || '',
+                                    kuota_bonus: pkg.kuota_bonus || pkg.bonus || '',
                                     bonus: pkg.bonus || pkg.kuota_bonus || '',
                                     telp: pkg.telp || '',
                                     sms: pkg.sms || '',
@@ -920,6 +920,40 @@
                     return parts.join(' - ') || 'Paket';
                 },
 
+                getQuotaDisplay(pkg) {
+                    const quotaStr = String(pkg.quota || '');
+                    
+                    // Extract numbers from quota
+                    const extractNumber = (str) => {
+                        const match = str.match(/(\d+(?:\.\d+)?)/);
+                        return match ? parseFloat(match[1]) : 0;
+                    };
+                    
+                    const quotaNum = extractNumber(quotaStr);
+                    
+                    if (quotaNum === 0) return '';
+                    
+                    // Format: "49 GB Kuota Arab" if quota exists
+                    return `${quotaNum} GB Kuota Arab`;
+                },
+
+                getBonusDisplay(pkg) {
+                    const bonusStr = String(pkg.bonus || '');
+                    
+                    // Extract numbers from bonus
+                    const extractNumber = (str) => {
+                        const match = str.match(/(\d+(?:\.\d+)?)/);
+                        return match ? parseFloat(match[1]) : 0;
+                    };
+                    
+                    const bonusNum = extractNumber(bonusStr);
+                    
+                    if (bonusNum === 0) return '';
+                    
+                    // Format: "1 GB Kuota Transit"
+                    return `${bonusNum} GB Kuota Transit`;
+                },
+
                 isFieldBold(pkg, field) {
                     const subtype = (pkg.subType || '').toUpperCase();
                     if (field === 'kuota') return subtype.includes('INTERNET') || !subtype;
@@ -984,6 +1018,7 @@
                         scheduledTime: this.scheduledTime,
                         refCode: STORE_CONFIG.link_referal,  // ref_code=link_referal untuk Agent/Referral
                         linkReferal: STORE_CONFIG.link_referal || 'kuotaumroh',
+                        agent_id: STORE_CONFIG.agent_id || null,  // Add agent_id for payment
                         mode: 'store',
                         isBulk: false,  // Flag untuk INDIVIDUAL payment (Store mode tanpa login)
                         createdAt: new Date().toISOString(),

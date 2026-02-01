@@ -467,7 +467,6 @@ function checkoutApp() {
         paymentId: null, batchId: null, qrCodeUrl: null, qrisString: null, qrisStaticString: null, useStaticQris: false, paymentAmount: 0,
         toastVisible: false, toastTitle: '', toastMessage: '',
         errorModalVisible: false, errorModalTitle: '', errorModalMessage: '', errorModalCountdown: 5,
-        errorModalVisible: false, errorModalTitle: '', errorModalMessage: '', errorModalCountdown: 5,
         // Exit Confirmation Modal
         showExitModal: false,
         isForceExit: false,
@@ -700,6 +699,7 @@ function checkoutApp() {
                     payment_method: 'QRIS', 
                     detail: this.orderData.scheduleDate ? `{date: ${this.orderData.scheduleDate}}` : null, 
                     ref_code: this.orderData.refCode, 
+                    agent_id: '{{ auth()->user()->id ?? "AGT00001" }}',
                     msisdn: msisdns, 
                     package_id: pkgs,
                     price: prices 

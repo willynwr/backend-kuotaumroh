@@ -706,8 +706,6 @@
                 errorModalVisible: false,
                 errorModalTitle: '',
                 errorModalMessage: '',
-                errorModalTitle: '',
-                errorModalMessage: '',
                 errorModalCountdown: 5,
                 
                 // Exit Confirmation Modal
@@ -1170,6 +1168,8 @@
                                 ref_code: this.orderData.refCode || '1',
                                 msisdn: msisdnList,          // Array
                                 package_id: packageIdList,   // Array
+                                agent_id: this.orderData.agent_id || null, // Pass agent_id/affiliate_id for role detection
+                                affiliate_id: this.orderData.affiliate_id || null,
                             };
 
                             console.log('📤 Sending BULK payment request:', requestData);
@@ -1206,6 +1206,8 @@
                                 msisdn: msisdn,  // String (untuk validasi provider)
                                 package_id: String(item.packageId || item.package_id),  // String (bukan array)
                                 price: item.price || 0, // String/Number
+                                agent_id: this.orderData.agent_id || null, // Pass agent_id/affiliate_id for role detection
+                                affiliate_id: this.orderData.affiliate_id || null,
                             };
 
                             console.log('📤 Sending INDIVIDUAL payment request:', requestData);
@@ -1603,6 +1605,17 @@
                 formatNumber(num) {
                     if (!num) return '0';
                     return new Intl.NumberFormat('id-ID').format(num);
+                },
+
+                // Format number dengan Rp
+                formatRupiah(amount) {
+                    if (!amount) return 'Rp 0';
+                    return new Intl.NumberFormat('id-ID', {
+                        style: 'currency',
+                        currency: 'IDR',
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0
+                    }).format(amount);
                 }
             }
         }

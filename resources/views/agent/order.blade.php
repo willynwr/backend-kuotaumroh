@@ -434,5 +434,15 @@
 @endsection
 
 @push('scripts')
+  <!-- Store Config for Agent Bulk Order -->
+  <script>
+    const STORE_CONFIG = {
+      agent_id: '{{ $user->id ?? auth()->user()->id ?? "" }}',
+      link_referal: '{{ $linkReferral ?? auth()->user()->link_referal ?? "kuotaumroh" }}',
+      nama_travel: '{{ $user->nama_travel ?? auth()->user()->nama_travel ?? "Kuotaumroh.id" }}',
+      is_bulk_order: true,
+    };
+    console.log('[STORE_CONFIG] Agent Order Config:', STORE_CONFIG);
+  </script>
   @include('agent.partials.order-scripts')
 @endpush
