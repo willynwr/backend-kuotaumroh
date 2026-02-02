@@ -37,6 +37,36 @@ class DashboardController extends Controller
     }
 
     /**
+     * Extract provider name from package_id
+     * Example: R1-TSEL-000 -> TELKOMSEL
+     */
+    private function extractProviderFromPackageId($packageId)
+    {
+        if (empty($packageId)) {
+            return '-';
+        }
+
+        $providerMap = [
+            'TSEL' => 'TELKOMSEL',
+            'ISAT' => 'INDOSAT',
+            'XL' => 'XL AXIATA',
+            'TRI' => 'TRI',
+            'AXIS' => 'AXIS',
+            'SFREN' => 'SMARTFREN',
+            'BYU' => 'BY.U',
+        ];
+
+        // Extract provider code from package_id (e.g., R1-TSEL-000 -> TSEL)
+        $parts = explode('-', $packageId);
+        if (count($parts) >= 2) {
+            $providerCode = strtoupper($parts[1]);
+            return $providerMap[$providerCode] ?? $providerCode;
+        }
+
+        return $packageId;
+    }
+
+    /**
      * Handle dashboard akses berdasarkan link_referral
      * Route: dash/{link_referral}
      */
@@ -1201,8 +1231,131 @@ class DashboardController extends Controller
             return redirect()->route('login')->with('error', 'Login gagal. Akun Anda belum terdaftar. Silakan daftar terlebih dahulu atau hubungi tim support.');
         }
 
-        // TODO: Get actual transactions from database
+        // Get transactions from pembayaran table based on affiliate_id
         $transactions = [];
+        
+        if ($data['portalType'] === 'affiliate') {
+            // Get pembayaran data where agent belongs to this affiliate
+            $pembayaranData = \App\Models\Pembayaran::with([
+                'agent.affiliate',
+                'produk',
+                'pesanan' => function($query) {
+                    $query->orderBy('created_at', 'asc');
+                }
+            ])
+            ->whereHas('agent', function($query) use ($data) {
+                $query->where('affiliate_id', $data['user']->id);
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+            // Transform data for frontend
+            foreach ($pembayaranData as $pembayaran) {
+                $agent = $pembayaran->agent;
+                
+                // Parse detail_pesanan to get detailed items
+                $detailPesanan = null;
+                $parsedItems = [];
+                
+                if ($pembayaran->detail_pesanan) {
+                    $detailPesanan = json_decode($pembayaran->detail_pesanan, true);
+                    
+                    // Extract items from detail_pesanan
+                    if ($detailPesanan && isset($detailPesanan['items']) && is_array($detailPesanan['items'])) {
+                        foreach ($detailPesanan['items'] as $item) {
+                            $packageId = $item['package_id'] ?? '';
+                            $provider = $this->extractProviderFromPackageId($packageId);
+                            
+                            // Get pricing details for this package
+                            $price = 0;
+                            if (isset($detailPesanan['pricing_details']) && is_array($detailPesanan['pricing_details'])) {
+                                foreach ($detailPesanan['pricing_details'] as $pricing) {
+                                    if ($pricing['package_id'] === $packageId) {
+                                        $price = $pricing['toko_harga_jual'] ?? 0;
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            // Determine item status based on pembayaran status
+                            $itemStatus = 'pending';
+                            if ($pembayaran->status_pembayaran === \App\Models\Pembayaran::STATUS_SUCCESS) {
+                                $itemStatus = 'completed';
+                            } elseif ($pembayaran->status_pembayaran === \App\Models\Pembayaran::STATUS_VERIFY) {
+                                $itemStatus = 'processing';
+                            } elseif ($pembayaran->status_pembayaran === \App\Models\Pembayaran::STATUS_FAILED) {
+                                $itemStatus = 'failed';
+                            }
+                            // WAITING remains as 'pending'
+                            
+                            $parsedItems[] = [
+                                'msisdn' => $item['msisdn'] ?? '-',
+                                'provider' => $provider,
+                                'packageName' => $item['package_name'] ?? $packageId,
+                                'price' => (int) $price,
+                                'status' => $itemStatus,
+                            ];
+                        }
+                    }
+                }
+                
+                // Map pesanan items (fallback if detail_pesanan is empty)
+                $items = [];
+                if (!empty($parsedItems)) {
+                    $items = collect($parsedItems);
+                } else {
+                    $items = $pembayaran->pesanan->map(function($pesanan) {
+                        $status = 'pending';
+                        $statusAktivasi = strtolower($pesanan->status_aktivasi ?? '');
+                        
+                        if ($statusAktivasi === 'berhasil' || $statusAktivasi === 'success') {
+                            $status = 'completed';
+                        } elseif ($statusAktivasi === 'proses' || $statusAktivasi === 'process' || $statusAktivasi === 'processing') {
+                            $status = 'processing';
+                        } elseif ($statusAktivasi === 'gagal' || $statusAktivasi === 'failed') {
+                            $status = 'failed';
+                        }
+
+                        return [
+                            'id' => $pesanan->id,
+                            'msisdn' => $pesanan->msisdn,
+                            'provider' => $pesanan->provider ?? '-',
+                            'packageName' => $pesanan->nama_paket ?? '-',
+                            'price' => (int) ($pesanan->harga_jual ?? 0),
+                            'status' => $status,
+                            'createdAt' => $pesanan->created_at->toIso8601String(),
+                        ];
+                    });
+                }
+
+                // Determine batch status based on pembayaran status
+                $batchStatus = 'pending';
+                
+                if ($pembayaran->status_pembayaran === \App\Models\Pembayaran::STATUS_SUCCESS) {
+                    $batchStatus = 'completed';
+                } elseif ($pembayaran->status_pembayaran === \App\Models\Pembayaran::STATUS_FAILED) {
+                    $batchStatus = 'failed';
+                } elseif ($pembayaran->status_pembayaran === \App\Models\Pembayaran::STATUS_VERIFY || $pembayaran->status_pembayaran === \App\Models\Pembayaran::STATUS_WAITING) {
+                    $batchStatus = 'pending'; // Menunggu Pembayaran
+                }
+
+                $transactions[] = [
+                    'id' => $pembayaran->id,
+                    'batchId' => $pembayaran->batch_id,
+                    'batchName' => $pembayaran->batch_name ?? 'Batch ' . $pembayaran->batch_id,
+                    'agentName' => $agent->nama_pic ?? '-',
+                    'agentPhone' => $agent->no_hp ?? '-',
+                    'travelName' => $agent->nama_travel ?? '-',
+                    'territory' => $agent->kabupaten_kota ?? '-',
+                    'totalAmount' => (int) $pembayaran->total_pembayaran,
+                    'margin' => (int) $pembayaran->fee_affiliate, // Use fee_affiliate as margin
+                    'status' => $batchStatus,
+                    'createdAt' => $pembayaran->created_at->toIso8601String(),
+                    'items' => is_array($items) ? $items : $items->toArray(), // Items to display in detail
+                    'msisdn' => $pembayaran->msisdn ?? '-', // Main msisdn from pembayaran
+                ];
+            }
+        }
 
         return view($data['viewPath'] . '.transactions', [
             'user' => $data['user'],
