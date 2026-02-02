@@ -649,7 +649,7 @@ function checkoutApp() {
                 total: parsedData.subtotal || parsedData.total || 0,
                 platformFee: parsedData.platformFee || 0,
                 paymentMethod: parsedData.paymentMethod || 'qris',
-                refCode: parsedData.refCode || '{{ auth()->user()->id ?? "AGT00001" }}',
+                refCode: parsedData.refCode || '{{ isset($user) ? $user->id : (auth()->check() ? auth()->user()->id : "") }}',
                 scheduleDate: parsedData.scheduleDate || null,
                 isBulk: true,
             };
@@ -956,14 +956,23 @@ function checkoutApp() {
                     batch_name: batchName,
                     payment_method: 'QRIS',
                     detail: this.orderData.scheduleDate ? `{date: ${this.orderData.scheduleDate}}` : null,
-                    ref_code: this.orderData.refCode || '{{ auth()->user()->link_referral ?? "testing-tower-1" }}',
-                    agent_id: '{{ auth()->user()->id ?? "AGT00001" }}',
+                    ref_code: this.orderData.refCode || '{{ isset($user) ? ($user->link_referral ?? $user->id) : (auth()->check() ? (auth()->user()->link_referral ?? auth()->user()->id) : "") }}',
+                    agent_id: '{{ isset($user) ? $user->id : (auth()->check() ? auth()->user()->id : "") }}',
                     msisdn: msisdnList,
                     package_id: packageIdList,
                     price: priceList,
                 };
 
+                // Validate authentication before proceeding
+                if (!requestData.agent_id) {
+                    console.error('❌ User not authenticated - redirecting to login');
+                    window.location.href = '/agent?redirect=' + encodeURIComponent(window.location.pathname);
+                    return;
+                }
+
+                console.log('✅ AUTH CHECK: User ID =', requestData.agent_id);
                 console.log('📤 BULK payment request:', requestData);
+
                 const response = await createBulkPayment(requestData);
                 
                 const data = response.data || response;

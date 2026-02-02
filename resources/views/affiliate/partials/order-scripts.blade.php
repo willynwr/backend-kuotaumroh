@@ -784,7 +784,9 @@ function orderApp() {
         activationTime: this.activationTime,
         scheduledDate: this.scheduledDate,
         scheduledTime: this.scheduledTime,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        // Simpan refCode (affiliate_id) untuk checkout
+        refCode: '{{ $user->id ?? "" }}'
       };
 
       try {

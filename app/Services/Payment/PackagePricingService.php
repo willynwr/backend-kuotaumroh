@@ -355,16 +355,22 @@ class PackagePricingService
         $viewTable = $this->getViewTableName($role);
         $idColumn = $this->getIdColumnName($role);
 
-        // Admin VIEW tidak punya bulk_potensi_profit
+        // Base columns yang ada di semua VIEW
         $selectColumns = [
             'produk_id',
             'bulk_harga_beli',
             'bulk_harga_rekomendasi',
         ];
         
-        // Hanya affiliate dan agent punya profit field
+        // Affiliate dan agent punya profit field
         if ($role !== 'admin') {
             $selectColumns[] = 'bulk_potensi_profit';
+        }
+        
+        // Hanya AGENT yang punya bulk_final_fee_affiliate (untuk affiliate dari agent)
+        // Affiliate tidak punya kolom ini di VIEW-nya
+        if ($role === 'agent') {
+            $selectColumns[] = 'bulk_final_fee_affiliate';
         }
 
         $rows = DB::table($viewTable)
@@ -380,6 +386,7 @@ class PackagePricingService
                 'bulk_harga_beli' => (int) $row->bulk_harga_beli,
                 'bulk_harga_rekomendasi' => (int) $row->bulk_harga_rekomendasi,
                 'bulk_potensi_profit' => (int) ($row->bulk_potensi_profit ?? 0),
+                'bulk_final_fee_affiliate' => (int) ($row->bulk_final_fee_affiliate ?? 0), // 0 jika tidak ada (affiliate/admin)
             ];
         }
 
