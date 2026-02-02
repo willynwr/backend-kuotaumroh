@@ -16,7 +16,13 @@
       position: sticky;
       left: 0;
       background: white;
-      z-index: 1;
+      z-index: 2;
+    }
+    .sticky-column-second {
+      position: sticky;
+      left: 0;
+      background: white;
+      z-index: 2;
     }
     .sticky-column::after {
       content: "";
@@ -27,8 +33,14 @@
       width: 1px;
       background: hsl(var(--border));
     }
-    .table-content tbody tr:hover .sticky-column {
-      background: hsl(var(--muted) / 0.5);
+    .table-content thead th.sticky-column,
+    .table-content thead th.sticky-column-second {
+      background: white;
+      z-index: 3;
+    }
+    .table-content tbody tr:hover .sticky-column,
+    .table-content tbody tr:hover .sticky-column-second {
+      background: white;
     }
     .badge {
       display: inline-flex;
@@ -139,12 +151,12 @@
               <table class="w-full table-content">
                 <thead>
                   <tr class="border-b">
-                    <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground whitespace-nowrap">
+                    <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground whitespace-nowrap sticky-column" style="left: 0;">
                       <button @click="handleSort('batchId')" class="inline-flex items-center gap-2">Batch ID
                         <svg class="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>
                       </button>
                     </th>
-                    <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground sticky-column whitespace-nowrap min-w-[200px]">
+                    <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground sticky-column-second whitespace-nowrap min-w-[200px]" style="left: 120px;">
                       <button @click="handleSort('batchName')" class="inline-flex items-center gap-2">Nama Batch
                         <svg class="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>
                       </button>
@@ -186,7 +198,7 @@
                       </button>
                     </th>
                     <th class="h-12 px-4 text-right align-middle font-medium text-muted-foreground whitespace-nowrap">
-                      <button @click="handleSort('marginTotal')" class="inline-flex items-center gap-2">Margin
+                      <button @click="handleSort('marginTotal')" class="inline-flex items-center gap-2">Fee
                         <svg class="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>
                       </button>
                     </th>
@@ -196,14 +208,14 @@
                 <tbody>
                   <template x-for="tx in paginatedTransactions" :key="tx.id">
                     <tr class="border-b transition-colors hover:bg-muted/50">
-                      <td class="p-4 align-middle font-mono whitespace-nowrap" x-text="tx.batchId"></td>
-                      <td class="p-4 align-middle font-medium whitespace-nowrap sticky-column" x-text="tx.batchName"></td>
+                      <td class="p-4 align-middle font-mono whitespace-nowrap sticky-column" style="left: 0;" x-text="tx.batchId"></td>
+                      <td class="p-4 align-middle font-medium whitespace-nowrap sticky-column-second" style="left: 120px;" x-text="tx.batchName"></td>
                       <td class="p-4 align-middle text-center whitespace-nowrap">
                         <span class="badge" :class="getStatusBadgeClass(tx.status)" x-text="getStatusLabel(tx.status)"></span>
                       </td>
                       <td class="p-4 align-middle text-center whitespace-nowrap">
                         <div class="flex items-center justify-center gap-1">
-                          <span x-text="tx.items?.length || 0"></span>
+                          <span x-text="getMsisdnCount(tx)"></span>
                           <button @click="viewDetails(tx)" class="inline-flex items-center justify-center rounded-md border bg-transparent h-7 w-7 hover:bg-muted transition-colors" title="Lihat Detail">
                             <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -213,7 +225,7 @@
                         </div>
                       </td>
                       <td class="p-4 align-middle whitespace-nowrap min-w-[180px]">
-                        <div class="package-status" x-html="getPackageStatusSummary(tx)"></div>
+                        <div class="package-status" x-html="getDetailPesananSummary(tx)"></div>
                       </td>
                       <td class="p-4 align-middle whitespace-nowrap" x-text="formatDateTime(tx.createdAt)"></td>
                       <td class="p-4 align-middle whitespace-nowrap min-w-[180px]" x-text="tx.travelName"></td>
@@ -225,7 +237,7 @@
                         </div>
                       </td>
                       <td class="p-4 align-middle text-right font-medium whitespace-nowrap" x-text="formatRupiah(tx.totalAmount)"></td>
-                      <td class="p-4 align-middle text-right font-medium whitespace-nowrap" x-text="formatRupiah(tx.marginTotal || 0)"></td>
+                      <td class="p-4 align-middle text-right font-medium whitespace-nowrap" x-text="formatRupiah(tx.margin || 0)"></td>
                       <td class="p-4 align-middle text-center whitespace-nowrap">
                         <div class="flex items-center justify-center gap-1">
                           <a :href="'tel:' + (tx.agentPhone || '')" class="inline-flex items-center justify-center rounded-md bg-transparent h-8 w-8 hover:bg-green-50 hover:text-green-600 transition-colors" title="Hubungi Agen" x-show="tx.agentPhone">
@@ -311,7 +323,7 @@
                       </button>
                     </th>
                     <th class="h-12 px-4 text-right align-middle font-medium text-muted-foreground whitespace-nowrap">
-                      <button @click="handleItemSort('margin')" class="inline-flex items-center gap-2">Margin
+                      <button @click="handleItemSort('margin')" class="inline-flex items-center gap-2">Fee
                         <svg class="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>
                       </button>
                     </th>
@@ -447,7 +459,7 @@
               </div>
               <div>
                 <p class="text-muted-foreground">Jumlah Nomor HP</p>
-                <p class="font-medium"><span x-text="selectedTransaction?.items?.length || 0"></span> nomor</p>
+                <p class="font-medium"><span x-text="getMsisdnCount(selectedTransaction)"></span> nomor</p>
               </div>
               <div>
                 <p class="text-muted-foreground">Total Pembayaran</p>
@@ -513,16 +525,16 @@
                   <tbody>
                     <template x-for="(item, idx) in sortedDetails" :key="idx">
                       <tr class="border-b transition-colors hover:bg-muted/50">
-                        <td class="p-4 align-middle font-mono text-sm" x-text="item.msisdn"></td>
-                        <td class="p-4 align-middle" x-text="item.provider"></td>
-                        <td class="p-4 align-middle" x-text="item.packageName"></td>
-                        <td class="p-4 align-middle text-right" x-text="formatRupiah(item.price)"></td>
+                        <td class="p-4 align-middle font-mono text-sm" x-text="item.msisdn || '-'"></td>
+                        <td class="p-4 align-middle" x-text="item.provider || '-'"></td>
+                        <td class="p-4 align-middle" x-text="item.packageName || '-'"></td>
+                        <td class="p-4 align-middle text-right" x-text="formatRupiah(item.price || 0)"></td>
                         <td class="p-4 align-middle text-center">
-                          <span class="badge" :class="selectedTransaction.status === 'pending' ? '' : getItemStatusBadgeClass(item.status)" x-text="selectedTransaction.status === 'pending' ? '' : getItemStatusLabel(item.status)"></span>
+                          <span class="badge" :class="getItemStatusBadgeClass(item.status)" x-text="getItemStatusLabel(item.status)"></span>
                         </td>
                       </tr>
                     </template>
-                    <template x-if="selectedTransaction && selectedTransaction.items.length === 0">
+                    <template x-if="sortedDetails.length === 0">
                       <tr>
                         <td colspan="5" class="p-6 text-center text-muted-foreground">Detail nomor belum tersedia.</td>
                       </tr>
@@ -610,7 +622,7 @@ function transactionsPage() {
           case 'agentName': comparison = (a.agentName || '').localeCompare(b.agentName || ''); break;
           case 'msisdnCount': comparison = (a.items?.length || 0) - (b.items?.length || 0); break;
           case 'totalAmount': comparison = a.totalAmount - b.totalAmount; break;
-          case 'marginTotal': comparison = (a.marginTotal || 0) - (b.marginTotal || 0); break;
+          case 'marginTotal': comparison = (a.margin || 0) - (b.margin || 0); break;
           case 'status': comparison = this.getStatusLabel(a.status).localeCompare(this.getStatusLabel(b.status)); break;
         }
         return this.sortDirection === 'asc' ? comparison : -comparison;
@@ -663,20 +675,42 @@ function transactionsPage() {
 
     get sortedDetails() {
       if (!this.selectedTransaction) return [];
-      const filtered = this.selectedTransaction.items.filter(item => {
+      
+      // Items are already parsed correctly from backend (either from detail_pesanan or pesanan table)
+      const items = this.selectedTransaction.items || [];
+      
+      const filtered = items.filter(item => {
         if (!this.detailSearch.trim()) return true;
         const query = this.detailSearch.toLowerCase();
-        const searchable = [item.msisdn, item.provider, item.packageName, this.formatRupiah(item.price), String(item.price)].join(' ').toLowerCase();
+        const searchable = [
+          item.msisdn || '',
+          item.provider || '',
+          item.packageName || '',
+          this.formatRupiah(item.price || 0),
+          String(item.price || 0)
+        ].join(' ').toLowerCase();
         return searchable.includes(query);
       });
+      
       return [...filtered].sort((a, b) => {
         let comparison = 0;
+        const aMsisdn = a.msisdn || '';
+        const bMsisdn = b.msisdn || '';
+        const aProvider = a.provider || '';
+        const bProvider = b.provider || '';
+        const aPackage = a.packageName || '';
+        const bPackage = b.packageName || '';
+        const aPrice = a.price || 0;
+        const bPrice = b.price || 0;
+        const aStatus = a.status || '';
+        const bStatus = b.status || '';
+        
         switch (this.detailSortKey) {
-          case 'msisdn': comparison = a.msisdn.localeCompare(b.msisdn); break;
-          case 'provider': comparison = a.provider.localeCompare(b.provider); break;
-          case 'packageName': comparison = a.packageName.localeCompare(b.packageName); break;
-          case 'price': comparison = a.price - b.price; break;
-          case 'status': comparison = this.getItemStatusLabel(a.status).localeCompare(this.getItemStatusLabel(b.status)); break;
+          case 'msisdn': comparison = aMsisdn.localeCompare(bMsisdn); break;
+          case 'provider': comparison = aProvider.localeCompare(bProvider); break;
+          case 'packageName': comparison = aPackage.localeCompare(bPackage); break;
+          case 'price': comparison = aPrice - bPrice; break;
+          case 'status': comparison = this.getItemStatusLabel(aStatus).localeCompare(this.getItemStatusLabel(bStatus)); break;
         }
         return this.detailSortDirection === 'asc' ? comparison : -comparison;
       });
@@ -742,7 +776,7 @@ function transactionsPage() {
     },
 
     getPackageStatusSummary(transaction) {
-      if (transaction.status === 'pending' || !transaction.items || transaction.items.length === 0) {
+      if (!transaction.items || transaction.items.length === 0) {
         return '<div>0 Berhasil<br>0 Diproses<br>0 Gagal</div>';
       }
       const counts = { completed: 0, processing: 0, failed: 0, pending: 0 };
@@ -753,6 +787,21 @@ function transactionsPage() {
       parts.push(`<span class="text-muted-foreground">${counts.processing} Diproses</span>`);
       parts.push(`<span class="${gagal > 0 ? 'text-destructive' : 'text-muted-foreground'}">${gagal} Gagal</span>`);
       return '<div>' + parts.join('<br>') + '</div>';
+    },
+
+    getMsisdnCount(transaction) {
+      // Count from msisdn in pembayaran (can be comma separated)
+      if (transaction.msisdn && transaction.msisdn !== '-') {
+        const msisdns = transaction.msisdn.split(',').filter(m => m.trim());
+        return msisdns.length;
+      }
+      // Fallback to items count
+      return transaction.items?.length || 0;
+    },
+
+    getDetailPesananSummary(transaction) {
+      // Just use package status summary from items (already parsed from detail_pesanan in backend)
+      return this.getPackageStatusSummary(transaction);
     },
 
     viewDetails(tx) {
@@ -766,8 +815,14 @@ function transactionsPage() {
     },
 
     getItemStatusCount(transaction, status) {
-      if (!transaction || !transaction.items || transaction.status === 'pending') return 0;
-      return transaction.items.filter(item => item.status === status).length;
+      if (!transaction) return 0;
+      
+      // Count from items array (already parsed from detail_pesanan in backend)
+      if (transaction.items) {
+        return transaction.items.filter(item => item.status === status).length;
+      }
+      
+      return 0;
     },
 
     getItemStatusLabel(status) {
