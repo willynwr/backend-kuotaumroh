@@ -1235,7 +1235,9 @@ class DashboardController extends Controller
         $transactions = [];
         
         if ($data['portalType'] === 'affiliate') {
-            // Get pembayaran data where agent belongs to this affiliate
+            // Get pembayaran data where:
+            // 1. agent belongs to this affiliate (AGT)
+            // 2. OR agent_id is directly affiliate ID (AFT)
             $pembayaranData = \App\Models\Pembayaran::with([
                 'agent.affiliate',
                 'produk',
@@ -1243,15 +1245,39 @@ class DashboardController extends Controller
                     $query->orderBy('created_at', 'asc');
                 }
             ])
-            ->whereHas('agent', function($query) use ($data) {
-                $query->where('affiliate_id', $data['user']->id);
+            ->where(function($query) use ($data) {
+                // Case 1: Transaksi melalui agent yang dimiliki affiliate ini
+                $query->whereHas('agent', function($q) use ($data) {
+                    $q->where('affiliate_id', $data['user']->id);
+                })
+                // Case 2: Transaksi langsung oleh affiliate (agent_id = AFT)
+                ->orWhere('agent_id', $data['user']->id);
             })
             ->orderBy('created_at', 'desc')
             ->get();
 
             // Transform data for frontend
             foreach ($pembayaranData as $pembayaran) {
-                $agent = $pembayaran->agent;
+                // Check if this is a direct affiliate transaction (agent_id = AFT)
+                $isDirectAffiliate = str_starts_with($pembayaran->agent_id, 'AFT');
+                
+                if ($isDirectAffiliate) {
+                    // For direct affiliate transactions, use affiliate data
+                    $affiliate = $data['user'];
+                    $agentName = $affiliate->nama;
+                    $agentPhone = $affiliate->no_wa;
+                    $travelName = '-';
+                    $territory = $affiliate->kab_kota ?? '-';
+                    $margin = (int) $pembayaran->profit; // Use profit as margin for AFT
+                } else {
+                    // For agent transactions, use agent data
+                    $agent = $pembayaran->agent;
+                    $agentName = $agent->nama_pic ?? '-';
+                    $agentPhone = $agent->no_hp ?? '-';
+                    $travelName = $agent->nama_travel ?? '-';
+                    $territory = $agent->kabupaten_kota ?? '-';
+                    $margin = (int) $pembayaran->fee_affiliate; // Use fee_affiliate as margin for AGT
+                }
                 
                 // Parse detail_pesanan to get detailed items
                 $detailPesanan = null;
@@ -1294,6 +1320,7 @@ class DashboardController extends Controller
                                 'packageName' => $item['package_name'] ?? $packageId,
                                 'price' => (int) $price,
                                 'status' => $itemStatus,
+                                'margin' => $margin, // Add margin per item (will be divided later)
                             ];
                         }
                     }
@@ -1304,7 +1331,7 @@ class DashboardController extends Controller
                 if (!empty($parsedItems)) {
                     $items = collect($parsedItems);
                 } else {
-                    $items = $pembayaran->pesanan->map(function($pesanan) {
+                    $items = $pembayaran->pesanan->map(function($pesanan) use ($margin) {
                         $status = 'pending';
                         $statusAktivasi = strtolower($pesanan->status_aktivasi ?? '');
                         
@@ -1323,6 +1350,7 @@ class DashboardController extends Controller
                             'packageName' => $pesanan->nama_paket ?? '-',
                             'price' => (int) ($pesanan->harga_jual ?? 0),
                             'status' => $status,
+                            'margin' => $margin, // Add margin per item
                             'createdAt' => $pesanan->created_at->toIso8601String(),
                         ];
                     });
@@ -1343,12 +1371,12 @@ class DashboardController extends Controller
                     'id' => $pembayaran->id,
                     'batchId' => $pembayaran->batch_id,
                     'batchName' => $pembayaran->batch_name ?? 'Batch ' . $pembayaran->batch_id,
-                    'agentName' => $agent->nama_pic ?? '-',
-                    'agentPhone' => $agent->no_hp ?? '-',
-                    'travelName' => $agent->nama_travel ?? '-',
-                    'territory' => $agent->kabupaten_kota ?? '-',
+                    'agentName' => $agentName,
+                    'agentPhone' => $agentPhone,
+                    'travelName' => $travelName,
+                    'territory' => $territory,
                     'totalAmount' => (int) $pembayaran->total_pembayaran,
-                    'margin' => (int) $pembayaran->fee_affiliate, // Use fee_affiliate as margin
+                    'margin' => $margin,
                     'status' => $batchStatus,
                     'createdAt' => $pembayaran->created_at->toIso8601String(),
                     'items' => is_array($items) ? $items : $items->toArray(), // Items to display in detail
