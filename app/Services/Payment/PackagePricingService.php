@@ -18,6 +18,23 @@ use Illuminate\Support\Facades\DB;
 class PackagePricingService
 {
     /**
+     * Special agent ID yang menggunakan v_pembelian_paket_kuotaumroh
+     * Tanpa affiliate, tanpa profit/fee calculation
+     */
+    const SPECIAL_AGENT_ID = 'AGT00001';
+
+    /**
+     * Check if agent is the special AGT00001
+     * 
+     * @param string $agentId
+     * @return bool
+     */
+    public function isSpecialAgent(string $agentId): bool
+    {
+        return $agentId === self::SPECIAL_AGENT_ID;
+    }
+
+    /**
      * Detect role dari ID format
      * 
      * @param string $id affiliate_id, agent_id, atau admin_id
@@ -285,6 +302,11 @@ class PackagePricingService
             throw new \InvalidArgumentException("Invalid agent ID format: {$agentId}");
         }
 
+        // Special case: AGT00001 uses v_pembelian_paket_kuotaumroh
+        if ($this->isSpecialAgent($agentId)) {
+            return $this->getBulkCatalogForSpecialAgent($agentId);
+        }
+
         $rows = DB::table('v_pembelian_paket_agent_travel')
             ->where('agent_id', $agentId)
             ->orderByRaw("CASE WHEN promo IS NOT NULL AND promo != '' THEN 0 ELSE 1 END")
@@ -292,6 +314,78 @@ class PackagePricingService
             ->toArray();
 
         return array_map(fn($row) => $this->mapBulkCatalogRow((array) $row, 'agent'), $rows);
+    }
+
+    /**
+     * Get bulk catalog untuk SPECIAL AGENT (AGT00001)
+     * Uses v_pembelian_paket_kuotaumroh, no profit/fee
+     * 
+     * Price mapping:
+     * - harga_coret = bulk_harga_rekomendasi
+     * - harga_beli = bulk_harga_beli
+     * 
+     * @param string $agentId Must be AGT00001
+     * @return array Array of packages
+     */
+    protected function getBulkCatalogForSpecialAgent(string $agentId): array
+    {
+        $rows = DB::table('v_pembelian_paket_kuotaumroh')
+            ->where('agent_id', $agentId)
+            ->orderByRaw("CASE WHEN promo IS NOT NULL AND promo != '' THEN 0 ELSE 1 END")
+            ->get()
+            ->toArray();
+
+        return array_map(fn($row) => $this->mapBulkCatalogRowForSpecialAgent((array) $row), $rows);
+    }
+
+    /**
+     * Map row for special agent bulk catalog (no profit/fee)
+     * 
+     * @param array $row Data from v_pembelian_paket_kuotaumroh
+     * @return array Mapped data
+     */
+    protected function mapBulkCatalogRowForSpecialAgent(array $row): array
+    {
+        $generatedName = $this->generatePackageName($row);
+        
+        return [
+            'id' => $row['produk_id'] ?? null,
+            'package_id' => $row['produk_id'] ?? null,
+            'name' => $generatedName,
+            'packageName' => $generatedName,
+            'type' => $row['provider'] ?? null,
+            'provider' => $row['provider'] ?? null,
+            'sub_type' => $row['tipe_paket'] ?? null,
+            'tipe_paket' => $row['tipe_paket'] ?? null,
+            'days' => $row['masa_aktif'] ?? null,
+            'masa_aktif' => $row['masa_aktif'] ?? null,
+            'quota' => $row['kuota_utama'] ?? null,
+            'kuota_utama' => $row['kuota_utama'] ?? null,
+            'total_kuota' => $row['total_kuota'] ?? null,
+            'telp' => $row['telp'] ?? null,
+            'sms' => $row['sms'] ?? null,
+            'bonus' => $row['kuota_bonus'] ?? null,
+            'kuota_bonus' => $row['kuota_bonus'] ?? null,
+            'is_active' => '1',
+            
+            // BULK PRICING - harga_coret = bulk_harga_rekomendasi, harga_beli = bulk_harga_beli
+            'price_app' => (int) ($row['bulk_harga_rekomendasi'] ?? 0),
+            'bulk_harga_rekomendasi' => (int) ($row['bulk_harga_rekomendasi'] ?? 0),
+            'price' => (int) ($row['bulk_harga_beli'] ?? 0),
+            'bulk_harga_beli' => (int) ($row['bulk_harga_beli'] ?? 0),
+            
+            // NO PROFIT/FEE for special agent
+            'bulk_potensi_profit' => 0,
+            'profit' => 0,
+            'bulk_final_fee_affiliate' => 0,
+            
+            // Legacy fields
+            'price_bulk' => (int) ($row['bulk_harga_beli'] ?? 0),
+            'price_customer' => (int) ($row['bulk_harga_rekomendasi'] ?? 0),
+            'harga' => (int) ($row['bulk_harga_beli'] ?? 0),
+            
+            'promo' => $row['promo'] ?? null,
+        ];
     }
 
     /**
@@ -328,6 +422,11 @@ class PackagePricingService
             throw new \InvalidArgumentException("Invalid agent ID format: {$agentId}");
         }
 
+        // Special case: AGT00001 uses v_pembelian_paket_kuotaumroh
+        if ($this->isSpecialAgent($agentId)) {
+            return $this->getStoreCatalogForSpecialAgent($agentId);
+        }
+
         $rows = DB::table('v_pembelian_paket_agent_travel')
             ->where('agent_id', $agentId)
             ->orderByRaw("CASE WHEN promo IS NOT NULL AND promo != '' THEN 0 ELSE 1 END")
@@ -335,6 +434,76 @@ class PackagePricingService
             ->toArray();
 
         return array_map(fn($row) => $this->mapStoreCatalogRow((array) $row), $rows);
+    }
+
+    /**
+     * Get store catalog untuk SPECIAL AGENT (AGT00001)
+     * Uses v_pembelian_paket_kuotaumroh, no profit/fee
+     * 
+     * Price mapping:
+     * - harga_coret = toko_harga_coret
+     * - harga_beli = toko_harga_jual
+     * 
+     * @param string $agentId Must be AGT00001
+     * @return array Array of packages
+     */
+    protected function getStoreCatalogForSpecialAgent(string $agentId): array
+    {
+        $rows = DB::table('v_pembelian_paket_kuotaumroh')
+            ->where('agent_id', $agentId)
+            ->orderByRaw("CASE WHEN promo IS NOT NULL AND promo != '' THEN 0 ELSE 1 END")
+            ->get()
+            ->toArray();
+
+        return array_map(fn($row) => $this->mapStoreCatalogRowForSpecialAgent((array) $row), $rows);
+    }
+
+    /**
+     * Map row for special agent store catalog (no profit/fee)
+     * 
+     * @param array $row Data from v_pembelian_paket_kuotaumroh
+     * @return array Mapped data
+     */
+    protected function mapStoreCatalogRowForSpecialAgent(array $row): array
+    {
+        $generatedName = $this->generatePackageName($row);
+        
+        return [
+            'id' => $row['produk_id'] ?? null,
+            'package_id' => $row['produk_id'] ?? null,
+            'name' => $generatedName,
+            'packageName' => $generatedName,
+            'type' => $row['provider'] ?? null,
+            'provider' => $row['provider'] ?? null,
+            'sub_type' => $row['tipe_paket'] ?? null,
+            'tipe_paket' => $row['tipe_paket'] ?? null,
+            'days' => $row['masa_aktif'] ?? null,
+            'masa_aktif' => $row['masa_aktif'] ?? null,
+            'quota' => $row['kuota_utama'] ?? null,
+            'kuota_utama' => $row['kuota_utama'] ?? null,
+            'total_kuota' => $row['total_kuota'] ?? null,
+            'telp' => $row['telp'] ?? null,
+            'sms' => $row['sms'] ?? null,
+            'bonus' => $row['kuota_bonus'] ?? null,
+            'kuota_bonus' => $row['kuota_bonus'] ?? null,
+            'is_active' => '1',
+            
+            // STORE PRICING - harga_coret = toko_harga_coret, harga_beli = toko_harga_jual
+            'price_app' => (int) ($row['toko_harga_coret'] ?? 0),
+            'toko_harga_coret' => (int) ($row['toko_harga_coret'] ?? 0),
+            'price' => (int) ($row['toko_harga_jual'] ?? 0),
+            'toko_harga_jual' => (int) ($row['toko_harga_jual'] ?? 0),
+            'hemat' => (int) ($row['toko_hemat'] ?? 0),
+            'toko_hemat' => (int) ($row['toko_hemat'] ?? 0),
+            
+            // NO PROFIT/FEE for special agent
+            'profit_agent' => 0,
+            'profit_affiliate' => 0,
+            'mandiri_final_fee_travel' => 0,
+            'mandiri_final_fee_affiliate' => 0,
+            
+            'promo' => $row['promo'] ?? null,
+        ];
     }
 
     /**
@@ -350,6 +519,11 @@ class PackagePricingService
     {
         if (!in_array($role, ['affiliate', 'agent', 'admin'])) {
             throw new \InvalidArgumentException("Invalid role: {$role}");
+        }
+
+        // Special case: AGT00001 uses v_pembelian_paket_kuotaumroh, no profit/fee
+        if ($role === 'agent' && $this->isSpecialAgent($userId)) {
+            return $this->getBulkPricesForSpecialAgent($userId, $packageIds);
         }
 
         $viewTable = $this->getViewTableName($role);
@@ -394,6 +568,36 @@ class PackagePricingService
     }
 
     /**
+     * Get bulk prices for SPECIAL AGENT (AGT00001)
+     * Uses v_pembelian_paket_kuotaumroh, no profit/fee
+     * 
+     * @param string $agentId Must be AGT00001
+     * @param array $packageIds Package IDs to lookup
+     * @return array Assoc array [package_id => pricing data]
+     */
+    protected function getBulkPricesForSpecialAgent(string $agentId, array $packageIds): array
+    {
+        $rows = DB::table('v_pembelian_paket_kuotaumroh')
+            ->where('agent_id', $agentId)
+            ->whereIn('produk_id', $packageIds)
+            ->select(['produk_id', 'bulk_harga_beli', 'bulk_harga_rekomendasi'])
+            ->get();
+
+        $result = [];
+        foreach ($rows as $row) {
+            $result[$row->produk_id] = [
+                'package_id' => $row->produk_id,
+                'bulk_harga_beli' => (int) $row->bulk_harga_beli,
+                'bulk_harga_rekomendasi' => (int) $row->bulk_harga_rekomendasi,
+                'bulk_potensi_profit' => 0, // No profit for special agent
+                'bulk_final_fee_affiliate' => 0, // No affiliate fee for special agent
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
      * Get harga untuk single item di store (untuk individu payment)
      * 
      * @param string $agentId Format: AGTxxx
@@ -404,6 +608,11 @@ class PackagePricingService
     {
         if (!$this->validateRoleId($agentId, 'agent')) {
             throw new \InvalidArgumentException("Invalid agent ID format: {$agentId}");
+        }
+
+        // Special case: AGT00001 uses v_pembelian_paket_kuotaumroh
+        if ($this->isSpecialAgent($agentId)) {
+            return $this->getStorePriceForSpecialAgent($agentId, $packageId);
         }
 
         $row = DB::table('v_pembelian_paket_agent_travel')
@@ -430,6 +639,40 @@ class PackagePricingService
             'toko_hemat' => (int) $row->toko_hemat,
             'mandiri_final_fee_travel' => (int) $row->mandiri_final_fee_travel,
             'mandiri_final_fee_affiliate' => (int) $row->mandiri_final_fee_affiliate,
+        ];
+    }
+
+    /**
+     * Get store price for SPECIAL AGENT (AGT00001)
+     * Uses v_pembelian_paket_kuotaumroh, no profit/fee
+     * 
+     * Price mapping:
+     * - harga_coret = toko_harga_coret
+     * - harga_beli = toko_harga_jual
+     * 
+     * @param string $agentId Must be AGT00001
+     * @param string $packageId Package ID to lookup
+     * @return array|null Pricing data or null if not found
+     */
+    protected function getStorePriceForSpecialAgent(string $agentId, string $packageId): ?array
+    {
+        $row = DB::table('v_pembelian_paket_kuotaumroh')
+            ->where('agent_id', $agentId)
+            ->where('produk_id', $packageId)
+            ->select(['produk_id', 'toko_harga_coret', 'toko_harga_jual', 'toko_hemat'])
+            ->first();
+
+        if (!$row) {
+            return null;
+        }
+
+        return [
+            'package_id' => $row->produk_id,
+            'toko_harga_coret' => (int) $row->toko_harga_coret,
+            'toko_harga_jual' => (int) $row->toko_harga_jual,
+            'toko_hemat' => (int) $row->toko_hemat,
+            'mandiri_final_fee_travel' => 0, // No profit for special agent
+            'mandiri_final_fee_affiliate' => 0, // No affiliate fee for special agent
         ];
     }
 }
