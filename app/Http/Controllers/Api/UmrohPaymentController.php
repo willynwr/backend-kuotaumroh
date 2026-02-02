@@ -170,6 +170,12 @@ class UmrohPaymentController extends Controller
             $role = null;
             $userId = null;
 
+            Log::info('🔍 DEBUG: Received IDs', [
+                'affiliate_id' => $affiliateId,
+                'agent_id' => $agentId,
+                'ref_code' => $request->input('ref_code'),
+            ]);
+
             if ($affiliateId) {
                 if (!str_starts_with($affiliateId, 'AFT')) {
                     return response()->json([
@@ -194,6 +200,11 @@ class UmrohPaymentController extends Controller
                     ], 400);
                 }
             }
+
+            Log::info('✅ DEBUG: Role & userId determined', [
+                'role' => $role,
+                'userId' => $userId,
+            ]);
 
             // ===== GET SERVER-SIDE PRICING FROM VIEW =====
             $packageIds = $request->input('package_id');

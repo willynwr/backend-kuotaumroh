@@ -66,6 +66,7 @@ class Pembayaran extends Model
         'harga_modal',
         'harga_jual',
         'profit',
+        'fee_affiliate',
         'metode_pembayaran',
         'qris_string',
         'qris_nmid',
