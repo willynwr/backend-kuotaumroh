@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\Pembayaran;
 use App\Models\Agent;
+use App\Models\Affiliate;
 use Illuminate\Support\Facades\Log;
 
 class PembayaranObserver
@@ -30,15 +31,13 @@ class PembayaranObserver
     {
         // Cek apakah status_pembayaran berubah menjadi berhasil
         if ($pembayaran->isDirty('status_pembayaran')) {
-            $newStatus = strtolower($pembayaran->status_pembayaran);
-            $oldStatus = strtolower($pembayaran->getOriginal('status_pembayaran'));
+            $newStatus = strtoupper($pembayaran->status_pembayaran);
+            $oldStatus = strtoupper($pembayaran->getOriginal('status_pembayaran'));
             
-            // Jika status baru adalah berhasil dan sebelumnya bukan berhasil
-            if (
-                in_array($newStatus, ['berhasil', 'success']) && 
-                !in_array($oldStatus, ['berhasil', 'success'])
-            ) {
+            // Jika status baru adalah SUCCESS dan sebelumnya bukan SUCCESS
+            if ($newStatus === 'SUCCESS' && $oldStatus !== 'SUCCESS') {
                 $this->incrementAgentSaldo($pembayaran);
+                $this->incrementAffiliateFee($pembayaran);
             }
         }
     }
@@ -76,6 +75,48 @@ class PembayaranObserver
             'agent_name' => $agent->nama_pic,
             'profit' => $pembayaran->profit,
             'saldo_baru' => $agent->fresh()->saldo,
+        ]);
+    }
+
+    /**
+     * Increment saldo_fee and total_fee affiliate berdasarkan fee_affiliate pembayaran
+     */
+    protected function incrementAffiliateFee(Pembayaran $pembayaran): void
+    {
+        if (!$pembayaran->agent_id || !$pembayaran->fee_affiliate) {
+            Log::info("Skipping affiliate fee increment - missing agent_id or fee_affiliate", [
+                'pembayaran_id' => $pembayaran->id,
+                'agent_id' => $pembayaran->agent_id,
+                'fee_affiliate' => $pembayaran->fee_affiliate,
+            ]);
+            return;
+        }
+
+        $agent = Agent::with('affiliate')->find($pembayaran->agent_id);
+        
+        if (!$agent || !$agent->affiliate_id || !$agent->affiliate) {
+            Log::info("Agent tidak memiliki affiliate untuk Pembayaran ID {$pembayaran->id}", [
+                'agent_id' => $pembayaran->agent_id,
+                'affiliate_id' => $agent->affiliate_id ?? null,
+            ]);
+            return;
+        }
+
+        $affiliate = $agent->affiliate;
+
+        // Increment saldo_fee dan total_fee (atomic operation)
+        $affiliate->increment('saldo_fee', $pembayaran->fee_affiliate);
+        $affiliate->increment('total_fee', $pembayaran->fee_affiliate);
+
+        Log::info("Saldo affiliate berhasil diupdate", [
+            'pembayaran_id' => $pembayaran->id,
+            'batch_id' => $pembayaran->batch_id,
+            'agent_id' => $agent->id,
+            'affiliate_id' => $affiliate->id,
+            'affiliate_name' => $affiliate->nama,
+            'fee_affiliate' => $pembayaran->fee_affiliate,
+            'saldo_fee_baru' => $affiliate->fresh()->saldo_fee,
+            'total_fee_baru' => $affiliate->fresh()->total_fee,
         ]);
     }
 }
