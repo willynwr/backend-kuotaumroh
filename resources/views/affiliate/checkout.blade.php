@@ -508,7 +508,7 @@ function checkoutApp() {
             const saved = localStorage.getItem('pendingOrder');
             if (!saved) { window.location.href = '{{ route("affiliate.order") }}'; return; }
             const data = JSON.parse(saved);
-            this.orderData = { items: data.items || [], total: data.subtotal || data.total || 0, platformFee: data.platformFee || 0, paymentMethod: data.paymentMethod || 'qris', refCode: data.refCode || '{{ $affiliate->id ?? 1 }}', scheduleDate: data.scheduleDate || null, isBulk: true };
+            this.orderData = { items: data.items || [], total: data.subtotal || data.total || 0, platformFee: data.platformFee || 0, paymentMethod: data.paymentMethod || 'qris', refCode: data.refCode || '{{ $user->id ?? "AFT00001" }}', scheduleDate: data.scheduleDate || null, isBulk: true };
             
             // Restore payment status dari localStorage jika ada
             // Jangan restore pending - langsung set ke verifying (biar masuk step verifikasi)
@@ -718,7 +718,7 @@ function checkoutApp() {
                     payment_method: 'QRIS', 
                     detail: this.orderData.scheduleDate ? `{date: ${this.orderData.scheduleDate}}` : null, 
                     ref_code: this.orderData.refCode, 
-                    affiliate_id: '{{ auth()->user()->id ?? "AFT00001" }}',
+                    affiliate_id: '{{ $user->id ?? "AFT00001" }}',
                     msisdn: msisdns, 
                     package_id: pkgs,
                     price: prices 

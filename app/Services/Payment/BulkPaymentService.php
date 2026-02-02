@@ -2,6 +2,7 @@
 
 namespace App\Services\Payment;
 
+use App\Models\Agent;
 use App\Models\Pembayaran;
 use App\Models\Pesanan;
 use App\Models\Produk;
@@ -195,13 +196,14 @@ class BulkPaymentService
                 $pricing = $serverPricing[$packageId];
                 $priceList[] = $pricing['bulk_harga_beli']; // Harga yang dikirim ke external API
                 
-                // Simpan detail pricing per item
+                // Simpan detail pricing per item (termasuk fee affiliate)
                 $pricingDetails[] = [
                     'msisdn' => $msisdnList[$index],
                     'package_id' => $packageId,
                     'bulk_harga_beli' => $pricing['bulk_harga_beli'],
                     'bulk_harga_rekomendasi' => $pricing['bulk_harga_rekomendasi'],
                     'bulk_potensi_profit' => $pricing['bulk_potensi_profit'] ?? 0,
+                    'bulk_final_fee_affiliate' => $pricing['bulk_final_fee_affiliate'] ?? 0, // Fee untuk affiliate
                 ];
             }
             
@@ -485,6 +487,8 @@ class BulkPaymentService
                         $totalHargaBeli += (int) ($item['bulk_harga_beli'] ?? 0);
                         $totalHargaRekomendasi += (int) ($item['bulk_harga_rekomendasi'] ?? 0);
                         $totalProfit += (int) ($item['bulk_potensi_profit'] ?? 0);
+                        // Ambil fee affiliate dari bulk pricing jika ada
+                        $totalFeeAffiliate += (int) ($item['bulk_final_fee_affiliate'] ?? 0);
                     }
                     $pricingSource = 'VIEW_BULK';
                     
@@ -492,6 +496,7 @@ class BulkPaymentService
                         'total_harga_beli' => $totalHargaBeli,
                         'total_harga_rekomendasi' => $totalHargaRekomendasi,
                         'total_profit' => $totalProfit,
+                        'total_fee_affiliate' => $totalFeeAffiliate,
                     ]);
                     
                 } elseif (isset($firstItem['toko_harga_jual'])) {
@@ -510,6 +515,38 @@ class BulkPaymentService
                         'total_harga_coret' => $totalHargaRekomendasi,
                         'total_fee_travel' => $totalFeeTravel,
                         'total_fee_affiliate' => $totalFeeAffiliate,
+                    ]);
+                }
+            }
+            
+            // ===== CALCULATE AFFILIATE FEE BASED ON AGENT RELATIONSHIP =====
+            // Cek apakah agent punya affiliate
+            // Jika agent tidak punya affiliate_id, fee_affiliate = 0
+            $feeAffiliate = 0;
+            
+            // Extract agent_id dari request
+            $agentId = $userId ?? $request['agent_id'] ?? $request['affiliate_id'] ?? $request['ref_code'] ?? null;
+            
+            if ($agentId && $totalFeeAffiliate > 0) {
+                // Query agent untuk cek apakah punya affiliate_id
+                // Note: tabel agent punya kolom link_referal, bukan ref_code
+                $agent = Agent::where('id', $agentId)
+                    ->orWhere('link_referal', $agentId)
+                    ->first();
+                
+                if ($agent && $agent->affiliate_id) {
+                    // Agent punya affiliate, gunakan totalFeeAffiliate yang sudah dihitung
+                    $feeAffiliate = $totalFeeAffiliate;
+                    
+                    Log::info('💳 Affiliate fee assigned', [
+                        'agent_id' => $agent->id,
+                        'affiliate_id' => $agent->affiliate_id,
+                        'fee_affiliate' => $feeAffiliate,
+                    ]);
+                } else {
+                    Log::info('⚠️ Agent has no affiliate, fee_affiliate = 0', [
+                        'agent_id' => $agentId,
+                        'has_affiliate' => isset($agent->affiliate_id),
                     ]);
                 }
             }
@@ -572,6 +609,7 @@ class BulkPaymentService
                 'harga_modal' => $totalHargaBeli ?? 0,
                 'harga_jual' => $totalHargaRekomendasi ?? 0,
                 'profit' => $totalProfit ?? 0,
+                'fee_affiliate' => $feeAffiliate ?? 0, // Fee untuk affiliate jika agent punya affiliate
             ];
             
             Log::info('💾 Creating payment record', [
