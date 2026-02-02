@@ -237,7 +237,7 @@
                         </div>
                       </td>
                       <td class="p-4 align-middle text-right font-medium whitespace-nowrap" x-text="formatRupiah(tx.totalAmount)"></td>
-                      <td class="p-4 align-middle text-right font-medium whitespace-nowrap" x-text="formatRupiah(tx.marginTotal || 0)"></td>
+                      <td class="p-4 align-middle text-right font-medium whitespace-nowrap" x-text="formatRupiah(tx.margin || 0)"></td>
                       <td class="p-4 align-middle text-center whitespace-nowrap">
                         <div class="flex items-center justify-center gap-1">
                           <a :href="'tel:' + (tx.agentPhone || '')" class="inline-flex items-center justify-center rounded-md bg-transparent h-8 w-8 hover:bg-green-50 hover:text-green-600 transition-colors" title="Hubungi Agen" x-show="tx.agentPhone">
@@ -622,7 +622,7 @@ function transactionsPage() {
           case 'agentName': comparison = (a.agentName || '').localeCompare(b.agentName || ''); break;
           case 'msisdnCount': comparison = (a.items?.length || 0) - (b.items?.length || 0); break;
           case 'totalAmount': comparison = a.totalAmount - b.totalAmount; break;
-          case 'marginTotal': comparison = (a.marginTotal || 0) - (b.marginTotal || 0); break;
+          case 'marginTotal': comparison = (a.margin || 0) - (b.margin || 0); break;
           case 'status': comparison = this.getStatusLabel(a.status).localeCompare(this.getStatusLabel(b.status)); break;
         }
         return this.sortDirection === 'asc' ? comparison : -comparison;
