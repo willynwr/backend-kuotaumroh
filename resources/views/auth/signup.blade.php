@@ -1684,7 +1684,8 @@
               if (ref.source_type === 'affiliate') formDataToSend.append('affiliate_id', String(ref.id));
               if (ref.source_type === 'freelance') formDataToSend.append('freelance_id', String(ref.id));
             } else {
-              formDataToSend.append('kategori_agent', 'Referral');
+              // No referral - backend will set as "Non Referral"
+              // Don't set kategori_agent here - let backend handle it
               // Don't set affiliate_id here - let backend use the default
             }
 

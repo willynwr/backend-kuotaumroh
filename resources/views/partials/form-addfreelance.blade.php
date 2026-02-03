@@ -59,13 +59,15 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-medium text-slate-700 mb-1">Nama <span class="text-red-500">*</span></label>
-            <input type="text" name="nama" x-model="newFreelance.nama" required
+            <input type="text" name="nama" x-model="newFreelance.nama" value="{{ old('nama') }}" 
+              x-init="newFreelance.nama = $el.value || newFreelance.nama" required
               class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
           </div>
 
           <div>
             <label class="block text-sm font-medium text-slate-700 mb-1">Email <span class="text-red-500">*</span></label>
-            <input type="email" name="email" x-model="newFreelance.email" required
+            <input type="email" name="email" x-model="newFreelance.email" value="{{ old('email') }}" 
+              x-init="newFreelance.email = $el.value || newFreelance.email" required
               class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
           </div>
 
@@ -75,7 +77,9 @@
               <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                 <span class="text-sm text-muted-foreground">+62</span>
               </div>
-              <input type="tel" name="no_wa" x-model="newFreelance.no_wa" @input="newFreelance.no_wa = newFreelance.no_wa.replace(/[^0-9]/g, '')" required placeholder="81xxx"
+              <input type="tel" name="no_wa" x-model="newFreelance.no_wa" value="{{ old('no_wa') }}" 
+                x-init="newFreelance.no_wa = $el.value || newFreelance.no_wa" 
+                @input="newFreelance.no_wa = newFreelance.no_wa.replace(/[^0-9]/g, '')" required placeholder="81xxx"
                 class="flex h-10 w-full rounded-md border border-input bg-background pl-12 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
             </div>
             <p class="text-xs text-muted-foreground mt-1">Format: 81xxxxxxxx (tanpa 0 atau +62)</p>
@@ -83,7 +87,8 @@
 
           <div>
             <label class="block text-sm font-medium text-slate-700 mb-1">Link Referral <span class="text-red-500">*</span></label>
-            <input type="text" name="link_referral" x-model="newFreelance.link_referral" required placeholder="john123"
+            <input type="text" name="link_referral" x-model="newFreelance.link_referral" value="{{ old('link_referral') }}" 
+              x-init="newFreelance.link_referral = $el.value || newFreelance.link_referral" required placeholder="john123"
               class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
           </div>
         </div>
@@ -155,7 +160,9 @@
 
         <div>
           <label class="block text-sm font-medium text-slate-700 mb-1">Alamat Lengkap <span class="text-red-500">*</span></label>
-          <textarea name="alamat_lengkap" x-model="newFreelance.alamat_lengkap" required rows="3" placeholder="Jl. Contoh No. 123"
+          <textarea name="alamat_lengkap" x-model="newFreelance.alamat_lengkap" 
+            x-init="newFreelance.alamat_lengkap = '{{ old('alamat_lengkap') }}' || newFreelance.alamat_lengkap" 
+            required rows="3" placeholder="Jl. Contoh No. 123"
             class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"></textarea>
         </div>
 

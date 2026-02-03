@@ -170,6 +170,11 @@ class DashboardController extends Controller
                 return redirect()->route('login')->with('error', 'Anda tidak memiliki akses ke dashboard ini');
             }
             
+            // Jika kategori_agent adalah Host, tidak boleh akses dashboard
+            if ($agent->kategori_agent === 'Host') {
+                return redirect()->route('login')->with('error', 'Agent Host tidak memiliki akses ke dashboard');
+            }
+            
             // Tampilkan dashboard normal untuk agent yang sudah approved
             return view('agent.dashboard', [
                 'user' => $agent,
@@ -1133,7 +1138,7 @@ class DashboardController extends Controller
     {
         // Validate request
         $validated = $request->validate([
-            'email' => 'required|email|unique:agent,email',
+            'email' => 'required|email|unique:agent,email|unique:affiliate,email|unique:freelance,email',
             'nama_pic' => 'required|string|max:255',
             'no_hp' => 'required|string|max:20',
             'provinsi' => 'required|string|max:255',
