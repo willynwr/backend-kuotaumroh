@@ -326,7 +326,15 @@ class AgentController extends Controller
 
     public function order()
     {
-        return view('agent.order');
+        $user = auth()->user();
+        $saldo = 0;
+        
+        // Ambil saldo dari tabel agent
+        if ($user instanceof \App\Models\Agent) {
+            $saldo = $user->saldo ?? 0;
+        }
+        
+        return view('agent.order', compact('saldo'));
     }
 
     public function checkout()

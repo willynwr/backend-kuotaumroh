@@ -513,27 +513,7 @@
                                     </table>
                                 </div>
 
-                                <!-- Action Buttons (Di bawah Detail Pesanan) -->
-                                <div class="mt-6 pt-6 border-t space-y-3">
-                                    <!-- View Invoice Button - Only enabled if payment is successful -->
-                                    <button @click="handleViewInvoice()"
-                                        :disabled="!canAccessInvoice"
-                                        :class="canAccessInvoice ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'bg-gray-300 text-gray-500 cursor-not-allowed'"
-                                        class="w-full inline-flex items-center justify-center gap-2 rounded-md h-10 px-4 py-2 transition-colors">
-                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                        </svg>
-                                        <span x-text="canAccessInvoice ? 'Lihat Invoice' : 'Invoice (Selesaikan Pembayaran)'"></span>
-                                    </button>
-                                    
-                                    <!-- Info message for pending payment -->
-                                    <p x-show="!canAccessInvoice" class="text-center text-sm text-muted-foreground">
-                                        <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                        </svg>
-                                        Invoice hanya dapat diakses setelah pembayaran berhasil
-                                    </p>
-                                </div>
+
                             </div>
                         </div>
                     </div>
@@ -589,12 +569,14 @@
                             <h3 class="text-lg leading-6 font-medium text-gray-900" x-text="errorModalTitle"></h3>
                             <div class="mt-2">
                                 <p class="text-sm text-gray-500" x-text="errorModalMessage"></p>
-                                <p class="text-xs text-gray-400 mt-2">Kembali ke halaman order dalam <span x-text="errorModalCountdown"></span> detik...</p>
+                                <p class="text-xs text-gray-400 mt-2">
+                                    Kembali dalam <span x-text="errorModalCountdown"></span> detik...
+                                </p>
                             </div>
                         </div>
                     </div>
                     <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
-                        <button @click="errorModalVisible = false" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        <button @click="redirectAfterError()" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
                             Tutup
                         </button>
                     </div>
@@ -664,6 +646,72 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Success Modal (Pembayaran Berhasil) -->
+        <div x-show="showSuccessModal" 
+             style="display: none;"
+             class="fixed inset-0 z-[60] overflow-y-auto"
+             x-cloak>
+            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                
+                <!-- Background overlay -->
+                <div x-show="showSuccessModal"
+                     x-transition:enter="transition ease-out duration-300"
+                     x-transition:enter-start="opacity-0"
+                     x-transition:enter-end="opacity-100"
+                     x-transition:leave="transition ease-in duration-200"
+                     x-transition:leave-start="opacity-100"
+                     x-transition:leave-end="opacity-0"
+                     class="fixed inset-0 transition-opacity bg-gray-900 bg-opacity-75 blur-sm" 
+                     aria-hidden="true"></div>
+
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+                <!-- Modal Panel -->
+                <div x-show="showSuccessModal"
+                     x-transition:enter="transition ease-out duration-300"
+                     x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                     x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                     x-transition:leave="transition ease-in duration-200"
+                     x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                     x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                     class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-sm sm:w-full">
+                    
+                    <div class="bg-gradient-to-br from-green-50 to-emerald-50 px-6 pt-6 pb-5">
+                        <div class="text-center">
+                            <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-500 mb-4">
+                                <svg class="h-9 w-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-900 mb-2">
+                                Pembayaran Berhasil!
+                            </h3>
+                            <p class="text-sm text-gray-600">
+                                Paket kuota umroh Anda sudah aktif dan siap digunakan.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white px-6 py-5 space-y-3">
+                        <button @click="redirectToInvoice()" type="button" 
+                            class="w-full inline-flex justify-center items-center rounded-lg px-4 py-3 bg-green-600 text-sm font-semibold text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all">
+                            <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            Lihat Invoice
+                        </button>
+                        <button @click="redirectToHome()" type="button" 
+                            class="w-full inline-flex justify-center items-center rounded-lg px-4 py-3 bg-gray-100 text-sm font-semibold text-gray-700 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all">
+                            <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                            </svg>
+                            <span x-text="sourceType === 'store' ? 'Kembali ke Store' : 'Kembali ke Order'"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Page Script -->
@@ -711,6 +759,11 @@
                 // Exit Confirmation Modal
                 showExitModal: false,
                 isForceExit: false,
+                
+                // Success Modal
+                showSuccessModal: false,
+                modalShown: false, // Flag untuk prevent duplicate modal
+                sourceType: 'store', // 'store' or 'order'
 
                 // Timer interval
                 timerInterval: null,
@@ -782,6 +835,12 @@
                     
                     console.log('📦 Order mode:', this.orderData.isBulk ? 'BULK (Agent)' : 'INDIVIDUAL (Public)');
                     
+                    // Detect source type: dari 'store' (by referal) atau dari 'order' (dashboard agent/affiliate/freelance)
+                    // Store: isBulk = false (public user dari store)
+                    // Order: isBulk = true (agent/affiliate/freelance dari dashboard)
+                    this.sourceType = this.orderData.isBulk ? 'order' : 'store';
+                    console.log('📍 Source type:', this.sourceType);
+                    
                     // Restore payment status dari localStorage jika ada (untuk handle refresh)
                     // Tapi jangan restore pending - langsung set ke verifying (seperti tokodigi langsung VERIFY)
                     if (parsedData.paymentStatus && ['verifying', 'activated'].includes(parsedData.paymentStatus)) {
@@ -803,6 +862,8 @@
                         if (this.paymentStatus === 'activated') {
                             console.log('✅ Status sudah activated, skip loading...');
                             this.isLoading = false;
+                            // Tampilkan success modal jika status sudah activated
+                            this.showSuccessModal = true;
                         } else {
                             // Fetch existing QRIS data
                             await this.fetchQrisData();
@@ -828,8 +889,28 @@
                 // Action saat user pilih "Ya, Batalkan"
                 confirmExit() {
                     this.isForceExit = true;
-                    // Redirect ke home
-                    window.location.href = '{{ route('welcome') }}';
+                    
+                    // Redirect berdasarkan source type
+                    if (this.sourceType === 'store') {
+                        // Dari store (public user) -> kembali ke store dengan referral yang dipakai
+                        const linkReferral = this.orderData.linkReferral || this.orderData.refCode || 'kuotaumroh';
+                        window.location.href = `/u/${linkReferral}`;
+                    } else {
+                        // Dari order (agent/affiliate/freelance) -> kembali ke halaman order
+                        const refCode = this.orderData.refCode;
+                        if (refCode && refCode.startsWith('AGT')) {
+                            window.location.href = '/agent/order';
+                        } else if (refCode && refCode.startsWith('AFT')) {
+                            const linkReferral = this.getLinkReferral();
+                            window.location.href = `/dash/${linkReferral}/order`;
+                        } else if (refCode && refCode.startsWith('FRL')) {
+                            const linkReferral = this.getLinkReferral();
+                            window.location.href = `/dash/${linkReferral}/order`;
+                        } else {
+                            // Fallback ke welcome page
+                            window.location.href = '{{ route('welcome') }}';
+                        }
+                    }
                 },
 
                 // Handle Back Button UI Click
@@ -979,6 +1060,61 @@
                 // Computed: Can access invoice (only when payment is successful)
                 get canAccessInvoice() {
                     return this.paymentStatus === 'activated';
+                },
+                
+                // Handle redirect berdasarkan source type
+                redirectToHome() {
+                    if (this.sourceType === 'store') {
+                        // Dari store (public user) -> kembali ke store dengan referral yang dipakai
+                        const linkReferral = this.orderData.linkReferral || this.orderData.refCode || 'kuotaumroh';
+                        window.location.href = `/u/${linkReferral}`;
+                    } else {
+                        // Dari order (agent/affiliate/freelance) -> kembali ke halaman order
+                        // Perlu check refCode untuk tentukan dashboard yang mana
+                        const refCode = this.orderData.refCode;
+                        if (refCode && refCode.startsWith('AGT')) {
+                            window.location.href = '/agent/order';
+                        } else if (refCode && refCode.startsWith('AFT')) {
+                            // Get link referral from localStorage or URL
+                            const linkReferral = this.getLinkReferral();
+                            window.location.href = `/dash/${linkReferral}/order`;
+                        } else if (refCode && refCode.startsWith('FRL')) {
+                            // Get link referral from localStorage or URL
+                            const linkReferral = this.getLinkReferral();
+                            window.location.href = `/dash/${linkReferral}/order`;
+                        } else {
+                            // Fallback ke welcome page
+                            window.location.href = '{{ route('welcome') }}';
+                        }
+                    }
+                },
+                
+                redirectToInvoice() {
+                    // Pass sourceType and refCode as query parameters
+                    const params = new URLSearchParams({
+                        source: this.sourceType,
+                        refCode: this.orderData.refCode || '',
+                        linkReferral: this.getLinkReferral()
+                    });
+                    const invoiceUrl = `/invoice/${this.paymentId}?${params.toString()}`;
+                    window.location.href = invoiceUrl;
+                },
+                
+                getLinkReferral() {
+                    // Try to get from localStorage
+                    const savedOrder = localStorage.getItem('pendingOrder');
+                    if (savedOrder) {
+                        try {
+                            const parsed = JSON.parse(savedOrder);
+                            // Check both linkReferral and linkReferal (typo in some places)
+                            if (parsed.linkReferral) return parsed.linkReferral;
+                            if (parsed.linkReferal) return parsed.linkReferal;
+                        } catch (e) {
+                            console.error('Failed to parse saved order:', e);
+                        }
+                    }
+                    // Fallback
+                    return 'kuotaumroh';
                 },
 
                 // Generate QR Code from QRIS string
@@ -1219,6 +1355,14 @@
                         // Handle both response formats:
                         // Format 1: { success: true, data: {...} }
                         // Format 2: Direct data { id: '...', qris: {...}, ... }
+                        
+                        // Check for error response first
+                        if (response.success === false || response.error) {
+                            const errorMessage = response.error || response.message || 'Gagal membuat transaksi';
+                            console.error('❌ API returned error:', errorMessage);
+                            throw new Error(errorMessage);
+                        }
+                        
                         const data = response.data || response;
                         const isSuccess = response.success === true || (data && data.id);
                         
@@ -1335,7 +1479,27 @@
                         }
                     } catch (error) {
                         console.error('❌ Failed to create payment:', error);
-                        this.showErrorModal('Error', error.message || 'Gagal membuat transaksi pembayaran. Silakan coba lagi.');
+                        
+                        // Check if error is about invalid/unregistered phone number
+                        const errorMessage = error.message || '';
+                        const errorStr = JSON.stringify(error).toLowerCase();
+                        
+                        if (errorMessage.includes('tidak terdaftar') || errorMessage.includes('not registered') || 
+                            errorMessage.includes('bukan nomor') || errorMessage.includes('tidak dapat diproses') ||
+                            errorMessage.includes('invalid') || errorMessage.toLowerCase().includes('msisdn') ||
+                            errorStr.includes('tidak terdaftar') || errorStr.includes('bukan nomor')) {
+                            
+                            // Extract nomor from error message if available
+                            const numberMatch = errorMessage.match(/(\d{10,15})/);
+                            const invalidNumber = numberMatch ? numberMatch[1] : '';
+                            
+                            this.showErrorModal(
+                                'Nomor Tidak Terdaftar', 
+                                errorMessage || 'Terdapat nomor telepon yang tidak terdaftar atau tidak valid. Silakan periksa kembali nomor telepon yang Anda masukkan dan pastikan nomor tersebut aktif.'
+                            );
+                        } else {
+                            this.showErrorModal('Error', error.message || 'Gagal membuat transaksi pembayaran. Silakan coba lagi.');
+                        }
                     }
                 },
 
@@ -1542,12 +1706,21 @@
 
                 // Set payment to activated state (paket aktif) - called when status is sukses
                 setPaymentActivated() {
-                    if (this.paymentStatus === 'activated') {
-                        console.log('⚠️ Already activated, skipping...');
-                        return;
+                    console.log('🎉 Payment successful! Setting to activated...');
+                    
+                    // Show success modal FIRST (sebelum check status, agar tidak ter-skip)
+                    if (!this.modalShown) {
+                        console.log('🎊 Showing success modal...');
+                        this.showSuccessModal = true;
+                        this.modalShown = true;
+                        console.log('🎊 showSuccessModal set to:', this.showSuccessModal);
                     }
                     
-                    console.log('🎉 Payment successful! Setting to activated...');
+                    // Check if already activated (after showing modal)
+                    if (this.paymentStatus === 'activated') {
+                        console.log('⚠️ Already activated, skipping status update...');
+                        return;
+                    }
                     
                     // Directly set to activated (step 4 - paket aktif)
                     this.paymentStatus = 'activated';
@@ -1555,12 +1728,6 @@
                     
                     // Save final state before cleanup (untuk akses invoice jika refresh)
                     this.savePaymentState();
-                    
-                    // Show success toast
-                    this.showToast(
-                        'Paket Aktif! 🎉',
-                        'Pembayaran berhasil! Paket kuota umroh Anda sudah aktif. Silakan lihat invoice.'
-                    );
                     
                     // Clean up intervals
                     // NOTE: Timer interval tidak di-clear agar tetap berjalan sampai habis (untuk cleanup localStorage)
@@ -1593,12 +1760,41 @@
                         this.errorModalCountdown--;
                         if (this.errorModalCountdown <= 0) {
                             clearInterval(countdownInterval);
-                            this.errorModalVisible = false;
-                            setTimeout(() => {
-                                window.location.href = '{{ route("welcome") }}';
-                            }, 300);
+                            this.redirectAfterError();
                         }
                     }, 1000);
+                },
+                
+                // Redirect after error - untuk tombol Tutup atau countdown habis
+                redirectAfterError() {
+                    this.errorModalVisible = false;
+                    this.isForceExit = true; // Bypass beforeunload confirmation
+                    // Redirect berdasarkan source type
+                    if (this.sourceType === 'store') {
+                        // Dari store (public user) -> kembali ke store dengan referral yang dipakai
+                        const linkReferral = this.orderData.linkReferral || this.orderData.refCode || 'kuotaumroh';
+                        window.location.href = `/u/${linkReferral}`;
+                    } else {
+                        // Dari order (agent/affiliate/freelance) -> kembali ke halaman order
+                        const refCode = this.orderData.refCode;
+                        if (refCode && refCode.startsWith('AGT')) {
+                            window.location.href = '/agent/order';
+                        } else if (refCode && refCode.startsWith('AFT')) {
+                            const linkReferral = this.getLinkReferral();
+                            window.location.href = `/dash/${linkReferral}/order`;
+                        } else if (refCode && refCode.startsWith('FRL')) {
+                            const linkReferral = this.getLinkReferral();
+                            window.location.href = `/dash/${linkReferral}/order`;
+                        } else {
+                            // Fallback ke store jika ada linkReferral
+                            const linkReferral = this.orderData.linkReferral || this.orderData.refCode;
+                            if (linkReferral) {
+                                window.location.href = `/u/${linkReferral}`;
+                            } else {
+                                window.location.href = '{{ route("welcome") }}';
+                            }
+                        }
+                    }
                 },
                 
                 // Format number tanpa Rp (untuk formula)
