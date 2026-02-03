@@ -31,6 +31,11 @@ class AgentController extends Controller
                 return redirect()->route('welcome')->with('error', 'Toko tidak ditemukan atau sudah tidak aktif');
             }
             
+            // Jika kategori_agent adalah Host, tidak boleh akses route ini
+            if ($agent->kategori_agent === 'Host') {
+                return redirect()->route('welcome')->with('error', 'Agent dengan kategori Host tidak memiliki akses ke halaman ini');
+            }
+            
             // Simpan agent info ke session untuk digunakan saat redirect ke store
             session([
                 'pending_agent_id' => $agent->id,
@@ -174,6 +179,11 @@ class AgentController extends Controller
         if (!$agent) {
             return redirect('/u/kuotaumroh')->with('error', 'Toko tidak ditemukan atau sudah tidak aktif');
         }
+        
+        // Jika kategori_agent adalah Host, tidak boleh akses route ini
+        if ($agent->kategori_agent === 'Host') {
+            return redirect('/u/kuotaumroh')->with('error', 'Agent dengan kategori Host tidak memiliki akses ke halaman ini');
+        }
 
         // Simpan agent info ke session
         session([
@@ -246,6 +256,11 @@ class AgentController extends Controller
         // Jika agent tidak ditemukan
         if (!$agent) {
             return redirect('/store/kuotaumroh')->with('error', 'Toko tidak ditemukan atau sudah tidak aktif');
+        }
+        
+        // Jika kategori_agent adalah Host, tidak boleh akses route ini
+        if ($agent->kategori_agent === 'Host') {
+            return redirect('/store/kuotaumroh')->with('error', 'Agent dengan kategori Host tidak memiliki akses ke halaman ini');
         }
 
         // Tampilkan halaman toko agent
