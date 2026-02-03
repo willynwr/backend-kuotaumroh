@@ -165,6 +165,65 @@
   </div>
 </div>
 
+<!-- Invalid Numbers for Checkout Modal -->
+<div
+  x-show="showInvalidNumbersCheckout"
+  x-cloak
+  role="dialog"
+  aria-labelledby="invalid-checkout-dialog-title"
+  aria-modal="true"
+  class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50"
+  @click.self="showInvalidNumbersCheckout = false"
+  @keydown.escape="showInvalidNumbersCheckout = false"
+>
+  <div class="relative bg-white rounded-xl shadow-xl w-full max-w-md max-h-[80vh] overflow-hidden animate-fade-in">
+    <div class="bg-red-50 px-6 pt-6 pb-5 border-b border-red-100">
+      <div class="flex items-start gap-4">
+        <div class="flex-shrink-0">
+          <div class="flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+            <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+          </div>
+        </div>
+        <div class="flex-1">
+          <h3 id="invalid-checkout-dialog-title" class="text-lg font-bold text-gray-900">
+            Nomor Tidak Valid
+          </h3>
+          <p class="mt-1 text-sm text-gray-600">
+            Terdapat <span class="font-semibold" x-text="invalidNumbersForCheckout.length"></span> nomor yang tidak valid. Silakan perbaiki sebelum melanjutkan checkout.
+          </p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="bg-white px-6 py-4 max-h-96 overflow-y-auto">
+      <div class="space-y-3">
+        <template x-for="(item, index) in invalidNumbersForCheckout" :key="index">
+          <div class="bg-red-50 border border-red-200 rounded-lg p-3">
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-semibold text-red-900 font-mono" x-text="item.number"></p>
+                <p class="text-xs text-red-700 mt-1" x-text="item.reason"></p>
+              </div>
+              <svg class="h-5 w-5 text-red-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+              </svg>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+    
+    <div class="bg-gray-50 px-6 py-4 border-t">
+      <button @click="showInvalidNumbersCheckout = false" type="button" 
+        class="w-full inline-flex justify-center items-center rounded-lg px-4 py-3 bg-red-600 text-sm font-semibold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all">
+        Tutup & Perbaiki Nomor
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- Package Picker Dialog - Step 1: PILIH PAKET -->
 @include('agent.partials.order-package-picker')
 

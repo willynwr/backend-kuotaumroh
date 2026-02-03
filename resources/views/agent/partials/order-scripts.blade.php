@@ -79,6 +79,8 @@ function orderApp() {
 
     // Dialogs
     invalidDialogOpen: false,
+    showInvalidNumbersCheckout: false,
+    invalidNumbersForCheckout: [],
     numberListDialogOpen: false,
     packagePickerOpen: false,
     numberSelectionOpen: false,
@@ -818,6 +820,10 @@ function orderApp() {
 
       this.validationError = false;
       this.isProcessing = true;
+      
+      // Validate all phone numbers and prepare order items
+      const invalidNumbers = [];
+      const orderItems = [];
 
       // Format schedule date if scheduled
       let scheduleDate = null;
@@ -830,19 +836,59 @@ function orderApp() {
         scheduleDate = date.toISOString().slice(0, 16); // Format: yyyy-mm-ddThh:mm
       }
 
-      // Prepare order items (sama dengan format store)
-      const orderItems = [];
-      
+      // Build order items with validation
       if (this.mode === 'bulk') {
-        // From bulk mode with multi-package assignments
+        console.log('🔍 Validating bulk numbers...');
         Object.entries(this.providerPackages).forEach(([provider, assignments]) => {
           assignments.forEach(assignment => {
             const pkg = this.packages.find(p => p.id === assignment.packageId);
             if (pkg) {
               assignment.numbers.forEach(msisdn => {
+                console.log('Checking number:', msisdn);
+                const validation = validateMsisdn(msisdn);
+                console.log('Validation result:', validation);
+                if (!validation.isValid) {
+                  console.log('❌ Invalid number found:', msisdn, validation.reason);
+                  invalidNumbers.push({
+                    number: msisdn,
+                    reason: validation.reason
+                  });
+                } else {
+                  orderItems.push({
+                    msisdn: msisdn,
+                    provider: provider,
+                    package_id: pkg.id,
+                    packageId: pkg.id,
+                    packageName: pkg.name || pkg.packageName,
+                    nama_paket: pkg.name,
+                    tipe_paket: pkg.tipe_paket || pkg.subType,
+                    masa_aktif: pkg.masa_aktif || pkg.days,
+                    days: pkg.days || pkg.masa_aktif,
+                    total_kuota: pkg.total_kuota || pkg.quota,
+                    price: pkg.price,
+                    harga: pkg.price,
+                    sellPrice: pkg.sellPrice
+                  });
+                }
+              });
+            }
+          });
+        });
+      } else {
+        this.individualItems.forEach(item => {
+          if (item.msisdn && item.packageId && item.provider) {
+            const validation = validateMsisdn(item.msisdn);
+            if (!validation.isValid) {
+              invalidNumbers.push({
+                number: item.msisdn,
+                reason: validation.reason
+              });
+            } else {
+              const pkg = this.packages.find(p => p.id === item.packageId);
+              if (pkg) {
                 orderItems.push({
-                  msisdn: msisdn,
-                  provider: provider,
+                  msisdn: item.msisdn,
+                  provider: item.provider,
                   package_id: pkg.id,
                   packageId: pkg.id,
                   packageName: pkg.name || pkg.packageName,
@@ -855,36 +901,34 @@ function orderApp() {
                   harga: pkg.price,
                   sellPrice: pkg.sellPrice
                 });
-              });
-            }
-          });
-        });
-      } else {
-        // From individual mode
-        this.individualItems.forEach(item => {
-          if (item.msisdn && item.packageId && item.provider) {
-            const pkg = this.packages.find(p => p.id === item.packageId);
-            if (pkg) {
-              orderItems.push({
-                msisdn: item.msisdn,
-                provider: item.provider,
-                package_id: pkg.id,
-                packageId: pkg.id,
-                packageName: pkg.name || pkg.packageName,
-                nama_paket: pkg.name,
-                tipe_paket: pkg.tipe_paket || pkg.subType,
-                masa_aktif: pkg.masa_aktif || pkg.days,
-                days: pkg.days || pkg.masa_aktif,
-                total_kuota: pkg.total_kuota || pkg.quota,
-                price: pkg.price,
-                harga: pkg.price,
-                sellPrice: pkg.sellPrice
-              });
+              }
             }
           }
         });
       }
+      
+      // Show error modal if there are invalid numbers
+      if (invalidNumbers.length > 0) {
+        console.log('❌ Found', invalidNumbers.length, 'invalid numbers, showing modal');
+        console.log('Invalid numbers:', invalidNumbers);
+        this.invalidNumbersForCheckout = invalidNumbers;
+        this.showInvalidNumbersCheckout = true;
+        this.isProcessing = false;
+        return;
+      }
+      
+      console.log('✅ All numbers are valid, proceeding with', orderItems.length, 'items');
+      
+      // If no valid items after validation
+      if (orderItems.length === 0) {
+        this.showToast('Error', 'Tidak ada nomor valid untuk diproses');
+        this.isProcessing = false;
+        return;
+      }
 
+      // Prepare order items (format sama dengan store)
+      // OrderItems sudah dibuat di bagian validasi di atas
+      
       // Save to localStorage (format sama dengan store)
       // RESET paymentId saat membuat order baru agar tidak resume order lama
       const orderData = {

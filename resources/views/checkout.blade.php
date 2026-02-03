@@ -569,12 +569,14 @@
                             <h3 class="text-lg leading-6 font-medium text-gray-900" x-text="errorModalTitle"></h3>
                             <div class="mt-2">
                                 <p class="text-sm text-gray-500" x-text="errorModalMessage"></p>
-                                <p class="text-xs text-gray-400 mt-2">Kembali ke halaman order dalam <span x-text="errorModalCountdown"></span> detik...</p>
+                                <p class="text-xs text-gray-400 mt-2">
+                                    Kembali dalam <span x-text="errorModalCountdown"></span> detik...
+                                </p>
                             </div>
                         </div>
                     </div>
                     <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
-                        <button @click="errorModalVisible = false" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        <button @click="redirectAfterError()" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
                             Tutup
                         </button>
                     </div>
@@ -1353,6 +1355,14 @@
                         // Handle both response formats:
                         // Format 1: { success: true, data: {...} }
                         // Format 2: Direct data { id: '...', qris: {...}, ... }
+                        
+                        // Check for error response first
+                        if (response.success === false || response.error) {
+                            const errorMessage = response.error || response.message || 'Gagal membuat transaksi';
+                            console.error('❌ API returned error:', errorMessage);
+                            throw new Error(errorMessage);
+                        }
+                        
                         const data = response.data || response;
                         const isSuccess = response.success === true || (data && data.id);
                         
@@ -1469,7 +1479,27 @@
                         }
                     } catch (error) {
                         console.error('❌ Failed to create payment:', error);
-                        this.showErrorModal('Error', error.message || 'Gagal membuat transaksi pembayaran. Silakan coba lagi.');
+                        
+                        // Check if error is about invalid/unregistered phone number
+                        const errorMessage = error.message || '';
+                        const errorStr = JSON.stringify(error).toLowerCase();
+                        
+                        if (errorMessage.includes('tidak terdaftar') || errorMessage.includes('not registered') || 
+                            errorMessage.includes('bukan nomor') || errorMessage.includes('tidak dapat diproses') ||
+                            errorMessage.includes('invalid') || errorMessage.toLowerCase().includes('msisdn') ||
+                            errorStr.includes('tidak terdaftar') || errorStr.includes('bukan nomor')) {
+                            
+                            // Extract nomor from error message if available
+                            const numberMatch = errorMessage.match(/(\d{10,15})/);
+                            const invalidNumber = numberMatch ? numberMatch[1] : '';
+                            
+                            this.showErrorModal(
+                                'Nomor Tidak Terdaftar', 
+                                errorMessage || 'Terdapat nomor telepon yang tidak terdaftar atau tidak valid. Silakan periksa kembali nomor telepon yang Anda masukkan dan pastikan nomor tersebut aktif.'
+                            );
+                        } else {
+                            this.showErrorModal('Error', error.message || 'Gagal membuat transaksi pembayaran. Silakan coba lagi.');
+                        }
                     }
                 },
 
@@ -1730,12 +1760,41 @@
                         this.errorModalCountdown--;
                         if (this.errorModalCountdown <= 0) {
                             clearInterval(countdownInterval);
-                            this.errorModalVisible = false;
-                            setTimeout(() => {
-                                window.location.href = '{{ route("welcome") }}';
-                            }, 300);
+                            this.redirectAfterError();
                         }
                     }, 1000);
+                },
+                
+                // Redirect after error - untuk tombol Tutup atau countdown habis
+                redirectAfterError() {
+                    this.errorModalVisible = false;
+                    this.isForceExit = true; // Bypass beforeunload confirmation
+                    // Redirect berdasarkan source type
+                    if (this.sourceType === 'store') {
+                        // Dari store (public user) -> kembali ke store dengan referral yang dipakai
+                        const linkReferral = this.orderData.linkReferral || this.orderData.refCode || 'kuotaumroh';
+                        window.location.href = `/u/${linkReferral}`;
+                    } else {
+                        // Dari order (agent/affiliate/freelance) -> kembali ke halaman order
+                        const refCode = this.orderData.refCode;
+                        if (refCode && refCode.startsWith('AGT')) {
+                            window.location.href = '/agent/order';
+                        } else if (refCode && refCode.startsWith('AFT')) {
+                            const linkReferral = this.getLinkReferral();
+                            window.location.href = `/dash/${linkReferral}/order`;
+                        } else if (refCode && refCode.startsWith('FRL')) {
+                            const linkReferral = this.getLinkReferral();
+                            window.location.href = `/dash/${linkReferral}/order`;
+                        } else {
+                            // Fallback ke store jika ada linkReferral
+                            const linkReferral = this.orderData.linkReferral || this.orderData.refCode;
+                            if (linkReferral) {
+                                window.location.href = `/u/${linkReferral}`;
+                            } else {
+                                window.location.href = '{{ route("welcome") }}';
+                            }
+                        }
+                    }
                 },
                 
                 // Format number tanpa Rp (untuk formula)
