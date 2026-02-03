@@ -269,7 +269,15 @@ class AffiliateController extends Controller
         
         $agents = $affiliate->agents;
         
-        return view('affiliate.order', compact('packages', 'agents', 'linkReferral'));
+        // Cari selected agent (jika ada di session atau default ke agent pertama jika hanya 1)
+        $selectedAgent = null;
+        $saldo = 0;
+        if ($agents->count() === 1) {
+            $selectedAgent = $agents->first();
+            $saldo = $selectedAgent->saldo ?? 0;
+        }
+        
+        return view('affiliate.order', compact('packages', 'agents', 'linkReferral', 'saldo'));
     }
 
     /**

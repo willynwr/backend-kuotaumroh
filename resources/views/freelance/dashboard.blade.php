@@ -240,8 +240,6 @@
                   ? 'border-primary bg-primary text-primary-foreground hover:bg-primary/90'
                   : 'border-slate-200 bg-white'">
                             <div class="flex flex-col items-center justify-start gap-3 p-6 text-center w-full">
-                                <img x-show="item.id === 'order'" src="{{ asset('images/order.png') }}" alt="Pesanan"
-                                    class="h-24 w-24 object-contain transition-transform group-hover:scale-110">
                                 <img x-show="item.id === 'downlines'" src="{{ asset('images/agen.png') }}" alt="Agen"
                                     class="h-24 w-24 object-contain transition-transform group-hover:scale-110">
                                 <img x-show="item.id === 'rewards'" src="{{ asset('images/hadiah.png') }}" alt="Hadiah"
@@ -307,13 +305,7 @@
             referralCode: '{{ $user->ref_code ?? "" }}',
             referralLink: '{{ !empty($linkReferral) ? str_replace("portal.", "", url("/agent/" . $linkReferral)) : "#" }}',
             shareText: 'Daftar sebagai Agent Kuotaumroh.id di bawah referral saya dan dapatkan penghasilan tambahan! {{ !empty($linkReferral) ? str_replace("portal.", "", url("/agent/" . $linkReferral)) : "" }}',
-            menuItems: [{                    id: 'order',
-                    title: 'Pesanan Baru',
-                    href: '{{ url("/dash/" . $linkReferral . "/order") }}',
-                    variant: 'default',
-                    iconSvg: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />'
-                },
-                {                    id: 'downlines',
+            menuItems: [{                    id: 'downlines',
                     title: 'Daftar Agent',
                     href: '{{ !empty($linkReferral) ? url("/dash/" . $linkReferral . "/downlines") : "#" }}',
                     variant: 'default',

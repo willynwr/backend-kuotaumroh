@@ -80,11 +80,62 @@ function detectProvider(msisdn) {
 /**
  * Validate phone number format
  * @param {string} msisdn - Phone number to validate
- * @returns {boolean} True if valid
+ * @returns {object} Validation result with isValid and reason
  */
 function validateMsisdn(msisdn) {
   const normalized = normalizeMsisdn(msisdn);
-  return /^0\d{9,12}$/.test(normalized);
+  
+  // Check basic format
+  if (!/^0\d{9,12}$/.test(normalized)) {
+    return {
+      isValid: false,
+      reason: 'Format nomor tidak valid. Harus 10-13 digit dimulai dengan 0'
+    };
+  }
+  
+  // Check if registered with any provider
+  const provider = detectProvider(normalized);
+  if (!provider) {
+    return {
+      isValid: false,
+      reason: 'Nomor tidak terdaftar di provider manapun'
+    };
+  }
+  
+  return {
+    isValid: true,
+    provider: provider
+  };
+}
+
+/**
+ * Check if phone number is registered with specific provider
+ * @param {string} msisdn - Phone number to check
+ * @param {string} expectedProvider - Expected provider name
+ * @returns {object} Check result with isRegistered and message
+ */
+function checkProviderRegistration(msisdn, expectedProvider) {
+  const normalized = normalizeMsisdn(msisdn);
+  const detectedProvider = detectProvider(normalized);
+  
+  if (!detectedProvider) {
+    return {
+      isRegistered: false,
+      message: 'Nomor tidak terdaftar di provider manapun'
+    };
+  }
+  
+  if (detectedProvider.toLowerCase() !== expectedProvider.toLowerCase()) {
+    return {
+      isRegistered: false,
+      message: `Nomor terdaftar di ${detectedProvider}, bukan ${expectedProvider}`
+    };
+  }
+  
+  return {
+    isRegistered: true,
+    provider: detectedProvider
+  };
 }
 
 /**

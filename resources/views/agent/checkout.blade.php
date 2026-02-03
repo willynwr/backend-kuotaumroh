@@ -328,12 +328,12 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <template x-for="(group, provider, index) in getGroupedByProvider()" :key="provider">
+                                        <template x-for="(item, idx) in Object.entries(getGroupedByProvider())" :key="item[0]">
                                             <tr class="border-b">
-                                                <td class="px-4 py-3 text-muted-foreground" x-text="index + 1"></td>
-                                                <td class="px-4 py-3 font-medium" x-text="provider"></td>
-                                                <td class="px-4 py-3" x-text="group.count + ' Paket'"></td>
-                                                <td class="px-4 py-3 text-right font-medium" x-text="formatRupiah(group.total)"></td>
+                                                <td class="px-4 py-3 text-muted-foreground" x-text="idx + 1"></td>
+                                                <td class="px-4 py-3 font-medium" x-text="item[0]"></td>
+                                                <td class="px-4 py-3" x-text="item[1].count + ' Paket'"></td>
+                                                <td class="px-4 py-3 text-right font-medium" x-text="formatRupiah(item[1].total)"></td>
                                             </tr>
                                         </template>
 
@@ -468,18 +468,84 @@
                         <h3 class="text-lg leading-6 font-medium text-gray-900" x-text="errorModalTitle"></h3>
                         <div class="mt-2">
                             <p class="text-sm text-gray-500" x-text="errorModalMessage"></p>
-                            <p class="text-xs text-gray-400 mt-2">Kembali ke halaman order dalam <span x-text="errorModalCountdown"></span> detik...</p>
+                            <p class="text-xs text-gray-400 mt-2">Kembali dalam <span x-text="errorModalCountdown"></span> detik...</p>
                         </div>
                     </div>
                 </div>
                 <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
-                    <button @click="errorModalVisible = false" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
+                    <button @click="redirectAfterError()" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
                         Tutup
                     </button>
                 </div>
             </div>
         </div>
     </div>
+    <!-- Success Modal (Pembayaran Berhasil) -->
+    <div x-show="showSuccessModal" 
+         style="display: none;"
+         class="fixed inset-0 z-[60] overflow-y-auto"
+         x-cloak>
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            
+            <!-- Background overlay -->
+            <div x-show="showSuccessModal"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 class="fixed inset-0 transition-opacity bg-gray-900 bg-opacity-75 blur-sm" 
+                 aria-hidden="true"></div>
+
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+            <!-- Modal Panel -->
+            <div x-show="showSuccessModal"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                 x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                 class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-sm sm:w-full">
+                
+                <div class="bg-gradient-to-br from-green-50 to-emerald-50 px-6 pt-6 pb-5">
+                    <div class="text-center">
+                        <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-500 mb-4">
+                            <svg class="h-9 w-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900 mb-2">
+                            Pembayaran Berhasil!
+                        </h3>
+                        <p class="text-sm text-gray-600">
+                            Paket kuota umroh Anda sudah aktif dan siap digunakan.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="bg-white px-6 py-5 space-y-3">
+                    <button @click="redirectToInvoice()" type="button" 
+                        class="w-full inline-flex justify-center items-center rounded-lg px-4 py-3 bg-green-600 text-sm font-semibold text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all">
+                        <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        Lihat Invoice
+                    </button>
+                    <button @click="redirectToOrder()" type="button" 
+                        class="w-full inline-flex justify-center items-center rounded-lg px-4 py-3 bg-gray-100 text-sm font-semibold text-gray-700 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all">
+                        <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                        </svg>
+                        Kembali ke Order
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Exit Confirmation Modal (Custom UI) -->
     <div x-show="showExitModal" 
          style="display: none;"
@@ -591,6 +657,10 @@ function checkoutApp() {
         // Exit Modal
         showExitModal: false,
         isForceExit: false,
+        
+        // Success Modal
+        showSuccessModal: false,
+        modalShown: false,
         
         isCreatingPayment: false,
 
@@ -975,6 +1045,15 @@ function checkoutApp() {
 
                 const response = await createBulkPayment(requestData);
                 
+                console.log('📥 Payment response:', response);
+                
+                // Check for error response first
+                if (response.success === false || response.error) {
+                    const errorMessage = response.error || response.message || 'Gagal membuat transaksi';
+                    console.error('❌ API returned error:', errorMessage);
+                    throw new Error(errorMessage);
+                }
+                
                 const data = response.data || response;
                 const isSuccess = response.success === true || (data && data.id);
                 
@@ -1038,7 +1117,28 @@ function checkoutApp() {
                 }
             } catch (error) {
                 console.error('❌ Payment error:', error);
-                this.showErrorModal('Error', error.message || 'Gagal membuat transaksi');
+                
+                // Check if error is about invalid/unregistered phone number
+                const errorMessage = error.message || '';
+                const errorStr = JSON.stringify(error).toLowerCase();
+                
+                if (errorMessage.includes('tidak terdaftar') || errorMessage.includes('not registered') || 
+                    errorMessage.includes('bukan nomor') || errorMessage.includes('tidak dapat diproses') ||
+                    errorMessage.includes('invalid') || errorMessage.toLowerCase().includes('msisdn') ||
+                    errorStr.includes('tidak terdaftar') || errorStr.includes('bukan nomor')) {
+                    
+                    // Extract nomor from error message if available
+                    const numberMatch = errorMessage.match(/(\d{10,15})/);
+                    const invalidNumber = numberMatch ? numberMatch[1] : '';
+                    
+                    this.showErrorModal(
+                        'Nomor Tidak Terdaftar', 
+                        errorMessage || 'Terdapat nomor telepon yang tidak terdaftar atau tidak valid. Silakan periksa kembali nomor telepon yang Anda masukkan dan pastikan nomor tersebut aktif.'
+                    );
+                } else {
+                    this.showErrorModal('Error', error.message || 'Gagal membuat transaksi pembayaran. Silakan coba lagi.');
+                }
+                
                 this.isLoading = false;
             } finally {
                 this.isCreatingPayment = false;
@@ -1179,18 +1279,42 @@ function checkoutApp() {
         },
 
         setPaymentActivated() {
-            if (this.paymentStatus === 'activated') return;
+            console.log('🎉 Payment successful! Setting to activated...');
+            
+            // Show success modal FIRST (sebelum check status, agar tidak ter-skip)
+            if (!this.modalShown) {
+                console.log('🎊 Showing success modal...');
+                this.showSuccessModal = true;
+                this.modalShown = true;
+                console.log('🎊 showSuccessModal set to:', this.showSuccessModal);
+            }
+            
+            // Check if already activated (after showing modal)
+            if (this.paymentStatus === 'activated') {
+                console.log('⚠️ Already activated, skipping status update...');
+                return;
+            }
             
             this.paymentStatus = 'activated';
+            console.log('📊 Status: activated (paket aktif)');
             
             // Save final state before cleanup
             this.savePaymentState();
             
-            this.showToast('Paket Aktif! 🎉', 'Pembayaran berhasil! Silakan lihat invoice.');
-            
             // Keep timer running
             // clearInterval(this.timerInterval);
             if (this.paymentCheckInterval) clearInterval(this.paymentCheckInterval);
+        },
+        
+        redirectToInvoice() {
+            if (this.paymentId) {
+                window.open(`/invoice/${this.paymentId}`, '_blank');
+            }
+        },
+        
+        redirectToOrder() {
+            this.isForceExit = true;
+            window.location.href = '{{ isset($linkReferral) ? url("/dash/" . $linkReferral . "/order") : route("agent.order") }}';
         },
 
         showToast(title, message) {
@@ -1211,12 +1335,16 @@ function checkoutApp() {
                 this.errorModalCountdown--;
                 if (this.errorModalCountdown <= 0) {
                     clearInterval(countdownInterval);
-                    this.errorModalVisible = false;
-                    setTimeout(() => {
-                        window.location.href = '{{ route("agent.order") }}';
-                    }, 300);
+                    this.redirectAfterError();
                 }
             }, 1000);
+        },
+        
+        // Redirect after error - untuk tombol Tutup atau countdown habis
+        redirectAfterError() {
+            this.errorModalVisible = false;
+            this.isForceExit = true; // Bypass beforeunload confirmation
+            window.location.href = '{{ route("agent.order") }}';
         },
         
         formatNumber(num) {

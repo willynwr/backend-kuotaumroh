@@ -105,6 +105,212 @@ class PackagePricingService
     }
 
     /**
+     * Check if user exists in VIEW database
+     * 
+     * Untuk user baru yang belum di-setup di VIEW, akan return false
+     * sehingga bisa fallback ke produk_default
+     * 
+     * @param string $role 'affiliate' | 'agent' | 'admin'
+     * @param string $userId ID user (AFTxxx, AGTxxx, ADMxxx)
+     * @return bool true jika user ada di VIEW, false jika tidak
+     */
+    public function checkUserExistsInView(string $role, string $userId): bool
+    {
+        try {
+            $viewTable = $this->getViewTableName($role);
+            $idColumn = $this->getIdColumnName($role);
+            
+            $exists = DB::table($viewTable)
+                ->where($idColumn, $userId)
+                ->exists();
+            
+            return $exists;
+        } catch (\Exception $e) {
+            // Jika VIEW tidak ada atau error, return false
+            return false;
+        }
+    }
+
+    /**
+     * Get catalog dari produk_default (fallback untuk user baru)
+     * 
+     * Join dengan table produk untuk dapat info lengkap produk
+     * Mapping fee/profit dari produk_default ke format VIEW
+     * 
+     * @param string $context 'bulk' | 'store'
+     * @return array Array of packages dengan pricing dari produk_default
+     */
+    public function getCatalogFromDefault(string $context = 'bulk'): array
+    {
+        $rows = DB::table('produk_default as pd')
+            ->join('produk as p', 'pd.produk_id', '=', 'p.id')
+            ->select([
+                'pd.produk_id',
+                'pd.agent_id',
+                'pd.affiliate_id',
+                // Bulk pricing fields
+                'pd.bulk_fee_travel',
+                'pd.bulk_persentase_fee_travel',
+                'pd.bulk_final_fee_travel',
+                'pd.bulk_fee_affiliate',
+                'pd.bulk_persentase_fee_affiliate',
+                'pd.bulk_final_fee_affiliate',
+                // Store/toko pricing fields
+                'pd.diskon_toko',
+                'pd.persentase_diskon_toko',
+                'pd.final_diskon',
+                // Mandiri (individual) pricing fields
+                'pd.mandiri_fee_travel',
+                'pd.mandiri_persentase_fee_travel',
+                'pd.mandiri_final_fee_travel',
+                'pd.mandiri_fee_affiliate',
+                'pd.mandiri_persentase_fee_affiliate',
+                'pd.mandiri_final_fee_affiliate',
+                // Product info from produk table
+                'p.provider',
+                'p.nama_paket',
+                'p.tipe_paket',
+                'p.masa_aktif',
+                'p.total_kuota',
+                'p.kuota_utama',
+                'p.kuota_bonus',
+                'p.telp',
+                'p.sms',
+                'p.promo',
+                'p.price_bulk',
+                'p.price_customer',
+                'p.harga_komersial',
+            ])
+            ->orderByRaw("CASE WHEN p.promo IS NOT NULL AND p.promo != '' THEN 0 ELSE 1 END")
+            ->orderBy('p.nama_paket')
+            ->get()
+            ->toArray();
+
+        if ($context === 'store') {
+            return array_map(fn($row) => $this->mapDefaultToStoreCatalog((array) $row), $rows);
+        }
+        
+        return array_map(fn($row) => $this->mapDefaultToBulkCatalog((array) $row), $rows);
+    }
+
+    /**
+     * Map produk_default row ke format BULK catalog (sama seperti VIEW)
+     * 
+     * @param array $row Data dari produk_default JOIN produk
+     * @return array Mapped data format bulk catalog
+     */
+    protected function mapDefaultToBulkCatalog(array $row): array
+    {
+        $generatedName = $this->generatePackageName($row);
+        
+        // Calculate bulk pricing
+        // bulk_harga_beli = price_bulk (dari tabel produk)
+        // bulk_harga_rekomendasi = price_customer (dari tabel produk)
+        // bulk_potensi_profit = bulk_final_fee_travel (dari produk_default)
+        $bulkHargaBeli = (int) ($row['price_bulk'] ?? 0);
+        $bulkHargaRekomendasi = (int) ($row['price_customer'] ?? 0);
+        $bulkPotensiProfit = (int) ($row['bulk_final_fee_travel'] ?? 0);
+        
+        return [
+            'id' => $row['produk_id'] ?? null,
+            'package_id' => $row['produk_id'] ?? null,
+            'name' => $row['nama_paket'] ?? $generatedName,
+            'packageName' => $row['nama_paket'] ?? $generatedName,
+            'type' => $row['provider'] ?? null,
+            'provider' => $row['provider'] ?? null,
+            'sub_type' => $row['tipe_paket'] ?? null,
+            'tipe_paket' => $row['tipe_paket'] ?? null,
+            'days' => $row['masa_aktif'] ?? null,
+            'masa_aktif' => $row['masa_aktif'] ?? null,
+            'quota' => $row['kuota_utama'] ?? null,
+            'kuota_utama' => $row['kuota_utama'] ?? null,
+            'total_kuota' => $row['total_kuota'] ?? null,
+            'telp' => $row['telp'] ?? null,
+            'sms' => $row['sms'] ?? null,
+            'bonus' => $row['kuota_bonus'] ?? null,
+            'kuota_bonus' => $row['kuota_bonus'] ?? null,
+            'is_active' => '1',
+            'promo' => $row['promo'] ?? null,
+            
+            // Source flag untuk debugging
+            '_source' => 'produk_default',
+            
+            // ===== BULK PRICING FIELDS =====
+            'price_app' => $bulkHargaRekomendasi,
+            'bulk_harga_rekomendasi' => $bulkHargaRekomendasi,
+            'price' => $bulkHargaBeli,
+            'bulk_harga_beli' => $bulkHargaBeli,
+            'bulk_potensi_profit' => $bulkPotensiProfit,
+            'profit' => $bulkPotensiProfit,
+            'bulk_final_fee_affiliate' => (int) ($row['bulk_final_fee_affiliate'] ?? 0),
+            
+            // Legacy field mapping
+            'price_bulk' => $bulkHargaBeli,
+            'price_customer' => $bulkHargaRekomendasi,
+            'harga' => $bulkHargaBeli,
+        ];
+    }
+
+    /**
+     * Map produk_default row ke format STORE catalog (untuk toko agent)
+     * 
+     * @param array $row Data dari produk_default JOIN produk
+     * @return array Mapped data format store catalog
+     */
+    protected function mapDefaultToStoreCatalog(array $row): array
+    {
+        $generatedName = $this->generatePackageName($row);
+        
+        // Calculate store pricing
+        // toko_harga_coret = harga_komersial atau price_customer
+        // toko_harga_jual = price_customer - final_diskon
+        // toko_hemat = final_diskon
+        $tokoHargaCoret = (int) ($row['harga_komersial'] ?? $row['price_customer'] ?? 0);
+        $finalDiskon = (int) ($row['final_diskon'] ?? 0);
+        $tokoHargaJual = (int) ($row['price_customer'] ?? 0);
+        $tokoHemat = $finalDiskon;
+        
+        return [
+            'id' => $row['produk_id'] ?? null,
+            'package_id' => $row['produk_id'] ?? null,
+            'name' => $row['nama_paket'] ?? $generatedName,
+            'packageName' => $row['nama_paket'] ?? $generatedName,
+            'type' => $row['provider'] ?? null,
+            'provider' => $row['provider'] ?? null,
+            'sub_type' => $row['tipe_paket'] ?? null,
+            'tipe_paket' => $row['tipe_paket'] ?? null,
+            'days' => $row['masa_aktif'] ?? null,
+            'masa_aktif' => $row['masa_aktif'] ?? null,
+            'quota' => $row['kuota_utama'] ?? null,
+            'kuota_utama' => $row['kuota_utama'] ?? null,
+            'total_kuota' => $row['total_kuota'] ?? null,
+            'telp' => $row['telp'] ?? null,
+            'sms' => $row['sms'] ?? null,
+            'bonus' => $row['kuota_bonus'] ?? null,
+            'kuota_bonus' => $row['kuota_bonus'] ?? null,
+            'is_active' => '1',
+            'promo' => $row['promo'] ?? null,
+            
+            // Source flag untuk debugging
+            '_source' => 'produk_default',
+            
+            // ===== STORE PRICING FIELDS =====
+            'price_app' => $tokoHargaCoret,
+            'toko_harga_coret' => $tokoHargaCoret,
+            'price' => $tokoHargaJual,
+            'toko_harga_jual' => $tokoHargaJual,
+            'hemat' => $tokoHemat,
+            'toko_hemat' => $tokoHemat,
+            
+            // Profit untuk individual purchase
+            'profit_agent' => (int) ($row['mandiri_final_fee_travel'] ?? 0),
+            'profit_affiliate' => (int) ($row['mandiri_final_fee_affiliate'] ?? 0),
+            'mandiri_final_fee_travel' => (int) ($row['mandiri_final_fee_travel'] ?? 0),
+            'mandiri_final_fee_affiliate' => (int) ($row['mandiri_final_fee_affiliate'] ?? 0),
+        ];
+    }
+
+    /**
      * Generate nama paket dari data VIEW
      * Format: "Provider TotalKuota - MasaAktif Hari" atau "Provider TipePaket - MasaAktif Hari"
      * 
@@ -272,6 +478,8 @@ class PackagePricingService
     /**
      * Get bulk catalog untuk AFFILIATE
      * 
+     * Jika affiliate belum ada di VIEW, fallback ke produk_default
+     * 
      * @param string $affiliateId Format: AFTxxx
      * @return array Array of packages dengan bulk pricing
      */
@@ -279,6 +487,12 @@ class PackagePricingService
     {
         if (!$this->validateRoleId($affiliateId, 'affiliate')) {
             throw new \InvalidArgumentException("Invalid affiliate ID format: {$affiliateId}");
+        }
+
+        // Check if affiliate exists in VIEW, if not use produk_default
+        if (!$this->checkUserExistsInView('affiliate', $affiliateId)) {
+            \Log::info("📦 Affiliate {$affiliateId} not found in VIEW, using produk_default");
+            return $this->getCatalogFromDefault('bulk');
         }
 
         $rows = DB::table('v_pembelian_paket_affiliate')
@@ -293,6 +507,8 @@ class PackagePricingService
     /**
      * Get bulk catalog untuk AGENT
      * 
+     * Jika agent belum ada di VIEW, fallback ke produk_default
+     * 
      * @param string $agentId Format: AGTxxx
      * @return array Array of packages dengan bulk pricing
      */
@@ -305,6 +521,12 @@ class PackagePricingService
         // Special case: AGT00001 uses v_pembelian_paket_kuotaumroh
         if ($this->isSpecialAgent($agentId)) {
             return $this->getBulkCatalogForSpecialAgent($agentId);
+        }
+
+        // Check if agent exists in VIEW, if not use produk_default
+        if (!$this->checkUserExistsInView('agent', $agentId)) {
+            \Log::info("📦 Agent {$agentId} not found in VIEW, using produk_default");
+            return $this->getCatalogFromDefault('bulk');
         }
 
         $rows = DB::table('v_pembelian_paket_agent_travel')
@@ -413,6 +635,8 @@ class PackagePricingService
      * Get store (public/individu) catalog untuk AGENT
      * Digunakan untuk toko publik agent (link share / public store)
      * 
+     * Jika agent belum ada di VIEW, fallback ke produk_default
+     * 
      * @param string $agentId Format: AGTxxx
      * @return array Array of packages dengan store pricing (toko_harga_*)
      */
@@ -425,6 +649,12 @@ class PackagePricingService
         // Special case: AGT00001 uses v_pembelian_paket_kuotaumroh
         if ($this->isSpecialAgent($agentId)) {
             return $this->getStoreCatalogForSpecialAgent($agentId);
+        }
+
+        // Check if agent exists in VIEW, if not use produk_default
+        if (!$this->checkUserExistsInView('agent', $agentId)) {
+            \Log::info("🏪 Agent {$agentId} not found in VIEW for store, using produk_default");
+            return $this->getCatalogFromDefault('store');
         }
 
         $rows = DB::table('v_pembelian_paket_agent_travel')
@@ -510,6 +740,8 @@ class PackagePricingService
      * Get harga untuk multiple items (untuk bulk payment)
      * Lookup price dari VIEW per item berdasarkan role
      * 
+     * Jika user tidak ada di VIEW, fallback ke produk_default
+     * 
      * @param string $role 'affiliate' | 'agent' | 'admin'
      * @param string $userId affiliate_id, agent_id, atau admin_id
      * @param array $packageIds Array of package_id yang dicari harganya
@@ -524,6 +756,12 @@ class PackagePricingService
         // Special case: AGT00001 uses v_pembelian_paket_kuotaumroh, no profit/fee
         if ($role === 'agent' && $this->isSpecialAgent($userId)) {
             return $this->getBulkPricesForSpecialAgent($userId, $packageIds);
+        }
+
+        // Check if user exists in VIEW, if not use produk_default
+        if (!$this->checkUserExistsInView($role, $userId)) {
+            \Log::info("💰 User {$userId} ({$role}) not found in VIEW for pricing, using produk_default");
+            return $this->getBulkPricesFromDefault($packageIds);
         }
 
         $viewTable = $this->getViewTableName($role);
@@ -561,6 +799,41 @@ class PackagePricingService
                 'bulk_harga_rekomendasi' => (int) $row->bulk_harga_rekomendasi,
                 'bulk_potensi_profit' => (int) ($row->bulk_potensi_profit ?? 0),
                 'bulk_final_fee_affiliate' => (int) ($row->bulk_final_fee_affiliate ?? 0), // 0 jika tidak ada (affiliate/admin)
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
+     * Get bulk prices dari produk_default (fallback)
+     * 
+     * @param array $packageIds Package IDs to lookup
+     * @return array Assoc array [package_id => pricing data]
+     */
+    protected function getBulkPricesFromDefault(array $packageIds): array
+    {
+        $rows = DB::table('produk_default as pd')
+            ->join('produk as p', 'pd.produk_id', '=', 'p.id')
+            ->whereIn('pd.produk_id', $packageIds)
+            ->select([
+                'pd.produk_id',
+                'p.price_bulk',
+                'p.price_customer',
+                'pd.bulk_final_fee_travel',
+                'pd.bulk_final_fee_affiliate',
+            ])
+            ->get();
+
+        $result = [];
+        foreach ($rows as $row) {
+            $result[$row->produk_id] = [
+                'package_id' => $row->produk_id,
+                'bulk_harga_beli' => (int) $row->price_bulk,
+                'bulk_harga_rekomendasi' => (int) $row->price_customer,
+                'bulk_potensi_profit' => (int) ($row->bulk_final_fee_travel ?? 0),
+                'bulk_final_fee_affiliate' => (int) ($row->bulk_final_fee_affiliate ?? 0),
+                '_source' => 'produk_default',
             ];
         }
 

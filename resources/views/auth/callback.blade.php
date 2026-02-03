@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
-<!-- VERSION: 2026-01-22 14:38 - FIXED REDIRECT PRIORITY -->
+<!-- VERSION: 2026-02-03 - MULTI ACCOUNT SUPPORT (same email in multiple tables) -->
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -73,6 +73,9 @@
         async function redirectUser(user, role, type = null) {
           statusEl.textContent = 'Menyimpan sesi...';
           
+          // Use token from user object if available (multi-account), otherwise from result
+          const authToken = user.token || result.token;
+          
           // Save to localStorage
           saveUser({
             id: user.id,
@@ -80,7 +83,7 @@
             email: user.email,
             role: role,
             agentCode: user.agent_code,
-            token: result.token
+            token: authToken
           });
 
           // Save to server session - CRITICAL: Must succeed before redirect
@@ -165,22 +168,55 @@
         // 2. Check if user is registered (backend already checked)
         if (result.is_registered && result.user) {
           console.log('User found:', result.user);
-          const role = result.role || 'agent';
+          console.log('All accounts:', result.accounts);
+          console.log('Has multiple accounts:', result.has_multiple_accounts);
           
-          // Validate role vs intent
           const intent = sessionStorage.getItem('auth_intent');
+          console.log('Auth intent:', intent);
           
-          // If admin_login intent, only allow admin role
-          if (intent === 'admin_login' && role !== 'admin') {
-            throw new Error('Akses ditolak. Email Anda tidak terdaftar sebagai administrator.');
+          let selectedAccount = null;
+          let selectedRole = null;
+          let selectedToken = null;
+          
+          // If user has multiple accounts, select based on intent
+          if (result.has_multiple_accounts && result.accounts) {
+            if (intent === 'admin_login') {
+              // From /maha - find admin account
+              selectedAccount = result.accounts.find(acc => acc.role === 'admin');
+              if (!selectedAccount) {
+                throw new Error('Akses ditolak. Email Anda tidak terdaftar sebagai administrator.');
+              }
+            } else {
+              // From /agent - find non-admin account (agent/affiliate/freelance)
+              selectedAccount = result.accounts.find(acc => acc.role !== 'admin');
+              if (!selectedAccount) {
+                throw new Error('Akses ditolak. Akun Anda hanya terdaftar sebagai admin. Silakan gunakan halaman login admin.');
+              }
+            }
+            selectedRole = selectedAccount.role;
+            selectedToken = selectedAccount.token;
+            
+            // Update result.user and result.token with selected account
+            result.user = selectedAccount;
+            result.token = selectedToken;
+            console.log('Selected account based on intent:', selectedAccount);
+          } else {
+            // Single account - use existing logic
+            selectedRole = result.role || 'agent';
+            selectedAccount = result.user;
+            selectedToken = result.token;
+            
+            // Validate role vs intent for single account
+            if (intent === 'admin_login' && selectedRole !== 'admin') {
+              throw new Error('Akses ditolak. Email Anda tidak terdaftar sebagai administrator.');
+            }
+            
+            if (intent === 'login' && selectedRole === 'admin') {
+              throw new Error('Email administrator tidak dapat digunakan di halaman ini. Silakan gunakan halaman login admin.');
+            }
           }
           
-          // If regular login intent, don't allow admin role
-          if (intent === 'login' && role === 'admin') {
-            throw new Error('Email administrator tidak dapat digunakan di halaman ini. Silakan gunakan halaman login admin.');
-          }
-          
-          await redirectUser(result.user, role, role);
+          await redirectUser(result.user, selectedRole, selectedRole);
           return;
         }
 

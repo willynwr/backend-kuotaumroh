@@ -31,6 +31,11 @@ class AgentController extends Controller
                 return redirect()->route('welcome')->with('error', 'Toko tidak ditemukan atau sudah tidak aktif');
             }
             
+            // Jika kategori_agent adalah Host, tidak boleh akses route ini
+            if ($agent->kategori_agent === 'Host') {
+                return redirect()->route('welcome')->with('error', 'Agent dengan kategori Host tidak memiliki akses ke halaman ini');
+            }
+            
             // Simpan agent info ke session untuk digunakan saat redirect ke store
             session([
                 'pending_agent_id' => $agent->id,
@@ -174,6 +179,11 @@ class AgentController extends Controller
         if (!$agent) {
             return redirect('/u/kuotaumroh')->with('error', 'Toko tidak ditemukan atau sudah tidak aktif');
         }
+        
+        // Jika kategori_agent adalah Host, tidak boleh akses route ini
+        if ($agent->kategori_agent === 'Host') {
+            return redirect('/u/kuotaumroh')->with('error', 'Agent dengan kategori Host tidak memiliki akses ke halaman ini');
+        }
 
         // Simpan agent info ke session
         session([
@@ -247,6 +257,11 @@ class AgentController extends Controller
         if (!$agent) {
             return redirect('/store/kuotaumroh')->with('error', 'Toko tidak ditemukan atau sudah tidak aktif');
         }
+        
+        // Jika kategori_agent adalah Host, tidak boleh akses route ini
+        if ($agent->kategori_agent === 'Host') {
+            return redirect('/store/kuotaumroh')->with('error', 'Agent dengan kategori Host tidak memiliki akses ke halaman ini');
+        }
 
         // Tampilkan halaman toko agent
         return view('agent.store', compact('agent'));
@@ -284,6 +299,13 @@ class AgentController extends Controller
 
     public function dashboard()
     {
+        // Cek apakah user yang login adalah agent dengan kategori Host
+        $user = auth()->user();
+        
+        if ($user instanceof \App\Models\Agent && $user->kategori_agent === 'Host') {
+            return redirect()->route('login')->with('error', 'Agent dengan kategori Host tidak memiliki akses ke dashboard');
+        }
+        
         return view('agent.dashboard');
     }
 
@@ -304,7 +326,15 @@ class AgentController extends Controller
 
     public function order()
     {
-        return view('agent.order');
+        $user = auth()->user();
+        $saldo = 0;
+        
+        // Ambil saldo dari tabel agent
+        if ($user instanceof \App\Models\Agent) {
+            $saldo = $user->saldo ?? 0;
+        }
+        
+        return view('agent.order', compact('saldo'));
     }
 
     public function checkout()
@@ -605,7 +635,7 @@ class AgentController extends Controller
                 'email' => 'required|email|unique:agent,email|unique:affiliate,email|unique:freelance,email',
                 'affiliate_id' => 'nullable|string|exists:affiliate,id',
                 'freelance_id' => 'nullable|string|exists:freelance,id',
-                'kategori_agent' => 'required|in:Referral,Host',
+                'kategori_agent' => 'nullable|in:Referral,Non Referral,Host',
                 'nama_pic' => 'required|string|max:255',
                 'no_hp' => 'required|string|unique:agent,no_hp|unique:affiliate,no_wa|unique:freelance,no_wa|regex:/^62[0-9]{9,13}$/',
                 'nama_travel' => 'required|string|max:255',
@@ -666,6 +696,31 @@ class AgentController extends Controller
                 ], 422);
             }
 
+            // Auto-set kategori_agent based on referral context
+            // Cek SEBELUM set default affiliate
+            if (!$request->has('kategori_agent')) {
+                // Cek apakah ada referral dari session (dari link affiliate/freelance)
+                $referrerType = session('referrer_type');
+                $hasReferral = false;
+                
+                // Cek apakah signup melalui link referral
+                if ($request->freelance_id || in_array($referrerType, ['affiliate', 'freelance'])) {
+                    $hasReferral = true;
+                } elseif ($request->affiliate_id) {
+                    // Ada affiliate_id yang dikirim dari frontend (bukan default yang akan di-set nanti)
+                    $hasReferral = true;
+                }
+                
+                if ($hasReferral) {
+                    // Ada referral dari affiliate/freelance
+                    $request->merge(['kategori_agent' => 'Referral']);
+                } else {
+                    // Tidak ada referral (signup biasa dari /agent)
+                    $request->merge(['kategori_agent' => 'Non Referral']);
+                }
+            }
+
+            // Set default affiliate jika tidak ada affiliate_id/freelance_id
             if (!$request->affiliate_id && !$request->freelance_id) {
                 // Get first/default affiliate
                 $defaultAffiliate = Affiliate::first();
@@ -726,7 +781,7 @@ class AgentController extends Controller
             'email' => 'email|unique:agent,email,' . $id . '|unique:affiliate,email|unique:freelance,email',
             'affiliate_id' => 'nullable|string|exists:affiliate,id',
             'freelance_id' => 'nullable|string|exists:freelance,id',
-            'kategori_agent' => 'in:Referral,Host',
+            'kategori_agent' => 'in:Referral,Non Referral,Host',
             'nama_pic' => 'string',
             'no_hp' => 'string|unique:agent,no_hp,' . $id,
             'nama_travel' => 'nullable|string',

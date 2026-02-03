@@ -717,7 +717,7 @@ class AdminController extends Controller
 
         $validator = Validator::make($request->all(), [
             'nama' => 'required|string|max:255',
-            'email' => 'required|email|unique:affiliate,email',
+            'email' => 'required|email|unique:affiliate,email|unique:agent,email|unique:freelance,email',
             'no_wa' => [
                 'required',
                 'string',
@@ -829,7 +829,7 @@ class AdminController extends Controller
 
         $validator = Validator::make($request->all(), [
             'nama' => 'required|string|max:255',
-            'email' => 'required|email|unique:affiliate,email,' . $id,
+            'email' => 'required|email|unique:affiliate,email,' . $id . '|unique:agent,email|unique:freelance,email',
             'no_wa' => [
                 'required',
                 'string',
@@ -980,7 +980,13 @@ class AdminController extends Controller
 
         $validator = Validator::make($request->all(), [
             'nama' => 'required|string|max:255',
-            'email' => 'required|email|unique:freelance,email',
+            'email' => [
+                'required',
+                'email',
+                'unique:freelance,email',
+                'unique:agent,email',
+                'unique:affiliate,email',
+            ],
             'no_wa' => [
                 'required',
                 'string',
@@ -1092,7 +1098,7 @@ class AdminController extends Controller
 
         $validator = Validator::make($request->all(), [
             'nama' => 'required|string|max:255',
-            'email' => 'required|email|unique:freelance,email,' . $id,
+            'email' => 'required|email|unique:freelance,email,' . $id . '|unique:agent,email|unique:affiliate,email',
             'no_wa' => [
                 'required',
                 'string',
@@ -1236,7 +1242,7 @@ class AdminController extends Controller
         ]);
 
         $validator = Validator::make($request->all(), [
-            'email' => 'required|email|unique:agent,email',
+            'email' => 'required|email|unique:agent,email|unique:affiliate,email|unique:freelance,email',
             'nama_pic' => 'required|string|max:255',
             'no_hp' => 'required|string|unique:agent,no_hp',
             'nama_travel' => 'required|string|max:255',
@@ -1328,7 +1334,7 @@ class AdminController extends Controller
         $agent = Agent::findOrFail($id);
 
         $validator = Validator::make($request->all(), [
-            'email' => 'required|email|unique:agent,email,' . $id,
+            'email' => 'required|email|unique:agent,email,' . $id . '|unique:affiliate,email|unique:freelance,email',
             'nama_pic' => 'required|string|max:255',
             'no_hp' => 'required|string|unique:agent,no_hp,' . $id,
             'nama_travel' => 'required|string|max:255',
@@ -1573,28 +1579,11 @@ class AdminController extends Controller
             'no_wa.unique' => 'Nomor WhatsApp sudah terdaftar, gunakan nomor lain',
         ]);
 
-        // Check if email exists in any user table (admin, agent, affiliate, freelance)
-        $emailExists = false;
-        $existingTable = '';
-
+        // Check if email exists in admin table only
         if (\App\Models\Admin::where('email', $validated['email'])->exists()) {
-            $emailExists = true;
-            $existingTable = 'Administrator';
-        } elseif (Agent::where('email', $validated['email'])->exists()) {
-            $emailExists = true;
-            $existingTable = 'Travel Agent';
-        } elseif (Affiliate::where('email', $validated['email'])->exists()) {
-            $emailExists = true;
-            $existingTable = 'Affiliate';
-        } elseif (Freelance::where('email', $validated['email'])->exists()) {
-            $emailExists = true;
-            $existingTable = 'Freelance';
-        }
-
-        if ($emailExists) {
             return redirect()->back()
                 ->withInput()
-                ->withErrors(['email' => 'Email sudah terdaftar sebagai ' . $existingTable . ', gunakan email lain']);
+                ->withErrors(['email' => 'Email sudah terdaftar sebagai Administrator, gunakan email lain']);
         }
 
         try {

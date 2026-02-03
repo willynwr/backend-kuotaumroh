@@ -57,12 +57,10 @@ function orderApp() {
     paymentMethods: [
       { id: 'qris', name: 'QRIS', description: 'Bayar dengan QRIS', icon: 'M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z' },
       { id: 'wallet', name: 'Saldo Dompet', description: 'Bayar dengan saldo dompet Anda', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
-      { id: 'bank', name: 'Transfer Bank', description: 'BCA, Mandiri, BNI, BRI', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
-      { id: 'va', name: 'Virtual Account', description: 'Bayar via Virtual Account', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
     ],
 
-    // Wallet balance
-    walletBalance: 3250000,
+    // Wallet balance (dari backend)
+    walletBalance: {{ $saldo ?? 0 }},
     platformFee: 0,
 
     // Batch info
@@ -81,6 +79,8 @@ function orderApp() {
 
     // Dialogs
     invalidDialogOpen: false,
+    showInvalidNumbersCheckout: false,
+    invalidNumbersForCheckout: [],
     numberListDialogOpen: false,
     packagePickerOpen: false,
     numberSelectionOpen: false,
@@ -811,9 +811,19 @@ function orderApp() {
           return;
         }
       }
+      
+      // Validasi saldo dompet jika metode pembayaran adalah wallet
+      if (this.paymentMethod === 'wallet' && this.walletBalance < this.totalWithFee) {
+        this.showToast('Saldo Tidak Cukup', `Saldo Anda: ${this.formatRupiah(this.walletBalance)}. Dibutuhkan: ${this.formatRupiah(this.totalWithFee)}`);
+        return;
+      }
 
       this.validationError = false;
       this.isProcessing = true;
+      
+      // Validate all phone numbers and prepare order items
+      const invalidNumbers = [];
+      const orderItems = [];
 
       // Format schedule date if scheduled
       let scheduleDate = null;
@@ -826,19 +836,59 @@ function orderApp() {
         scheduleDate = date.toISOString().slice(0, 16); // Format: yyyy-mm-ddThh:mm
       }
 
-      // Prepare order items (sama dengan format store)
-      const orderItems = [];
-      
+      // Build order items with validation
       if (this.mode === 'bulk') {
-        // From bulk mode with multi-package assignments
+        console.log('🔍 Validating bulk numbers...');
         Object.entries(this.providerPackages).forEach(([provider, assignments]) => {
           assignments.forEach(assignment => {
             const pkg = this.packages.find(p => p.id === assignment.packageId);
             if (pkg) {
               assignment.numbers.forEach(msisdn => {
+                console.log('Checking number:', msisdn);
+                const validation = validateMsisdn(msisdn);
+                console.log('Validation result:', validation);
+                if (!validation.isValid) {
+                  console.log('❌ Invalid number found:', msisdn, validation.reason);
+                  invalidNumbers.push({
+                    number: msisdn,
+                    reason: validation.reason
+                  });
+                } else {
+                  orderItems.push({
+                    msisdn: msisdn,
+                    provider: provider,
+                    package_id: pkg.id,
+                    packageId: pkg.id,
+                    packageName: pkg.name || pkg.packageName,
+                    nama_paket: pkg.name,
+                    tipe_paket: pkg.tipe_paket || pkg.subType,
+                    masa_aktif: pkg.masa_aktif || pkg.days,
+                    days: pkg.days || pkg.masa_aktif,
+                    total_kuota: pkg.total_kuota || pkg.quota,
+                    price: pkg.price,
+                    harga: pkg.price,
+                    sellPrice: pkg.sellPrice
+                  });
+                }
+              });
+            }
+          });
+        });
+      } else {
+        this.individualItems.forEach(item => {
+          if (item.msisdn && item.packageId && item.provider) {
+            const validation = validateMsisdn(item.msisdn);
+            if (!validation.isValid) {
+              invalidNumbers.push({
+                number: item.msisdn,
+                reason: validation.reason
+              });
+            } else {
+              const pkg = this.packages.find(p => p.id === item.packageId);
+              if (pkg) {
                 orderItems.push({
-                  msisdn: msisdn,
-                  provider: provider,
+                  msisdn: item.msisdn,
+                  provider: item.provider,
                   package_id: pkg.id,
                   packageId: pkg.id,
                   packageName: pkg.name || pkg.packageName,
@@ -851,36 +901,34 @@ function orderApp() {
                   harga: pkg.price,
                   sellPrice: pkg.sellPrice
                 });
-              });
-            }
-          });
-        });
-      } else {
-        // From individual mode
-        this.individualItems.forEach(item => {
-          if (item.msisdn && item.packageId && item.provider) {
-            const pkg = this.packages.find(p => p.id === item.packageId);
-            if (pkg) {
-              orderItems.push({
-                msisdn: item.msisdn,
-                provider: item.provider,
-                package_id: pkg.id,
-                packageId: pkg.id,
-                packageName: pkg.name || pkg.packageName,
-                nama_paket: pkg.name,
-                tipe_paket: pkg.tipe_paket || pkg.subType,
-                masa_aktif: pkg.masa_aktif || pkg.days,
-                days: pkg.days || pkg.masa_aktif,
-                total_kuota: pkg.total_kuota || pkg.quota,
-                price: pkg.price,
-                harga: pkg.price,
-                sellPrice: pkg.sellPrice
-              });
+              }
             }
           }
         });
       }
+      
+      // Show error modal if there are invalid numbers
+      if (invalidNumbers.length > 0) {
+        console.log('❌ Found', invalidNumbers.length, 'invalid numbers, showing modal');
+        console.log('Invalid numbers:', invalidNumbers);
+        this.invalidNumbersForCheckout = invalidNumbers;
+        this.showInvalidNumbersCheckout = true;
+        this.isProcessing = false;
+        return;
+      }
+      
+      console.log('✅ All numbers are valid, proceeding with', orderItems.length, 'items');
+      
+      // If no valid items after validation
+      if (orderItems.length === 0) {
+        this.showToast('Error', 'Tidak ada nomor valid untuk diproses');
+        this.isProcessing = false;
+        return;
+      }
 
+      // Prepare order items (format sama dengan store)
+      // OrderItems sudah dibuat di bagian validasi di atas
+      
       // Save to localStorage (format sama dengan store)
       // RESET paymentId saat membuat order baru agar tidak resume order lama
       const orderData = {

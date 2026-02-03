@@ -587,6 +587,85 @@
             <span class="text-sm font-semibold">Hubungi Kami</span>
         </a>
 
+        <!-- Invalid Numbers Modal -->
+        <div x-show="showInvalidNumbersModal" 
+             style="display: none;"
+             class="fixed inset-0 z-[100] overflow-y-auto"
+             x-cloak>
+            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                
+                <!-- Background overlay -->
+                <div x-show="showInvalidNumbersModal"
+                     x-transition:enter="transition ease-out duration-300"
+                     x-transition:enter-start="opacity-0"
+                     x-transition:enter-end="opacity-100"
+                     x-transition:leave="transition ease-in duration-200"
+                     x-transition:leave-start="opacity-100"
+                     x-transition:leave-end="opacity-0"
+                     class="fixed inset-0 transition-opacity bg-gray-900 bg-opacity-75" 
+                     @click="showInvalidNumbersModal = false"
+                     aria-hidden="true"></div>
+
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+                <!-- Modal Panel -->
+                <div x-show="showInvalidNumbersModal"
+                     x-transition:enter="transition ease-out duration-300"
+                     x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                     x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                     x-transition:leave="transition ease-in duration-200"
+                     x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                     x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                     class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full">
+                    
+                    <div class="bg-red-50 px-6 pt-6 pb-5 border-b border-red-100">
+                        <div class="flex items-start gap-4">
+                            <div class="flex-shrink-0">
+                                <div class="flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                                    <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="text-lg font-bold text-gray-900">
+                                    Nomor Tidak Valid
+                                </h3>
+                                <p class="mt-1 text-sm text-gray-600">
+                                    Terdapat nomor yang tidak valid. Silakan perbaiki sebelum melanjutkan.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white px-6 py-4 max-h-96 overflow-y-auto">
+                        <div class="space-y-3">
+                            <template x-for="(item, index) in invalidNumbersForCheckout" :key="index">
+                                <div class="bg-red-50 border border-red-200 rounded-lg p-3">
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-sm font-semibold text-red-900 font-mono" x-text="item.number"></p>
+                                            <p class="text-xs text-red-700 mt-1" x-text="item.reason"></p>
+                                        </div>
+                                        <svg class="h-5 w-5 text-red-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-50 px-6 py-4">
+                        <button @click="showInvalidNumbersModal = false" type="button" 
+                            class="w-full inline-flex justify-center items-center rounded-lg px-4 py-3 bg-red-600 text-sm font-semibold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all">
+                            Tutup & Perbaiki Nomor
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Toast Notification -->
         <div x-show="toastVisible" x-transition class="toast">
             <div class="font-semibold mb-1" x-text="toastTitle"></div>
@@ -615,6 +694,11 @@
                 toastVisible: false,
                 toastTitle: '',
                 toastMessage: '',
+                
+                // Invalid numbers modal
+                showInvalidNumbersModal: false,
+                invalidNumbersForCheckout: [],
+                
                 invoiceCetakEnabled: false,
                 invoiceMethod: 'whatsapp',
                 invoiceEmail: '',
@@ -980,6 +1064,24 @@
 
                 handleCheckout() {
                     if (!this.canCheckout) return;
+                    
+                    console.log('🔍 Validating phone number:', this.msisdn);
+                    
+                    // Validate phone number before checkout
+                    const validation = validateMsisdn(this.msisdn);
+                    console.log('📋 Validation result:', validation);
+                    
+                    if (!validation.isValid) {
+                        console.log('❌ Invalid number detected, showing modal');
+                        this.invalidNumbersForCheckout = [{
+                            number: this.msisdn,
+                            reason: validation.reason
+                        }];
+                        this.showInvalidNumbersModal = true;
+                        return;
+                    }
+                    
+                    console.log('✅ Number is valid, proceeding to checkout');
 
                     // Format schedule date if scheduled
                     let scheduleDate = null;
