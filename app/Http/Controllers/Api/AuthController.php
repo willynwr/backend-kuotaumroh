@@ -52,9 +52,8 @@ class AuthController extends Controller
             $email = $googleUser->getEmail();
             $name = $googleUser->getName();
 
-            // Check if user exists in any table
-            $user = null;
-            $role = null;
+            // Check if user exists in any table - collect ALL matching accounts
+            $accounts = [];
 
             // Check all tables
             $admin = Admin::where('email', $email)->first();
@@ -62,31 +61,81 @@ class AuthController extends Controller
             $affiliate = Affiliate::where('email', $email)->first();
             $freelance = Freelance::where('email', $email)->first();
 
-            // Determine role
+            // Collect all found accounts
             if ($admin) {
-                $user = $admin;
-                $role = 'admin';
-            } elseif ($agent) {
-                $user = $agent;
+                $token = $admin->createToken('auth-token-admin')->plainTextToken;
+                $accounts[] = [
+                    'id' => $admin->id,
+                    'email' => $admin->email,
+                    'nama' => $admin->nama ?? $name,
+                    'no_wa' => $admin->no_wa ?? null,
+                    'role' => 'admin',
+                    'token' => $token
+                ];
+            }
+            
+            if ($agent) {
+                $token = $agent->createToken('auth-token-agent')->plainTextToken;
                 $jenis = strtolower($agent->jenis_agent ?? 'agent');
+                $role = 'agent';
                 
                 if (str_contains($jenis, 'freelance')) {
                     $role = 'freelance';
                 } elseif (str_contains($jenis, 'affiliate')) {
                     $role = 'affiliate';
-                } else {
-                    $role = 'agent';
                 }
-            } elseif ($affiliate) {
-                $user = $affiliate;
-                $role = 'affiliate';
-            } elseif ($freelance) {
-                $user = $freelance;
-                $role = 'freelance';
+                
+                $accounts[] = [
+                    'id' => $agent->id,
+                    'email' => $agent->email,
+                    'nama_pic' => $agent->nama_pic ?? $agent->nama ?? $name,
+                    'nama' => $agent->nama_pic ?? $agent->nama ?? $name,
+                    'jenis_agent' => $agent->jenis_agent ?? null,
+                    'agent_code' => $agent->agent_code ?? null,
+                    'link_referral' => $agent->link_referral ?? $agent->link_referal ?? null,
+                    'status' => $agent->status ?? 'approved',
+                    'role' => $role,
+                    'source_table' => 'agent',
+                    'token' => $token
+                ];
+            }
+            
+            if ($affiliate) {
+                $token = $affiliate->createToken('auth-token-affiliate')->plainTextToken;
+                $accounts[] = [
+                    'id' => $affiliate->id,
+                    'email' => $affiliate->email,
+                    'nama_pic' => $affiliate->nama_pic ?? $affiliate->nama ?? $name,
+                    'nama' => $affiliate->nama_pic ?? $affiliate->nama ?? $name,
+                    'jenis_agent' => 'affiliate',
+                    'agent_code' => $affiliate->agent_code ?? null,
+                    'link_referral' => $affiliate->link_referral ?? $affiliate->link_referal ?? null,
+                    'status' => $affiliate->status ?? 'approved',
+                    'role' => 'affiliate',
+                    'source_table' => 'affiliate',
+                    'token' => $token
+                ];
+            }
+            
+            if ($freelance) {
+                $token = $freelance->createToken('auth-token-freelance')->plainTextToken;
+                $accounts[] = [
+                    'id' => $freelance->id,
+                    'email' => $freelance->email,
+                    'nama_pic' => $freelance->nama_pic ?? $freelance->nama ?? $name,
+                    'nama' => $freelance->nama_pic ?? $freelance->nama ?? $name,
+                    'jenis_agent' => 'freelance',
+                    'agent_code' => $freelance->agent_code ?? null,
+                    'link_referral' => $freelance->link_referral ?? $freelance->link_referal ?? null,
+                    'status' => $freelance->status ?? 'approved',
+                    'role' => 'freelance',
+                    'source_table' => 'freelance',
+                    'token' => $token
+                ];
             }
 
-            // User not found
-            if (!$user) {
+            // User not found in any table
+            if (empty($accounts)) {
                 return response()->json([
                     'success' => false,
                     'is_registered' => false,
@@ -94,37 +143,29 @@ class AuthController extends Controller
                         'email' => $email,
                         'name' => $name,
                     ],
+                    'accounts' => [],
                     'message' => 'User belum terdaftar'
                 ], 404);
             }
 
-            // User found - generate token
-            $token = $user->createToken('auth-token')->plainTextToken;
-
-            // Prepare user response based on role
-            $userData = [
-                'id' => $user->id,
-                'email' => $user->email,
-            ];
-
-            if ($role === 'admin') {
-                $userData['nama'] = $user->nama ?? $name;
-                $userData['no_wa'] = $user->no_wa ?? null;
-            } else {
-                $userData['nama_pic'] = $user->nama_pic ?? $user->nama ?? $name;
-                $userData['nama'] = $user->nama_pic ?? $user->nama ?? $name;
-                $userData['jenis_agent'] = $user->jenis_agent ?? null;
-                $userData['agent_code'] = $user->agent_code ?? null;
-                $userData['link_referral'] = $user->link_referral ?? $user->link_referal ?? null;
-                $userData['status'] = $user->status ?? 'approved';
-            }
+            // Return all found accounts - let frontend decide which to use based on intent
+            // For backward compatibility, also include first matching user/role
+            $primaryAccount = $accounts[0];
+            $primaryRole = $primaryAccount['role'];
+            $primaryToken = $primaryAccount['token'];
+            
+            // Build userData without token for backward compatibility
+            $userData = $primaryAccount;
+            unset($userData['token']);
 
             return response()->json([
                 'success' => true,
                 'is_registered' => true,
                 'user' => $userData,
-                'token' => $token,
-                'role' => $role
+                'token' => $primaryToken,
+                'role' => $primaryRole,
+                'accounts' => $accounts, // NEW: all accounts for this email
+                'has_multiple_accounts' => count($accounts) > 1
             ]);
 
         } catch (\Exception $e) {

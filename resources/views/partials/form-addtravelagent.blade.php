@@ -65,13 +65,15 @@
             
             <div>
               <label class="block text-sm font-medium text-slate-700 mb-1">Nama PIC <span class="text-red-500">*</span></label>
-              <input type="text" name="nama_pic" x-model="newTravelAgent.full_name" required
+              <input type="text" name="nama_pic" x-model="newTravelAgent.full_name" value="{{ old('nama_pic') }}" 
+                x-init="newTravelAgent.full_name = $el.value || newTravelAgent.full_name" required
                 class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
             </div>
 
             <div>
               <label class="block text-sm font-medium text-slate-700 mb-1">Email <span class="text-red-500">*</span></label>
-              <input type="email" name="email" x-model="newTravelAgent.email" required
+              <input type="email" name="email" x-model="newTravelAgent.email" value="{{ old('email') }}" 
+                x-init="newTravelAgent.email = $el.value || newTravelAgent.email" required
                 class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
             </div>
 
@@ -81,7 +83,9 @@
                 <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                   <span class="text-sm text-muted-foreground">+62</span>
                 </div>
-                <input type="tel" name="no_hp" x-model="newTravelAgent.phone" @input="newTravelAgent.phone = newTravelAgent.phone.replace(/[^0-9]/g, '')" required placeholder="81xxx"
+                <input type="tel" name="no_hp" x-model="newTravelAgent.phone" value="{{ old('no_hp') }}" 
+                  x-init="newTravelAgent.phone = $el.value || newTravelAgent.phone" 
+                  @input="newTravelAgent.phone = newTravelAgent.phone.replace(/[^0-9]/g, '')" required placeholder="81xxx"
                   class="flex h-10 w-full rounded-md border border-input bg-background pl-12 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
               </div>
               <p class="text-xs text-muted-foreground mt-1">Format: 81xxxxxxxx (tanpa 0 atau +62)</p>
@@ -102,7 +106,8 @@
 
             <div>
               <label class="block text-sm font-medium text-slate-700 mb-1">Nama Travel <span class="text-red-500">*</span></label>
-              <input type="text" name="nama_travel" x-model="newTravelAgent.travel_name" required
+              <input type="text" name="nama_travel" x-model="newTravelAgent.travel_name" value="{{ old('nama_travel') }}" 
+                x-init="newTravelAgent.travel_name = $el.value || newTravelAgent.travel_name" required
                 class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
             </div>
 
@@ -128,7 +133,8 @@
 
             <div>
               <label class="block text-sm font-medium text-slate-700 mb-1">Total Traveller per Bulan <span class="text-red-500">*</span></label>
-              <input type="number" name="total_traveller" x-model="newTravelAgent.travel_member" required min="0"
+              <input type="number" name="total_traveller" x-model="newTravelAgent.travel_member" value="{{ old('total_traveller') }}" 
+                x-init="newTravelAgent.travel_member = $el.value || newTravelAgent.travel_member" required min="0"
                 class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
             </div>
 
@@ -239,7 +245,7 @@
 
         <div>
           <label class="block text-sm font-medium text-slate-700 mb-1">Alamat Lengkap <span class="text-red-500">*</span></label>
-          <textarea name="alamat_lengkap" x-model="newTravelAgent.address" required rows="3" placeholder="Jl. Contoh No. 123" class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"></textarea>
+          <textarea name="alamat_lengkap" x-model="newTravelAgent.address" \n            x-init="newTravelAgent.address = '{{ old('alamat_lengkap') }}' || newTravelAgent.address" \n            required rows="3" placeholder="Jl. Contoh No. 123" class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"></textarea>
         </div>
 
         <!-- Map Section -->

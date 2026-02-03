@@ -3,7 +3,6 @@
 @section('title', 'Daftar Agent - Kuotaumroh.id')
 
 @push('styles')
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <style>
     /* Match Flatpickr to project's green theme */
@@ -48,6 +47,20 @@
     .flatpickr-day.inRange {
         background: rgba(16, 185, 129, 0.15);
         border-color: transparent;
+    }
+
+    /* Map lock styles */
+    .map-locked {
+        cursor: default !important;
+        pointer-events: none;
+    }
+    
+    .map-locked * {
+        cursor: default !important;
+    }
+
+    [x-cloak] {
+        display: none !important;
     }
 
     .flatpickr-day:hover:not(.selected):not(.startRange):not(.endRange) {
@@ -618,7 +631,22 @@
                                 <label class="text-sm font-medium">Tandai Lokasi di Peta</label>
                                 <p class="text-xs text-muted-foreground">Klik pada peta untuk menandai lokasi Anda</p>
 
-                                <div class="relative mb-2">
+                                <!-- Map Lock/Unlock Button -->
+                                <div class="mb-2">
+                                    <button type="button" @click="toggleMapLock()" 
+                                        class="flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-md border transition-colors"
+                                        :class="mapLocked ? 'bg-muted text-muted-foreground border-input hover:bg-muted/80' : 'bg-primary text-primary-foreground border-primary hover:bg-primary/90'">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" x-show="mapLocked">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                        </svg>
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" x-show="!mapLocked">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                                        </svg>
+                                        <span x-text="mapLocked ? 'Klik untuk Geser Peta' : 'Kunci Peta'"></span>
+                                    </button>
+                                </div>
+
+                                <!-- Map Search -->
                                     <div class="relative">
                                         <input type="text" x-model="mapSearchQuery" @input="handleMapSearch()"
                                             @keydown.enter.prevent="handleMapEnter()"
@@ -644,23 +672,62 @@
                                         </div>
                                     </div>
 
+                                    <!-- Search Results Dropdown -->
                                     <div x-show="mapSearchResults.length > 0" @click.away="mapSearchResults = []"
-                                        class="absolute z-10 w-full mt-1 bg-popover text-popover-foreground rounded-md border shadow-md max-h-60 overflow-y-auto"
+                                        class="absolute z-40 w-full mt-1 bg-white rounded-lg border border-gray-200 shadow-xl max-h-80 overflow-y-auto"
                                         style="display: none;">
-                                        <ul>
+                                        <div class="py-1">
                                             <template x-for="(result, index) in mapSearchResults" :key="index">
-                                                <li @click="selectMapLocation(result)"
-                                                    class="px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer border-b last:border-0">
-                                                    <div class="font-medium" x-text="result.display_name.split(',')[0]"></div>
-                                                    <div class="text-xs text-muted-foreground truncate" x-text="result.display_name"></div>
-                                                </li>
+                                                <button type="button" @click="selectMapLocation(result)"
+                                                    class="w-full text-left px-4 py-3 hover:bg-green-50 transition-colors border-b border-gray-100 last:border-0 group">
+                                                    <div class="flex items-start gap-3">
+                                                        <!-- Location Icon -->
+                                                        <div class="flex-shrink-0 mt-0.5">
+                                                            <svg class="h-5 w-5 text-green-600 group-hover:text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                                                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                                                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                            </svg>
+                                                        </div>
+                                                        <!-- Text Content -->
+                                                        <div class="flex-1 min-w-0">
+                                                            <div class="font-medium text-gray-900 group-hover:text-green-700 mb-0.5" 
+                                                                x-text="result.name || (result.description ? result.description.split(',')[0] : result.display_name)"></div>
+                                                            <div class="text-xs text-gray-500 truncate leading-relaxed" 
+                                                                x-text="result.description || result.display_name"></div>
+                                                        </div>
+                                                        <!-- Arrow Icon -->
+                                                        <div class="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <svg class="h-4 w-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                                            </svg>
+                                                        </div>
+                                                    </div>
+                                                </button>
                                             </template>
-                                        </ul>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div id="addAgentMap" class="w-full h-80 rounded-md border border-input overflow-hidden"
-                                    x-init="$nextTick(() => { if (addFormData.city && !mapInitialized) initializeMap(); })"></div>
+                                <!-- Map Container with Overlay -->
+                                <div class="relative">
+                                    <div id="addAgentMap" class="w-full h-80 rounded-md border border-input overflow-hidden bg-gray-100"
+                                        x-init="$nextTick(() => { if (addFormData.city && !mapInitialized) initializeMap(); })"></div>
+                                    
+                                    <!-- Locked Overlay -->
+                                    <div x-show="mapLocked" 
+                                        @click="toggleMapLock()"
+                                        class="absolute inset-0 bg-black/10 backdrop-blur-[1px] rounded-md cursor-pointer flex items-center justify-center transition-opacity hover:bg-black/20 group">
+                                        <div class="bg-white/95 px-6 py-4 rounded-lg shadow-lg border border-primary/20 text-center max-w-xs">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mx-auto mb-2 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                            </svg>
+                                            <p class="text-sm font-semibold text-foreground mb-1">Peta Dikunci</p>
+                                            <p class="text-xs text-muted-foreground leading-relaxed">Peta tidak akan bergerak saat Anda scroll halaman. Klik di sini untuk mengaktifkan peta agar bisa digeser dan di-zoom.</p>
+                                        </div>
+                                    </div>
+                                </div>
 
                                 <div class="grid grid-cols-2 gap-4 pt-2">
                                     <div class="space-y-2">
@@ -781,8 +848,17 @@
 @endsection
 
 @push('scripts')
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<!-- Google Maps JavaScript API -->
+<script src="https://maps.googleapis.com/maps/api/js?key={{ config('services.google_maps.api_key') }}&libraries=places&callback=initGoogleMapsDownlinesFreelance" async defer></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script>
+    // Google Maps callback
+    function initGoogleMapsDownlinesFreelance() {
+        console.log('Google Maps API loaded for freelance downlines');
+        window.googleMapsLoadedDownlinesFreelance = true;
+    }
+</script>
 
 <script>
     function downlinesPage() {
@@ -838,6 +914,8 @@
             mapInstance: null,
             marker: null,
             mapInitialized: false,
+            mapLocked: true, // Lock map by default to prevent accidental scrolling
+            placesService: null, // Places Service instance
             mapSearchQuery: '',
             mapSearchResults: [],
             isSearchingMap: false,
@@ -1000,27 +1078,71 @@
                 });
             },
 
+            toggleMapLock() {
+                this.mapLocked = !this.mapLocked;
+                
+                if (this.mapInstance) {
+                    const mapContainer = document.getElementById('addAgentMap');
+                    
+                    if (this.mapLocked) {
+                        // Lock the map
+                        this.mapInstance.setOptions({ 
+                            draggable: false,
+                            zoomControl: false,
+                            scrollwheel: false,
+                            disableDoubleClickZoom: true
+                        });
+                        if (mapContainer) mapContainer.classList.add('map-locked');
+                        
+                        this.showToast('Peta Dikunci', 'Peta tidak akan bergerak saat Anda scroll. Lokasi Anda aman!');
+                    } else {
+                        // Unlock the map
+                        this.mapInstance.setOptions({ 
+                            draggable: true,
+                            zoomControl: true,
+                            scrollwheel: true,
+                            disableDoubleClickZoom: false
+                        });
+                        if (mapContainer) mapContainer.classList.remove('map-locked');
+                        
+                        this.showToast('Peta Aktif', 'Anda sekarang bisa menggeser dan zoom peta');
+                    }
+                }
+            },
+
             async recenterMapToCity() {
-                if (!this.mapInstance || !this.addFormData.city) return;
+                if (!this.mapInstance || !this.addFormData.city || typeof google === 'undefined') return;
                 try {
                     const searchQuery = this.addFormData.province ?
                         `${this.addFormData.city}, ${this.addFormData.province}, Indonesia` :
                         `${this.addFormData.city}, Indonesia`;
-                    const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`;
-                    const response = await fetch(geocodeUrl);
-                    const data = await response.json();
-                    if (data && data.length > 0) {
-                        const centerLat = parseFloat(data[0].lat);
-                        const centerLng = parseFloat(data[0].lon);
-                        this.mapInstance.flyTo([centerLat, centerLng], 11, {
-                            duration: 1.5
-                        });
-                    }
+                    
+                    const geocoder = new google.maps.Geocoder();
+                    geocoder.geocode({ address: searchQuery }, (results, status) => {
+                        if (status === 'OK' && results[0]) {
+                            const location = results[0].geometry.location;
+                            this.mapInstance.panTo(location);
+                            this.mapInstance.setZoom(11);
+                        }
+                    });
                 } catch {}
             },
 
             async initializeMap() {
                 if (this.mapInitialized) return;
+                
+                // Wait for Google Maps to load
+                let attempts = 0;
+                while (typeof google === 'undefined' && attempts < 50) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    attempts++;
+                }
+                
+                if (typeof google === 'undefined') {
+                    console.error('Google Maps failed to load');
+                    return;
+                }
+                
                 let centerLat = -2.5;
                 let centerLng = 118.0;
                 let zoomLevel = 5;
@@ -1031,41 +1153,63 @@
                             const searchQuery = this.addFormData.province ?
                                 `${this.addFormData.city}, ${this.addFormData.province}, Indonesia` :
                                 `${this.addFormData.city}, Indonesia`;
-                            const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`;
-                            const response = await fetch(geocodeUrl);
-                            const data = await response.json();
-                            if (data && data.length > 0) {
-                                centerLat = parseFloat(data[0].lat);
-                                centerLng = parseFloat(data[0].lon);
+                            
+                            const geocoder = new google.maps.Geocoder();
+                            const result = await new Promise((resolve) => {
+                                geocoder.geocode({ address: searchQuery }, (results, status) => {
+                                    if (status === 'OK' && results[0]) {
+                                        resolve(results[0].geometry.location);
+                                    } else {
+                                        resolve(null);
+                                    }
+                                });
+                            });
+                            
+                            if (result) {
+                                centerLat = result.lat();
+                                centerLng = result.lng();
                                 zoomLevel = 11;
                             }
                         } catch {}
                     }
 
-                    this.mapInstance = L.map('addAgentMap').setView([centerLat, centerLng], zoomLevel);
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        attribution: '© OpenStreetMap contributors',
-                        maxZoom: 19
-                    }).addTo(this.mapInstance);
+                    const mapContainer = document.getElementById('addAgentMap');
+                    this.mapInstance = new google.maps.Map(mapContainer, {
+                        center: { lat: centerLat, lng: centerLng },
+                        zoom: zoomLevel,
+                        draggable: !this.mapLocked,
+                        zoomControl: !this.mapLocked,
+                        scrollwheel: !this.mapLocked,
+                        disableDoubleClickZoom: this.mapLocked,
+                        mapTypeControl: false,
+                        streetViewControl: false,
+                        fullscreenControl: true
+                    });
+
+                    // Initialize Places Service for better search results
+                    this.placesService = new google.maps.places.PlacesService(this.mapInstance);
+
+                    // Apply map-locked class if locked
+                    if (this.mapLocked && mapContainer) {
+                        mapContainer.classList.add('map-locked');
+                    }
 
                     if (this.addFormData.latitude && this.addFormData.longitude) {
                         this.updateMarker(this.addFormData.latitude, this.addFormData.longitude);
                     }
 
-                    this.mapInstance.on('click', (e) => {
-                        const {
-                            lat,
-                            lng
-                        } = e.latlng;
-                        this.updateMarker(lat, lng);
+                    this.mapInstance.addListener('click', (e) => {
+                        if (!this.mapLocked) {
+                            const lat = e.latLng.lat();
+                            const lng = e.latLng.lng();
+                            this.updateMarker(lat, lng);
+                        } else {
+                            this.mapLocked = true;
+                            this.showToast('Peta Dikunci', 'Klik tombol Kunci Peta untuk mengaktifkan peta');
+                        }
                     });
 
                     this.mapInitialized = true;
-                    setTimeout(() => {
-                        try {
-                            this.mapInstance.invalidateSize();
-                        } catch {}
-                    }, 100);
                 } catch (e) {
                     console.error(e);
                     this.showToast('Error', 'Gagal memuat peta');
@@ -1078,21 +1222,136 @@
                     return;
                 }
 
+                // Debounce search
                 if (this.mapSearchDebounce) clearTimeout(this.mapSearchDebounce);
-                this.mapSearchDebounce = setTimeout(async () => {
+
+                this.mapSearchDebounce = setTimeout(() => {
+                    if (typeof google === 'undefined' || !google.maps) {
+                        console.error('Google Maps not loaded');
+                        return;
+                    }
+                    
+                    // Wait for map to be initialized
+                    if (!this.mapInstance) {
+                        console.warn('Map not initialized yet, waiting...');
+                        setTimeout(() => this.handleMapSearch(), 500);
+                        return;
+                    }
+                    
                     this.isSearchingMap = true;
-                    try {
-                        const query = `${this.mapSearchQuery}, Indonesia`;
-                        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`);
-                        if (response.ok) {
-                            this.mapSearchResults = await response.json();
-                        }
-                    } catch (e) {
-                        console.error(e);
-                    } finally {
-                        this.isSearchingMap = false;
+                    
+                    // Build search query with city and province context
+                    let searchQuery = this.mapSearchQuery;
+                    if (this.addFormData.city) {
+                        searchQuery += `, ${this.addFormData.city}`;
+                    }
+                    if (this.addFormData.province) {
+                        searchQuery += `, ${this.addFormData.province}`;
+                    }
+                    searchQuery += ', Indonesia';
+                    
+                    console.log('Searching for:', searchQuery);
+                    
+                    // Use Places Service if available
+                    if (this.placesService) {
+                        console.log('Using Places API');
+                        
+                        const request = {
+                            query: searchQuery,
+                            fields: ['name', 'formatted_address', 'geometry', 'place_id']
+                        };
+                        
+                        this.placesService.findPlaceFromQuery(request, (results, status) => {
+                            console.log('findPlaceFromQuery status:', status);
+                            
+                            if (status === google.maps.places.PlacesServiceStatus.OK && results && results.length > 0) {
+                                // Success with Places API!
+                                this.mapSearchResults = results.map(r => ({
+                                    place_id: r.place_id,
+                                    description: r.formatted_address,
+                                    display_name: r.formatted_address,
+                                    geometry: r.geometry,
+                                    name: r.name || r.formatted_address.split(',')[0]
+                                }));
+                                console.log('Places API success:', this.mapSearchResults.length, 'results');
+                                this.isSearchingMap = false;
+                            } else if (status === google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
+                                // Try textSearch for broader results
+                                console.log('findPlaceFromQuery zero results, trying textSearch');
+                                this.placesService.textSearch(request, (results, status) => {
+                                    if (status === google.maps.places.PlacesServiceStatus.OK && results && results.length > 0) {
+                                        this.mapSearchResults = results.slice(0, 10).map(r => ({
+                                            place_id: r.place_id,
+                                            description: r.formatted_address,
+                                            display_name: r.formatted_address,
+                                            geometry: r.geometry,
+                                            name: r.name || r.formatted_address.split(',')[0]
+                                        }));
+                                        console.log('textSearch success:', this.mapSearchResults.length);
+                                        this.isSearchingMap = false;
+                                    } else {
+                                        console.log('textSearch failed, using Geocoding');
+                                        this.useGeocodingSearch(searchQuery);
+                                    }
+                                });
+                            } else {
+                                console.log('Places API error:', status, '- using Geocoding fallback');
+                                this.useGeocodingSearch(searchQuery);
+                            }
+                        });
+                    } else {
+                        // Places Service not available
+                        console.log('Places Service not initialized, using Geocoding API');
+                        this.useGeocodingSearch(searchQuery);
                     }
                 }, 500);
+            },
+            
+            useGeocodingSearch(searchQuery) {
+                const geocoder = new google.maps.Geocoder();
+                
+                geocoder.geocode({ 
+                    address: searchQuery,
+                    region: 'id'
+                }, (results, status) => {
+                    console.log('Geocoding status:', status, 'Results:', results?.length || 0);
+                    this.isSearchingMap = false;
+                    
+                    if (status === 'OK' && results && results.length > 0) {
+                        this.mapSearchResults = results.slice(0, 10).map(r => {
+                            // Extract better name from address components
+                            let name = '';
+                            
+                            // Try to get POI, premise, or street address as name
+                            const nameComponent = r.address_components?.find(c => 
+                                c.types.includes('point_of_interest') ||
+                                c.types.includes('premise') ||
+                                c.types.includes('street_address') ||
+                                c.types.includes('route')
+                            );
+                            
+                            if (nameComponent) {
+                                name = nameComponent.long_name;
+                            } else {
+                                // Fallback: use first part of formatted address
+                                name = r.formatted_address.split(',')[0];
+                            }
+                            
+                            return {
+                                place_id: r.place_id,
+                                description: r.formatted_address,
+                                display_name: r.formatted_address,
+                                geometry: r.geometry,
+                                name: name
+                            };
+                        });
+                        
+                        console.log('Geocoding results:', this.mapSearchResults.length);
+                    } else {
+                        console.log('No geocoding results');
+                        this.mapSearchResults = [];
+                    }
+                });
             },
 
             async handleMapEnter() {
@@ -1104,48 +1363,70 @@
                 if (this.mapSearchDebounce) clearTimeout(this.mapSearchDebounce);
                 this.isSearchingMap = true;
                 try {
-                    const query = `${this.mapSearchQuery}, Indonesia`;
-                    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&addressdetails=1`);
-                    if (response.ok) {
-                        const data = await response.json();
-                        if (data && data.length > 0) {
-                            this.selectMapLocation(data[0]);
+                    if (typeof google === 'undefined') return;
+                    
+                    const geocoder = new google.maps.Geocoder();
+                    geocoder.geocode({ address: `${this.mapSearchQuery}, Indonesia` }, (results, status) => {
+                        if (status === 'OK' && results[0]) {
+                            this.selectMapLocation(results[0]);
                         } else {
                             this.showToast('Info', 'Lokasi tidak ditemukan');
                         }
-                    }
+                        this.isSearchingMap = false;
+                    });
                 } catch (e) {
                     console.error(e);
-                } finally {
                     this.isSearchingMap = false;
                 }
             },
 
             selectMapLocation(result) {
-                const lat = parseFloat(result.lat);
-                const lon = parseFloat(result.lon);
-                this.addFormData.latitude = lat;
-                this.addFormData.longitude = lon;
+                if (typeof google === 'undefined' || !this.mapInstance) return;
 
-                if (result.address && (result.address.road || result.address.village)) {
-                    const street = result.address.road || result.address.village || result.display_name.split(',')[0];
-                    if (!this.addFormData.address) {
-                        this.addFormData.address = street;
+                // Check if result has geometry (from Geocoder)
+                if (result.geometry && result.geometry.location) {
+                    const location = result.geometry.location;
+                    const lat = typeof location.lat === 'function' ? location.lat() : location.lat;
+                    const lng = typeof location.lng === 'function' ? location.lng() : location.lng;
+
+                    this.addFormData.latitude = lat;
+                    this.addFormData.longitude = lng;
+
+                    this.mapInstance.panTo(location);
+                    this.mapInstance.setZoom(16);
+                    this.updateMarker(lat, lng);
+
+                    this.mapSearchResults = [];
+                    if (result.formatted_address) {
+                        this.mapSearchQuery = result.formatted_address;
                     }
-                }
+                } 
+                // Check if result is from Places API (has place_id)
+                else if (result.place_id) {
+                    const geocoder = new google.maps.Geocoder();
+                    geocoder.geocode({ placeId: result.place_id }, (results, status) => {
+                        if (status === 'OK' && results[0]) {
+                            const location = results[0].geometry.location;
+                            const lat = location.lat();
+                            const lng = location.lng();
 
-                if (this.mapInstance) {
-                    this.mapInstance.flyTo([lat, lon], 16);
-                    this.updateMarker(lat, lon);
-                }
+                            this.addFormData.latitude = lat;
+                            this.addFormData.longitude = lng;
 
-                this.mapSearchResults = [];
-                this.mapSearchQuery = result.display_name;
+                            this.mapInstance.panTo(location);
+                            this.mapInstance.setZoom(16);
+                            this.updateMarker(lat, lng);
+
+                            this.mapSearchResults = [];
+                            this.mapSearchQuery = result.description;
+                        }
+                    });
+                }
             },
 
             async geocodeAddress() {
                 if (!this.addFormData.address || this.addFormData.address.length < 5) return;
-                if (!this.mapInstance) return;
+                if (!this.mapInstance || typeof google === 'undefined') return;
 
                 this.isGeocodingAddress = true;
                 const queryItems = [this.addFormData.address];
@@ -1154,17 +1435,21 @@
                 const query = queryItems.join(', ');
 
                 try {
-                    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
-                    const data = await response.json();
-                    if (data && data.length > 0) {
-                        const lat = parseFloat(data[0].lat);
-                        const lon = parseFloat(data[0].lon);
-                        this.mapInstance.flyTo([lat, lon], 18);
-                        this.updateMarker(lat, lon);
-                    }
+                    const geocoder = new google.maps.Geocoder();
+                    geocoder.geocode({ address: query }, (results, status) => {
+                        if (status === 'OK' && results[0]) {
+                            const location = results[0].geometry.location;
+                            const lat = location.lat();
+                            const lng = location.lng();
+                            
+                            this.mapInstance.panTo(location);
+                            this.mapInstance.setZoom(18);
+                            this.updateMarker(lat, lng);
+                        }
+                        this.isGeocodingAddress = false;
+                    });
                 } catch (e) {
                     console.error(e);
-                } finally {
                     this.isGeocodingAddress = false;
                 }
             },
@@ -1172,28 +1457,41 @@
             updateMapFromCoordinates() {
                 const lat = parseFloat(this.addFormData.latitude);
                 const lng = parseFloat(this.addFormData.longitude);
-                if (!isNaN(lat) && !isNaN(lng) && this.mapInstance) {
+                if (!isNaN(lat) && !isNaN(lng) && this.mapInstance && typeof google !== 'undefined') {
                     this.updateMarker(lat, lng);
-                    this.mapInstance.flyTo([lat, lng], 16);
+                    const position = new google.maps.LatLng(lat, lng);
+                    this.mapInstance.panTo(position);
+                    this.mapInstance.setZoom(16);
                 }
             },
 
             updateMarker(lat, lng) {
-                if (!this.mapInstance) return;
+                if (!this.mapInstance || typeof google === 'undefined') return;
+                
+                const position = new google.maps.LatLng(lat, lng);
+                
+                // Strategy: UPDATE existing marker position instead of creating new one
                 if (this.marker) {
-                    this.mapInstance.removeLayer(this.marker);
+                    console.log('Updating existing marker position to:', lat, lng);
+                    this.marker.setPosition(position);
+                    this.marker.setAnimation(google.maps.Animation.DROP);
+                } else {
+                    // Create new marker ONLY if none exists
+                    console.log('Creating first marker at:', lat, lng);
+                    this.marker = new google.maps.Marker({
+                        position: position,
+                        map: this.mapInstance,
+                        draggable: true,
+                        animation: google.maps.Animation.DROP
+                    });
+                    
+                    // Update coordinates when marker is dragged (add listener only once)
+                    this.marker.addListener('dragend', (e) => {
+                        this.addFormData.latitude = e.latLng.lat();
+                        this.addFormData.longitude = e.latLng.lng();
+                    });
                 }
-                const greenIcon = L.icon({
-                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                    iconSize: [25, 41],
-                    iconAnchor: [12, 41],
-                    popupAnchor: [1, -34],
-                    shadowSize: [41, 41]
-                });
-                this.marker = L.marker([lat, lng], {
-                    icon: greenIcon
-                }).addTo(this.mapInstance);
+                
                 this.addFormData.latitude = lat;
                 this.addFormData.longitude = lng;
             },
