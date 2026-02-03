@@ -389,8 +389,8 @@
               </div>
               <button
                 @click="handleConfirmOrder()"
-                :disabled="itemCount === 0 || subtotal === 0 || isProcessing"
-                :class="(itemCount > 0 && subtotal > 0) ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'bg-muted text-muted-foreground cursor-not-allowed'"
+                :disabled="itemCount === 0 || subtotal === 0 || isProcessing || (paymentMethod === 'wallet' && walletBalance < totalWithFee)"
+                :class="(itemCount > 0 && subtotal > 0 && !(paymentMethod === 'wallet' && walletBalance < totalWithFee)) ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'bg-muted text-muted-foreground cursor-not-allowed'"
                 class="w-full h-12 rounded-md font-medium transition-colors flex items-center justify-center gap-2"
               >
                 <template x-if="isProcessing">

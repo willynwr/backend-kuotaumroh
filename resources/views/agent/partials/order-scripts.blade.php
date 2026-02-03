@@ -57,12 +57,10 @@ function orderApp() {
     paymentMethods: [
       { id: 'qris', name: 'QRIS', description: 'Bayar dengan QRIS', icon: 'M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z' },
       { id: 'wallet', name: 'Saldo Dompet', description: 'Bayar dengan saldo dompet Anda', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
-      { id: 'bank', name: 'Transfer Bank', description: 'BCA, Mandiri, BNI, BRI', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
-      { id: 'va', name: 'Virtual Account', description: 'Bayar via Virtual Account', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
     ],
 
-    // Wallet balance
-    walletBalance: 3250000,
+    // Wallet balance (dari backend)
+    walletBalance: {{ $saldo ?? 0 }},
     platformFee: 0,
 
     // Batch info
@@ -810,6 +808,12 @@ function orderApp() {
           this.showToast('Validasi Gagal', 'Ada nomor yang belum dipilih paketnya');
           return;
         }
+      }
+      
+      // Validasi saldo dompet jika metode pembayaran adalah wallet
+      if (this.paymentMethod === 'wallet' && this.walletBalance < this.totalWithFee) {
+        this.showToast('Saldo Tidak Cukup', `Saldo Anda: ${this.formatRupiah(this.walletBalance)}. Dibutuhkan: ${this.formatRupiah(this.totalWithFee)}`);
+        return;
       }
 
       this.validationError = false;

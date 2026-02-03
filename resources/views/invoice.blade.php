@@ -147,19 +147,19 @@
                     <span class="text-xl font-semibold">Kuotaumroh.id</span>
                 </a>
 
-                <!-- Actions -->
-                <div class="flex items-center gap-3">
+                <!-- Actions - Force ke kanan di mobile dengan ml-auto -->
+                <div class="flex items-center gap-3 ml-auto">
                     <button @click="printInvoice()" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border hover:bg-gray-50 transition-colors">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
                         </svg>
-                        Cetak
+                        <span class="hidden sm:inline">Cetak</span>
                     </button>
                     <button @click="downloadPDF()" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                         </svg>
-                        Download PDF
+                        <span class="hidden sm:inline">Download PDF</span>
                     </button>
                 </div>
             </div>
@@ -685,17 +685,35 @@
 
                 // Handle Back Button
                 handleBack() {
-                    // Jika dibuka di tab baru (via window.open), tutup tab
-                    if (window.opener && !window.opener.closed) {
+                    // Get URL parameters
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const source = urlParams.get('source');
+                    const refCode = urlParams.get('refCode');
+                    const linkReferral = urlParams.get('linkReferral') || 'kuotaumroh';
+                    
+                    // Redirect based on source
+                    if (source === 'store') {
+                        // Dari store -> kembali ke store dengan referral yang dipakai
+                        window.location.href = `/u/${linkReferral}`;
+                    } else if (source === 'order') {
+                        // Dari order -> kembali ke order page berdasarkan role
+                        if (refCode && refCode.startsWith('AGT')) {
+                            window.location.href = '/agent/order';
+                        } else if (refCode && refCode.startsWith('AFT')) {
+                            window.location.href = `/dash/${linkReferral}/order`;
+                        } else if (refCode && refCode.startsWith('FRL')) {
+                            window.location.href = `/dash/${linkReferral}/order`;
+                        } else {
+                            window.location.href = '{{ route("welcome") }}';
+                        }
+                    } 
+                    // Fallback: cek history atau kembali ke checkout
+                    else if (window.opener && !window.opener.closed) {
                         window.close();
-                    } 
-                    // Jika ada history sebelumnya, kembali
-                    else if (window.history.length > 1) {
+                    } else if (window.history.length > 1) {
                         window.history.back();
-                    } 
-                    // Fallback ke halaman checkout default
-                    else {
-                        window.location.href = '{{ route("checkout") }}';
+                    } else {
+                        window.location.href = '{{ route("welcome") }}';
                     }
                 },
 
