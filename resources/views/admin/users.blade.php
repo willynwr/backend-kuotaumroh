@@ -1397,20 +1397,29 @@ function usersPage() {
         updateMarkerAgent(lat, lng) {
             if (!this.mapAgentInstance || typeof google === 'undefined') return;
             
-            if (this.markerAgent) this.markerAgent.setMap(null);
-            
             const position = new google.maps.LatLng(lat, lng);
-            this.markerAgent = new google.maps.Marker({
-                position: position,
-                map: this.mapAgentInstance,
-                draggable: true,
-                animation: google.maps.Animation.DROP
-            });
             
-            this.markerAgent.addListener('dragend', (e) => {
-                this.newTravelAgent.latitude = e.latLng.lat();
-                this.newTravelAgent.longitude = e.latLng.lng();
-            });
+            // Strategy: UPDATE existing marker position instead of creating new one
+            if (this.markerAgent) {
+                console.log('Updating existing marker position to:', lat, lng);
+                this.markerAgent.setPosition(position);
+                this.markerAgent.setAnimation(google.maps.Animation.DROP);
+            } else {
+                // Create new marker ONLY if none exists
+                console.log('Creating first marker at:', lat, lng);
+                this.markerAgent = new google.maps.Marker({
+                    position: position,
+                    map: this.mapAgentInstance,
+                    draggable: true,
+                    animation: google.maps.Animation.DROP
+                });
+                
+                // Update coordinates when marker is dragged (add listener only once)
+                this.markerAgent.addListener('dragend', (e) => {
+                    this.newTravelAgent.latitude = e.latLng.lat();
+                    this.newTravelAgent.longitude = e.latLng.lng();
+                });
+            }
         },
         
         updateMapFromCoordinatesAgent() {
@@ -1717,20 +1726,29 @@ function usersPage() {
         updateMarkerEditAgent(lat, lng) {
             if (!this.mapEditAgentInstance || typeof google === 'undefined') return;
             
-            if (this.markerEditAgent) this.markerEditAgent.setMap(null);
-            
             const position = new google.maps.LatLng(lat, lng);
-            this.markerEditAgent = new google.maps.Marker({
-                position: position,
-                map: this.mapEditAgentInstance,
-                draggable: true,
-                animation: google.maps.Animation.DROP
-            });
             
-            this.markerEditAgent.addListener('dragend', (e) => {
-                this.editingTravelAgent.latitude = e.latLng.lat();
-                this.editingTravelAgent.longitude = e.latLng.lng();
-            });
+            // Strategy: UPDATE existing marker position instead of creating new one
+            if (this.markerEditAgent) {
+                console.log('Updating existing edit marker position to:', lat, lng);
+                this.markerEditAgent.setPosition(position);
+                this.markerEditAgent.setAnimation(google.maps.Animation.DROP);
+            } else {
+                // Create new marker ONLY if none exists
+                console.log('Creating first edit marker at:', lat, lng);
+                this.markerEditAgent = new google.maps.Marker({
+                    position: position,
+                    map: this.mapEditAgentInstance,
+                    draggable: true,
+                    animation: google.maps.Animation.DROP
+                });
+                
+                // Update coordinates when marker is dragged (add listener only once)
+                this.markerEditAgent.addListener('dragend', (e) => {
+                    this.editingTravelAgent.latitude = e.latLng.lat();
+                    this.editingTravelAgent.longitude = e.latLng.lng();
+                });
+            }
         },
 
         toggleMapLockEditAgent() {

@@ -802,6 +802,7 @@
         // Map state
         mapInstance: null,
         marker: null,
+        markers: [], // Track all markers to ensure proper cleanup
         mapInitialized: false,
         mapLocked: true, // Lock map by default to prevent accidental scrolling
         placesService: null, // Places Service instance
@@ -1423,14 +1424,31 @@
           const lng = parseFloat(this.formData.longitude);
 
           if (!isNaN(lat) && !isNaN(lng) && this.mapInstance && typeof google !== 'undefined') {
-            const position = new google.maps.LatLng(lat, lng);
+            console.log('updateMapFromCoordinates called');
             
-            // Remove existing marker
-            if (this.marker) {
-              this.marker.setMap(null);
-            }
+            // Use updateMarker instead of duplicating logic
+            this.updateMarker(lat, lng);
+            
+            // Pan and zoom to marker
+            const position = new google.maps.LatLng(lat, lng);
+            this.mapInstance.panTo(position);
+            this.mapInstance.setZoom(16);
+          }
+        },
 
-            // Add new marker
+        updateMarker(lat, lng) {
+          if (typeof google === 'undefined' || !this.mapInstance) return;
+
+          const position = new google.maps.LatLng(lat, lng);
+
+          // Strategy: UPDATE existing marker position instead of creating new one
+          if (this.marker) {
+            console.log('Updating existing marker position to:', lat, lng);
+            this.marker.setPosition(position);
+            this.marker.setAnimation(google.maps.Animation.DROP);
+          } else {
+            // Create new marker ONLY if none exists
+            console.log('Creating first marker at:', lat, lng);
             this.marker = new google.maps.Marker({
               position: position,
               map: this.mapInstance,
@@ -1438,41 +1456,12 @@
               animation: google.maps.Animation.DROP
             });
 
-            // Update coordinates when marker is dragged
+            // Update coordinates when marker is dragged (add listener only once)
             this.marker.addListener('dragend', (e) => {
               this.formData.latitude = e.latLng.lat();
               this.formData.longitude = e.latLng.lng();
             });
-
-            // Pan and zoom to marker
-            this.mapInstance.panTo(position);
-            this.mapInstance.setZoom(16);
           }
-        },
-
-        updateMarker(lat, lng) {
-          if (typeof google === 'undefined') return;
-
-          // Remove existing marker
-          if (this.marker) {
-            this.marker.setMap(null);
-          }
-
-          const position = new google.maps.LatLng(lat, lng);
-
-          // Add new marker
-          this.marker = new google.maps.Marker({
-            position: position,
-            map: this.mapInstance,
-            draggable: true,
-            animation: google.maps.Animation.DROP
-          });
-
-          // Update coordinates when marker is dragged
-          this.marker.addListener('dragend', (e) => {
-            this.formData.latitude = e.latLng.lat();
-            this.formData.longitude = e.latLng.lng();
-          });
 
           // Update form data
           this.formData.latitude = lat;
