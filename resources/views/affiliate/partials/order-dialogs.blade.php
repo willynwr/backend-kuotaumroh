@@ -86,6 +86,167 @@
   </div>
 </div>
 
+<!-- Upload Validation Dialog (Invalid & Duplicate Numbers) -->
+<div
+  x-show="uploadValidationDialogOpen"
+  x-cloak
+  role="dialog"
+  aria-labelledby="upload-validation-dialog-title"
+  aria-modal="true"
+  class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+  @click.self="uploadValidationDialogOpen = false"
+  @keydown.escape="uploadValidationDialogOpen = false"
+>
+  <div class="relative bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[85vh] overflow-hidden animate-fade-in">
+    <div class="p-6 border-b bg-gradient-to-r from-orange-50 to-red-50">
+      <div class="flex items-start gap-3">
+        <div class="flex-shrink-0 w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+          <svg class="h-6 w-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        <div class="flex-1">
+          <h2 id="upload-validation-dialog-title" class="text-lg font-semibold text-gray-900">Validasi File Upload</h2>
+          <template x-if="uploadValidationErrors">
+            <p class="text-sm text-gray-600 mt-1">
+              Ditemukan <span class="font-semibold text-orange-600" x-text="(uploadValidationErrors.invalid?.length || 0) + (uploadValidationErrors.duplicates?.length || 0)"></span> masalah dari <span class="font-semibold" x-text="uploadValidationErrors.totalUploaded"></span> nomor yang diupload
+            </p>
+          </template>
+        </div>
+        <button @click="uploadValidationDialogOpen = false" class="text-gray-400 hover:text-gray-600">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+    </div>
+    
+    <div class="p-6 max-h-[calc(85vh-200px)] overflow-y-auto space-y-6">
+      <template x-if="uploadValidationErrors">
+        <div class="space-y-6">
+          <!-- Summary Cards -->
+          <div class="grid grid-cols-3 gap-4">
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+              <div class="text-2xl font-bold text-blue-600" x-text="uploadValidationErrors.validCount"></div>
+              <div class="text-xs text-blue-600 mt-1">Nomor Valid</div>
+            </div>
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+              <div class="text-2xl font-bold text-red-600" x-text="uploadValidationErrors.invalid?.length || 0"></div>
+              <div class="text-xs text-red-600 mt-1">Tidak Valid</div>
+            </div>
+            <div class="bg-orange-50 border border-orange-200 rounded-lg p-4 text-center">
+              <div class="text-2xl font-bold text-orange-600" x-text="uploadValidationErrors.duplicates?.length || 0"></div>
+              <div class="text-xs text-orange-600 mt-1">Duplicate</div>
+            </div>
+          </div>
+          
+          <!-- Invalid Numbers Section -->
+          <template x-if="uploadValidationErrors.invalid?.length > 0">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <h3 class="font-semibold text-red-600 flex items-center gap-2">
+                  <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  Nomor Tidak Valid (<span x-text="uploadValidationErrors.invalid.length"></span>)
+                </h3>
+                <button 
+                  @click="removeInvalidNumbersFromUpload()"
+                  class="text-xs bg-red-600 text-white px-3 py-1.5 rounded-md hover:bg-red-700 transition-colors flex items-center gap-1"
+                >
+                  <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Hapus Semua
+                </button>
+              </div>
+              <div class="bg-red-50 rounded-lg p-4 max-h-60 overflow-y-auto">
+                <div class="space-y-2">
+                  <template x-for="(item, index) in uploadValidationErrors.invalid" :key="index">
+                    <div class="flex items-center justify-between p-2 bg-white rounded border border-red-200">
+                      <div class="flex items-center gap-3">
+                        <span class="text-xs text-gray-500 w-8" x-text="'#' + item.position"></span>
+                        <span class="font-mono text-sm text-gray-900" x-text="item.msisdn"></span>
+                      </div>
+                      <span class="text-xs text-red-600 bg-red-100 px-2 py-1 rounded">Format salah</span>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </div>
+          </template>
+          
+          <!-- Duplicate Numbers Section -->
+          <template x-if="uploadValidationErrors.duplicates?.length > 0">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <h3 class="font-semibold text-orange-600 flex items-center gap-2">
+                  <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  Nomor Duplicate (<span x-text="uploadValidationErrors.duplicates.length"></span>)
+                </h3>
+                <button 
+                  @click="removeDuplicateNumbersFromUpload()"
+                  class="text-xs bg-orange-600 text-white px-3 py-1.5 rounded-md hover:bg-orange-700 transition-colors flex items-center gap-1"
+                >
+                  <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Hapus Duplicate
+                </button>
+              </div>
+              <div class="bg-orange-50 rounded-lg p-4 max-h-60 overflow-y-auto">
+                <div class="space-y-2">
+                  <template x-for="(item, index) in uploadValidationErrors.duplicates" :key="index">
+                    <div class="flex items-center justify-between p-2 bg-white rounded border border-orange-200">
+                      <div class="flex items-center gap-3">
+                        <span class="font-mono text-sm text-gray-900" x-text="item.msisdn"></span>
+                      </div>
+                      <span class="text-xs text-orange-600 bg-orange-100 px-2 py-1 rounded">
+                        Muncul <span x-text="item.positions.length"></span>x di posisi #<span x-text="item.positions.join(', #')"></span>
+                      </span>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </div>
+          </template>
+        </div>
+      </template>
+    </div>
+    
+    <div class="p-6 border-t bg-gray-50">
+      <div class="flex items-center justify-between gap-4">
+        <div class="flex-1">
+          <p class="text-sm text-gray-600">
+            💡 <strong>Tip:</strong> Perbaiki nomor yang bermasalah di textarea atau hapus dan upload ulang
+          </p>
+        </div>
+        <div class="flex gap-2">
+          <template x-if="uploadValidationErrors && ((uploadValidationErrors.invalid?.length > 0) || (uploadValidationErrors.duplicates?.length > 0))">
+            <button 
+              @click="removeAllProblematicNumbers()" 
+              class="inline-flex items-center justify-center rounded-md bg-red-600 text-white h-10 px-4 hover:bg-red-700 font-medium transition-colors gap-2"
+            >
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              Hapus Semua Masalah
+            </button>
+          </template>
+          <button 
+            @click="uploadValidationDialogOpen = false" 
+            class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground h-10 px-6 hover:bg-primary/90 font-medium"
+          >
+            Mengerti
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Number List Edit Dialog (Daftar Nomor Provider) -->
 <div
   x-show="numberListDialogOpen"
