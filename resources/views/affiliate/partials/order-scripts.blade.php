@@ -15,10 +15,20 @@ function validateMsisdn(msisdn) {
 
 function detectProvider(msisdn) {
   const s = String(msisdn || '');
-  if (/^62(811|812|813|821|822|823|851|852|853)/.test(s)) return 'TELKOMSEL';
+  // TELKOMSEL: 0811, 0812, 0813, 0821, 0822, 0823, 0852, 0853
+  if (/^62(811|812|813|821|822|823|852|853)/.test(s)) return 'TELKOMSEL';
+  // INDOSAT: 0814, 0815, 0816, 0855, 0856, 0857, 0858
   if (/^62(814|815|816|855|856|857|858)/.test(s)) return 'INDOSAT';
+  // XL: 0817, 0818, 0819, 0859, 0877, 0878
   if (/^62(817|818|819|859|877|878)/.test(s)) return 'XL';
+  // AXIS: 0831, 0832, 0833, 0838
+  if (/^62(831|832|833|838)/.test(s)) return 'AXIS';
+  // TRI: 0895, 0896, 0897, 0898, 0899
   if (/^62(895|896|897|898|899)/.test(s)) return 'TRI';
+  // SMARTFREN: 0881, 0882, 0883, 0884, 0885, 0886, 0887, 0888, 0889
+  if (/^62(881|882|883|884|885|886|887|888|889)/.test(s)) return 'SMARTFREN';
+  // BYU: 0851 (menggunakan prefix Telkomsel)
+  if (/^62(851)/.test(s)) return 'BYU';
   return 'TELKOMSEL';
 }
 
@@ -55,12 +65,9 @@ function orderApp() {
     paymentMethod: 'qris',
     quickTimes: ['02:00', '04:00', '13:00', '22:00'],
 
-    // Payment methods
+    // Payment methods (Affiliate: QRIS only)
     paymentMethods: [
       { id: 'qris', name: 'QRIS', description: 'Bayar dengan QRIS', icon: 'M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z' },
-      { id: 'wallet', name: 'Saldo Dompet', description: 'Bayar dengan saldo dompet Anda', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
-      { id: 'bank', name: 'Transfer Bank', description: 'BCA, Mandiri, BNI, BRI', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
-      { id: 'va', name: 'Virtual Account', description: 'Bayar via Virtual Account', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
     ],
 
     // Wallet balance
@@ -86,6 +93,8 @@ function orderApp() {
     numberListDialogOpen: false,
     packagePickerOpen: false,
     numberSelectionOpen: false,
+    uploadValidationDialogOpen: false,
+    uploadValidationErrors: null,
     editingProvider: '',
     pickerProvider: '',
     tempSelectedPackage: '',
@@ -318,14 +327,215 @@ function orderApp() {
     handleFileUpload(event) {
       const file = event.target.files?.[0];
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const content = e.target.result;
-        this.bulkInput = this.bulkInput ? this.bulkInput + '\n' + content : content;
-        this.parseBulkNumbers();
-      };
-      reader.readAsText(file);
+      
+      const fileName = file.name.toLowerCase();
+      const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
+      
+      if (isExcel) {
+        // Handle Excel files
+        if (typeof XLSX === 'undefined') {
+          this.showToast('Error', 'Library Excel belum dimuat. Silakan refresh halaman.');
+          return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+            
+            // Extract all numbers from all cells
+            const numbers = [];
+            jsonData.forEach(row => {
+              row.forEach(cell => {
+                if (cell) {
+                  const cellStr = cell.toString().trim();
+                  if (cellStr) numbers.push(cellStr);
+                }
+              });
+            });
+            
+            const content = numbers.join('\n');
+            this.bulkInput = this.bulkInput ? this.bulkInput + '\n' + content : content;
+            this.parseBulkNumbers();
+            
+            // Validasi setelah parsing
+            this.validateUploadedNumbers(numbers.length);
+          } catch (error) {
+            console.error('Error reading Excel:', error);
+            this.showToast('Error', 'Gagal membaca file Excel. Pastikan format file benar.');
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      } else {
+        // Handle text files (.txt, .csv)
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const content = e.target.result;
+          const lines = content.split(/[\n,;]+/).map(l => l.trim()).filter(Boolean);
+          this.bulkInput = this.bulkInput ? this.bulkInput + '\n' + content : content;
+          this.parseBulkNumbers();
+          
+          // Validasi setelah parsing
+          this.validateUploadedNumbers(lines.length);
+        };
+        reader.readAsText(file);
+      }
+      
+      // Reset file input
       event.target.value = '';
+    },
+    
+    validateUploadedNumbers(totalUploaded) {
+      // Deteksi nomor duplicate
+      const seen = new Map();
+      const duplicates = [];
+      
+      this.parsedNumbers.forEach((num, index) => {
+        if (seen.has(num.msisdn)) {
+          duplicates.push({
+            msisdn: num.msisdn,
+            positions: [seen.get(num.msisdn) + 1, index + 1]
+          });
+        } else {
+          seen.set(num.msisdn, index);
+        }
+      });
+      
+      // Deteksi nomor tidak valid
+      const invalidNumbers = this.parsedNumbers
+        .filter(n => !n.isValid)
+        .map((n, index) => ({
+          msisdn: n.msisdn,
+          position: this.parsedNumbers.indexOf(n) + 1
+        }));
+      
+      // Tampilkan popup jika ada masalah
+      if (duplicates.length > 0 || invalidNumbers.length > 0) {
+        this.uploadValidationErrors = {
+          duplicates: duplicates,
+          invalid: invalidNumbers,
+          totalUploaded: totalUploaded,
+          validCount: this.validCount
+        };
+        this.uploadValidationDialogOpen = true;
+      } else {
+        // Semua nomor valid
+        this.showToast('Berhasil', `${totalUploaded} nomor berhasil dimuat dan semua valid`);
+      }
+      
+      event.target.value = '';
+    },
+    
+    removeInvalidNumbersFromUpload() {
+      if (!this.uploadValidationErrors || !this.uploadValidationErrors.invalid?.length) return;
+      
+      // Filter out invalid numbers from bulkInput
+      const invalidMsisdns = new Set(this.uploadValidationErrors.invalid.map(item => item.msisdn));
+      
+      // Split and filter
+      const lines = this.bulkInput.split(/[\n,;]+/).map(l => l.trim()).filter(Boolean);
+      const validLines = lines.filter(line => {
+        const normalized = normalizeMsisdn(line);
+        return !invalidMsisdns.has(normalized);
+      });
+      
+      // Update bulkInput
+      this.bulkInput = validLines.join('\n');
+      this.parseBulkNumbers();
+      
+      // Show success message
+      const removedCount = this.uploadValidationErrors.invalid.length;
+      this.showToast('Berhasil', `${removedCount} nomor tidak valid telah dihapus`);
+      
+      // Close dialog if no more issues
+      if (this.uploadValidationErrors.duplicates?.length === 0) {
+        this.uploadValidationDialogOpen = false;
+        this.uploadValidationErrors = null;
+      } else {
+        // Refresh validation
+        this.validateUploadedNumbers(this.parsedNumbers.length);
+      }
+    },
+    
+    removeDuplicateNumbersFromUpload() {
+      if (!this.uploadValidationErrors || !this.uploadValidationErrors.duplicates?.length) return;
+      
+      // Get unique numbers only (keep first occurrence)
+      const seen = new Set();
+      const lines = this.bulkInput.split(/[\n,;]+/).map(l => l.trim()).filter(Boolean);
+      const uniqueLines = [];
+      
+      lines.forEach(line => {
+        const normalized = normalizeMsisdn(line);
+        if (!seen.has(normalized)) {
+          seen.add(normalized);
+          uniqueLines.push(line);
+        }
+      });
+      
+      // Update bulkInput
+      const duplicateCount = lines.length - uniqueLines.length;
+      this.bulkInput = uniqueLines.join('\n');
+      this.parseBulkNumbers();
+      
+      // Show success message
+      this.showToast('Berhasil', `${duplicateCount} nomor duplicate telah dihapus`);
+      
+      // Close dialog if no more issues
+      if (this.uploadValidationErrors.invalid?.length === 0) {
+        this.uploadValidationDialogOpen = false;
+        this.uploadValidationErrors = null;
+      } else {
+        // Refresh validation
+        this.validateUploadedNumbers(this.parsedNumbers.length);
+      }
+    },
+    
+    removeAllProblematicNumbers() {
+      if (!this.uploadValidationErrors) return;
+      
+      // Get all problematic msisdns
+      const problematicMsisdns = new Set();
+      
+      // Add invalid numbers
+      if (this.uploadValidationErrors.invalid?.length) {
+        this.uploadValidationErrors.invalid.forEach(item => {
+          problematicMsisdns.add(item.msisdn);
+        });
+      }
+      
+      // Add duplicate numbers (keep only first occurrence)
+      const seen = new Set();
+      const lines = this.bulkInput.split(/[\n,;]+/).map(l => l.trim()).filter(Boolean);
+      const cleanLines = [];
+      
+      lines.forEach(line => {
+        const normalized = normalizeMsisdn(line);
+        
+        // Skip if invalid
+        if (problematicMsisdns.has(normalized)) return;
+        
+        // Skip if duplicate
+        if (seen.has(normalized)) return;
+        
+        seen.add(normalized);
+        cleanLines.push(line);
+      });
+      
+      // Update bulkInput
+      const removedCount = lines.length - cleanLines.length;
+      this.bulkInput = cleanLines.join('\n');
+      this.parseBulkNumbers();
+      
+      // Show success message
+      this.showToast('Berhasil', `${removedCount} nomor bermasalah telah dihapus`);
+      
+      // Close dialog
+      this.uploadValidationDialogOpen = false;
+      this.uploadValidationErrors = null;
     },
 
     getPackagesForProvider(provider) {
