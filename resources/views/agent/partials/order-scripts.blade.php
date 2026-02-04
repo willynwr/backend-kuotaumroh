@@ -81,6 +81,8 @@ function orderApp() {
     invalidDialogOpen: false,
     showInvalidNumbersCheckout: false,
     invalidNumbersForCheckout: [],
+    uploadValidationDialogOpen: false,
+    uploadValidationErrors: null,
     numberListDialogOpen: false,
     packagePickerOpen: false,
     numberSelectionOpen: false,
@@ -330,14 +332,212 @@ function orderApp() {
     handleFileUpload(event) {
       const file = event.target.files?.[0];
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const content = e.target.result;
-        this.bulkInput = this.bulkInput ? this.bulkInput + '\n' + content : content;
-        this.parseBulkNumbers();
-      };
-      reader.readAsText(file);
+      
+      const fileName = file.name.toLowerCase();
+      const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
+      
+      if (isExcel) {
+        // Handle Excel files
+        if (typeof XLSX === 'undefined') {
+          this.showToast('Error', 'Library Excel belum dimuat. Silakan refresh halaman.');
+          return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+            
+            // Extract all numbers from all cells
+            const numbers = [];
+            jsonData.forEach(row => {
+              row.forEach(cell => {
+                if (cell) {
+                  const cellStr = cell.toString().trim();
+                  if (cellStr) numbers.push(cellStr);
+                }
+              });
+            });
+            
+            const content = numbers.join('\n');
+            this.bulkInput = this.bulkInput ? this.bulkInput + '\n' + content : content;
+            this.parseBulkNumbers();
+            
+            // Validasi setelah parsing
+            this.validateUploadedNumbers(numbers.length);
+          } catch (error) {
+            console.error('Error reading Excel:', error);
+            this.showToast('Error', 'Gagal membaca file Excel. Pastikan format file benar.');
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      } else {
+        // Handle text files (.txt, .csv)
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const content = e.target.result;
+          const lines = content.split(/[\n,;]+/).map(l => l.trim()).filter(Boolean);
+          this.bulkInput = this.bulkInput ? this.bulkInput + '\n' + content : content;
+          this.parseBulkNumbers();
+          
+          // Validasi setelah parsing
+          this.validateUploadedNumbers(lines.length);
+        };
+        reader.readAsText(file);
+      }
+      
       event.target.value = '';
+    },
+    
+    validateUploadedNumbers(totalUploaded) {
+      // Deteksi nomor duplicate
+      const seen = new Map();
+      const duplicates = [];
+      
+      this.parsedNumbers.forEach((num, index) => {
+        if (seen.has(num.msisdn)) {
+          duplicates.push({
+            msisdn: num.msisdn,
+            positions: [seen.get(num.msisdn) + 1, index + 1]
+          });
+        } else {
+          seen.set(num.msisdn, index);
+        }
+      });
+      
+      // Deteksi nomor tidak valid
+      const invalidNumbers = this.parsedNumbers
+        .filter(n => !n.isValid)
+        .map((n, index) => ({
+          msisdn: n.msisdn,
+          position: this.parsedNumbers.indexOf(n) + 1
+        }));
+      
+      // Tampilkan popup jika ada masalah
+      if (duplicates.length > 0 || invalidNumbers.length > 0) {
+        this.uploadValidationErrors = {
+          duplicates: duplicates,
+          invalid: invalidNumbers,
+          totalUploaded: totalUploaded,
+          validCount: this.validCount
+        };
+        this.uploadValidationDialogOpen = true;
+      } else {
+        // Semua nomor valid
+        this.showToast('Berhasil', `${totalUploaded} nomor berhasil dimuat dan semua valid`);
+      }
+    },
+    
+    removeInvalidNumbersFromUpload() {
+      if (!this.uploadValidationErrors || !this.uploadValidationErrors.invalid?.length) return;
+      
+      // Filter out invalid numbers from bulkInput
+      const invalidMsisdns = new Set(this.uploadValidationErrors.invalid.map(item => item.msisdn));
+      
+      // Split and filter
+      const lines = this.bulkInput.split(/[\n,;]+/).map(l => l.trim()).filter(Boolean);
+      const validLines = lines.filter(line => {
+        const normalized = normalizeMsisdnFor62(line);
+        return !invalidMsisdns.has(normalized);
+      });
+      
+      // Update bulkInput
+      this.bulkInput = validLines.join('\n');
+      this.parseBulkNumbers();
+      
+      // Show success message
+      const removedCount = this.uploadValidationErrors.invalid.length;
+      this.showToast('Berhasil', `${removedCount} nomor tidak valid telah dihapus`);
+      
+      // Close dialog if no more issues
+      if (this.uploadValidationErrors.duplicates?.length === 0) {
+        this.uploadValidationDialogOpen = false;
+        this.uploadValidationErrors = null;
+      } else {
+        // Refresh validation
+        this.validateUploadedNumbers(this.parsedNumbers.length);
+      }
+    },
+    
+    removeDuplicateNumbersFromUpload() {
+      if (!this.uploadValidationErrors || !this.uploadValidationErrors.duplicates?.length) return;
+      
+      // Get unique numbers only (keep first occurrence)
+      const seen = new Set();
+      const lines = this.bulkInput.split(/[\n,;]+/).map(l => l.trim()).filter(Boolean);
+      const uniqueLines = [];
+      
+      lines.forEach(line => {
+        const normalized = normalizeMsisdnFor62(line);
+        if (!seen.has(normalized)) {
+          seen.add(normalized);
+          uniqueLines.push(line);
+        }
+      });
+      
+      // Update bulkInput
+      const duplicateCount = lines.length - uniqueLines.length;
+      this.bulkInput = uniqueLines.join('\n');
+      this.parseBulkNumbers();
+      
+      // Show success message
+      this.showToast('Berhasil', `${duplicateCount} nomor duplicate telah dihapus`);
+      
+      // Close dialog if no more issues
+      if (this.uploadValidationErrors.invalid?.length === 0) {
+        this.uploadValidationDialogOpen = false;
+        this.uploadValidationErrors = null;
+      } else {
+        // Refresh validation
+        this.validateUploadedNumbers(this.parsedNumbers.length);
+      }
+    },
+    
+    removeAllProblematicNumbers() {
+      if (!this.uploadValidationErrors) return;
+      
+      // Get all problematic msisdns
+      const problematicMsisdns = new Set();
+      
+      // Add invalid numbers
+      if (this.uploadValidationErrors.invalid?.length) {
+        this.uploadValidationErrors.invalid.forEach(item => {
+          problematicMsisdns.add(item.msisdn);
+        });
+      }
+      
+      // Add duplicate numbers (keep only first occurrence)
+      const seen = new Set();
+      const lines = this.bulkInput.split(/[\n,;]+/).map(l => l.trim()).filter(Boolean);
+      const cleanLines = [];
+      
+      lines.forEach(line => {
+        const normalized = normalizeMsisdnFor62(line);
+        
+        // Skip if invalid
+        if (problematicMsisdns.has(normalized)) return;
+        
+        // Skip if duplicate
+        if (seen.has(normalized)) return;
+        
+        seen.add(normalized);
+        cleanLines.push(line);
+      });
+      
+      // Update bulkInput
+      const removedCount = lines.length - cleanLines.length;
+      this.bulkInput = cleanLines.join('\n');
+      this.parseBulkNumbers();
+      
+      // Show success message
+      this.showToast('Berhasil', `${removedCount} nomor bermasalah telah dihapus`);
+      
+      // Close dialog
+      this.uploadValidationDialogOpen = false;
+      this.uploadValidationErrors = null;
     },
 
     generateDurationFilters(provider) {
