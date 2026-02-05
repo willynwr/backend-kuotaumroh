@@ -592,13 +592,17 @@ class DashboardController extends Controller
                         $msisdnCount = is_array($msisdnArray) ? count($msisdnArray) : 0;
                         
                         // Fallback: build items dari kolom msisdn jika tidak ada pesanan
+                        $perItemFallbackProfit = ($msisdnCount > 0 && !empty($pembayaran->profit))
+                            ? ($pembayaran->profit / $msisdnCount)
+                            : 0;
+
                         foreach ($msisdnArray as $msisdn) {
                             $items[] = [
                                 'msisdn' => $msisdn,
                                 'provider' => $this->detectProviderFromMsisdn($msisdn),
                                 'packageName' => $pembayaran->nama_paket ?? 'N/A',
                                 'price' => $pembayaran->harga_jual ?? 0,
-                                'profit' => 0,
+                                'profit' => $perItemFallbackProfit,
                                 'status' => $this->mapPaymentStatusForItem($pembayaran->status_pembayaran)
                             ];
                         }
