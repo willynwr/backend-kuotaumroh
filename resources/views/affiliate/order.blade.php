@@ -76,7 +76,7 @@
                 <div class="space-y-2">
                   <div class="flex items-center justify-between">
                     <label for="bulk-input" class="text-sm font-medium">Daftar Nomor</label>
-                    <input type="file" @change="handleFileUpload($event)" accept=".csv,.txt" class="hidden" x-ref="fileInput">
+                    <input type="file" @change="handleFileUpload($event)" accept=".csv,.txt,.xlsx,.xls" class="hidden" x-ref="fileInput">
                     <button @click="$refs.fileInput.click()" class="inline-flex items-center rounded-md border bg-background h-9 px-3 text-sm hover:bg-muted">
                       <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -459,6 +459,9 @@
 @endsection
 
 @push('scripts')
+  <!-- SheetJS Library for Excel Support -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+  
   <!-- Store Config for Affiliate Order -->
   <script>
     const STORE_CONFIG = {
