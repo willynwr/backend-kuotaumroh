@@ -1351,7 +1351,7 @@ function checkoutApp() {
         redirectAfterError() {
             this.errorModalVisible = false;
             this.isForceExit = true; // Bypass beforeunload confirmation
-            window.location.href = '{{ route("agent.order") }}';
+            window.location.href = '{{ isset($linkReferral) ? url("/dash/" . $linkReferral . "/order") : route("agent.order") }}';
         },
         
         formatNumber(num) {

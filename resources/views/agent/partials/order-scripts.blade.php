@@ -1166,7 +1166,9 @@ function orderApp() {
         @if(isset($linkReferral))
           window.location.href = '{{ url('/dash/' . $linkReferral . '/checkout') }}';
         @else
-          window.location.href = '{{ route('agent.checkout') }}';
+          // Fallback: use link_referal from STORE_CONFIG
+          const linkReferal = STORE_CONFIG.link_referal || 'kuotaumroh';
+          window.location.href = `/dash/${linkReferal}/checkout`;
         @endif
       } catch (e) {
         console.error('Error saving order to localStorage:', e);
