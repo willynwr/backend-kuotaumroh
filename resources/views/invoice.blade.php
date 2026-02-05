@@ -276,7 +276,7 @@
                     <div class="px-8 py-6 grid sm:grid-cols-2 gap-6 border-b">
                         <!-- Agent Info -->
                         <div>
-                            <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Travel Agent</h3>
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3" x-text="invoice.agent.label"></h3>
                             <div class="space-y-2">
                                 <p class="font-semibold text-lg" x-text="invoice.agent.name"></p>
                                 <div class="flex items-center gap-2 text-gray-600 text-sm">
@@ -625,6 +625,8 @@
                     batchId: '',
                     batchName: '',
                     agent: {
+                        label: 'Travel Agent',
+                        type: 'agent',
                         name: '',
                         pic: '',
                         phone: '',
@@ -814,6 +816,41 @@
                     }
                 },
 
+                // Apply agent/affiliate info for invoice display
+                applyAgentInfo(source) {
+                    const info = source?.agent_info || {};
+                    const agentId = source?.agent_id || source?.agentId || '';
+                    const isAffiliate = info.type === 'affiliate' || (agentId && agentId.startsWith('AFT'));
+
+                    const label = isAffiliate ? 'Affiliate' : 'Travel Agent';
+                    const name = info.name
+                        || source?.affiliate_link_referral
+                        || source?.link_referral
+                        || source?.link_referal
+                        || source?.agent_name
+                        || source?.nama_travel
+                        || source?.nama_agent
+                        || 'Kuotaumroh.id';
+                    const pic = info.pic
+                        || source?.affiliate_name
+                        || source?.nama
+                        || source?.nama_pic
+                        || source?.agent_pic
+                        || 'Kuotaumroh.id';
+                    const phone = info.phone
+                        || source?.affiliate_phone
+                        || source?.no_wa
+                        || source?.agent_phone
+                        || source?.no_hp
+                        || '+62 812-3456-7890';
+
+                    this.invoice.agent.label = label;
+                    this.invoice.agent.type = isAffiliate ? 'affiliate' : 'agent';
+                    this.invoice.agent.name = name;
+                    this.invoice.agent.pic = pic;
+                    this.invoice.agent.phone = phone;
+                },
+
                 // Parse Bulk Invoice Data
                 parseBulkInvoiceData(data) {
                     // data is array of items
@@ -832,10 +869,8 @@
 
                     this.invoice.paymentMethod = firstItem.payment_method || 'QRIS';
 
-                    // Agent info from travel data
-                    this.invoice.agent.name = firstItem.agent_name || 'Kuotaumroh.id';
-                    this.invoice.agent.pic = firstItem.agent_pic || 'Kuotaumroh.id';
-                    this.invoice.agent.phone = firstItem.agent_phone || '+62 812-3456-7890';
+                    // Agent/Affiliate info
+                    this.applyAgentInfo(firstItem);
 
                     // Parse items
                     this.invoice.items = items.map(item => ({
@@ -928,10 +963,8 @@
 
                     this.invoice.paymentMethod = item.payment_method || item.metode_pembayaran || 'QRIS';
                     
-                    // Agent info
-                    this.invoice.agent.name = item.agent_name || 'Kuotaumroh.id';
-                    this.invoice.agent.pic = item.agent_pic || 'Kuotaumroh.id'; 
-                    this.invoice.agent.phone = item.agent_phone || '+62 812-3456-7890';
+                    // Agent/Affiliate info
+                    this.applyAgentInfo(item);
                     
                     // Ordered by info
                     this.invoice.orderedBy.name = item.customer_name || item.name || 'Customer';

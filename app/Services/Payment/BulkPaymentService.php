@@ -3,6 +3,7 @@
 namespace App\Services\Payment;
 
 use App\Models\Agent;
+use App\Models\Affiliate;
 use App\Models\Pembayaran;
 use App\Models\Pesanan;
 use App\Models\Produk;
@@ -19,6 +20,7 @@ use Illuminate\Support\Facades\Log;
 class BulkPaymentService
 {
     protected QrisDynamicService $qrisService;
+    protected PackagePricingService $pricingService;
 
     /**
      * Base URL untuk external API
@@ -40,9 +42,10 @@ class BulkPaymentService
      */
     protected int $paymentExpiredMinutes = 15;
 
-    public function __construct(QrisDynamicService $qrisService)
+    public function __construct(QrisDynamicService $qrisService, PackagePricingService $pricingService)
     {
         $this->qrisService = $qrisService;
+        $this->pricingService = $pricingService;
         $this->platformFee = config('payment.platform_fee', 0);
         $this->paymentExpiredMinutes = config('payment.expired_minutes', 15);
         $this->externalApiUrl = config('payment.external_api_url', 'https://kuotaumroh.id/api');
@@ -519,34 +522,40 @@ class BulkPaymentService
                 }
             }
             
-            // ===== CALCULATE AFFILIATE FEE BASED ON AGENT RELATIONSHIP =====
-            // Cek apakah agent punya affiliate
-            // Jika agent tidak punya affiliate_id, fee_affiliate = 0
+            // ===== CALCULATE AFFILIATE FEE BASED ON AGENT KATEGORI =====
+            // Gunakan PackagePricingService untuk cek apakah affiliate dapat fee
+            // Rules:
+            // - Referral: affiliate dapat fee
+            // - Non Referral: affiliate TIDAK dapat fee (0)
+            // - Host: affiliate TIDAK dapat fee (0)
+            // - Super Host: tidak ada affiliate
             $feeAffiliate = 0;
             
             // Extract agent_id dari request
             $agentId = $userId ?? $request['agent_id'] ?? $request['affiliate_id'] ?? $request['ref_code'] ?? null;
             
-            if ($agentId && $totalFeeAffiliate > 0) {
-                // Query agent untuk cek apakah punya affiliate_id
-                // Note: tabel agent punya kolom link_referal, bukan ref_code
-                $agent = Agent::where('id', $agentId)
-                    ->orWhere('link_referal', $agentId)
-                    ->first();
+            if ($agentId && $totalFeeAffiliate > 0 && str_starts_with($agentId, 'AGT')) {
+                // Gunakan PackagePricingService untuk cek apakah affiliate dapat fee
+                $shouldReceiveFee = $this->pricingService->shouldAffiliateReceiveFee($agentId);
+                $kategori = $this->pricingService->getAgentKategori($agentId);
                 
-                if ($agent && $agent->affiliate_id) {
-                    // Agent punya affiliate, gunakan totalFeeAffiliate yang sudah dihitung
+                if ($shouldReceiveFee) {
+                    // Affiliate dapat fee (hanya untuk Referral)
                     $feeAffiliate = $totalFeeAffiliate;
                     
-                    Log::info('💳 Affiliate fee assigned', [
-                        'agent_id' => $agent->id,
-                        'affiliate_id' => $agent->affiliate_id,
+                    Log::info('💳 Affiliate fee assigned (Referral)', [
+                        'agent_id' => $agentId,
+                        'kategori' => $kategori,
                         'fee_affiliate' => $feeAffiliate,
                     ]);
                 } else {
-                    Log::info('⚠️ Agent has no affiliate, fee_affiliate = 0', [
+                    // Affiliate TIDAK dapat fee (Non Referral, Host, Super Host)
+                    $feeAffiliate = 0;
+                    
+                    Log::info('⚠️ Affiliate fee = 0 (kategori: ' . $kategori . ')', [
                         'agent_id' => $agentId,
-                        'has_affiliate' => isset($agent->affiliate_id),
+                        'kategori' => $kategori,
+                        'reason' => 'Non-Referral agent does not share fee with affiliate',
                     ]);
                 }
             }
@@ -1175,19 +1184,7 @@ class BulkPaymentService
             $detailPesanan = json_decode($detailPesanan, true);
         }
 
-        // Ambil data agent untuk invoice (dari relasi atau agent_id)
-        $agentName = 'Kuotaumroh.id';
-        $agentPic = 'Kuotaumroh.id';
-        $agentPhone = '+62 812-3456-7890';
-        
-        if ($payment->agent_id) {
-            $agent = Agent::find($payment->agent_id);
-            if ($agent) {
-                $agentName = $agent->nama_travel ?? 'Kuotaumroh.id';
-                $agentPic = $agent->nama_pic ?? 'Kuotaumroh.id';
-                $agentPhone = $agent->no_hp ?? '+62 812-3456-7890';
-            }
-        }
+        $agentInfo = $this->resolveAgentInfo($payment->agent_id);
 
         // Format response similar to external API but with local DB data
         return [
@@ -1216,8 +1213,64 @@ class BulkPaymentService
                 'qris_string' => $payment->qris_string,
                 'qris_nmid' => $payment->qris_nmid,
                 'qr_code' => $payment->qris_string, // Alias for compatibility
+                'agent_info' => $agentInfo,
             ],
         ];
+    }
+
+    /**
+     * Resolve agent/affiliate info untuk invoice display
+     * 
+     * @param string|null $agentId
+     * @return array{type:string|null,label:string,name:string,pic:string,phone:string}
+     */
+    protected function resolveAgentInfo(?string $agentId): array
+    {
+        $default = [
+            'type' => null,
+            'label' => 'Travel Agent',
+            'name' => 'Kuotaumroh.id',
+            'pic' => 'Kuotaumroh.id',
+            'phone' => '+62 812-3456-7890',
+        ];
+
+        if (!$agentId) {
+            return $default;
+        }
+
+        if (str_starts_with($agentId, 'AFT')) {
+            $affiliate = Affiliate::find($agentId);
+
+            if (!$affiliate) {
+                return $default;
+            }
+
+            return [
+                'type' => 'affiliate',
+                'label' => 'Affiliate',
+                'name' => $affiliate->link_referral ?? $affiliate->ref_code ?? $affiliate->nama ?? 'Affiliate',
+                'pic' => $affiliate->nama ?? 'Affiliate',
+                'phone' => $affiliate->no_wa ?? '-',
+            ];
+        }
+
+        if (str_starts_with($agentId, 'AGT')) {
+            $agent = Agent::find($agentId);
+
+            if (!$agent) {
+                return $default;
+            }
+
+            return [
+                'type' => 'agent',
+                'label' => 'Travel Agent',
+                'name' => $agent->nama_travel ?? $agent->nama_pic ?? 'Travel Agent',
+                'pic' => $agent->nama_pic ?? $agent->nama_travel ?? 'Travel Agent',
+                'phone' => $agent->no_hp ?? '-',
+            ];
+        }
+
+        return $default;
     }
 
     /**
