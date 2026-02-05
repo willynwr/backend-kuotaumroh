@@ -309,6 +309,7 @@ function orderApp() {
       if (!this.bulkInput.trim()) {
         this.parsedNumbers = [];
         this.providerGroups = {};
+        this.providerPackages = {}; // FIX BUG #3: Reset package assignments when all numbers are cleared
         return;
       }
       
@@ -327,6 +328,23 @@ function orderApp() {
         groups[num.provider].push(num.msisdn);
       });
       this.providerGroups = groups;
+      
+      // FIX BUG #2: Clean up package assignments for numbers that no longer exist
+      const currentNumbers = new Set(this.parsedNumbers.map(n => n.msisdn));
+      Object.keys(this.providerPackages).forEach(provider => {
+        this.providerPackages[provider] = this.providerPackages[provider]
+          .map(assignment => ({
+            ...assignment,
+            numbers: assignment.numbers.filter(num => currentNumbers.has(num))
+          }))
+          .filter(assignment => assignment.numbers.length > 0);
+        
+        // Remove provider key if no assignments left
+        if (this.providerPackages[provider].length === 0) {
+          delete this.providerPackages[provider];
+        }
+      });
+      this.providerPackages = { ...this.providerPackages };
     },
 
     handleFileUpload(event) {
@@ -683,7 +701,8 @@ function orderApp() {
       
       // Multi-number mode: open step 2
       this.selectedPackageForNumbers = pkg;
-      this.tempSelectedNumbers = [...this.getPickerNumbers()];
+      // FIX BUG #1: Only pre-select unassigned numbers (numbers without a package)
+      this.tempSelectedNumbers = this.getUnassignedNumbers(this.pickerProvider);
       this.numberSearch = '';
       this.numberSelectionOpen = true;
     },

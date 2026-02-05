@@ -1136,7 +1136,10 @@ function checkoutApp() {
                         errorMessage || 'Terdapat nomor telepon yang tidak terdaftar atau tidak valid. Silakan periksa kembali nomor telepon yang Anda masukkan dan pastikan nomor tersebut aktif.'
                     );
                 } else {
-                    this.showErrorModal('Error', error.message || 'Gagal membuat transaksi pembayaran. Silakan coba lagi.');
+                    this.showErrorModal(
+                        'Error',
+                        this.withCsInfo(error.message || 'Gagal membuat transaksi pembayaran. Silakan coba lagi.')
+                    );
                 }
                 
                 this.isLoading = false;
@@ -1256,7 +1259,10 @@ function checkoutApp() {
                 }
             } catch (error) {
                 console.error('Check error:', error);
-                this.showErrorModal('Error', 'Gagal mengecek status pembayaran. Silakan coba lagi.');
+                this.showErrorModal(
+                    'Error',
+                    this.withCsInfo('Gagal mengecek status pembayaran. Silakan coba lagi.')
+                );
             }
         },
 
@@ -1329,6 +1335,10 @@ function checkoutApp() {
             this.toastMessage = message;
             this.toastVisible = true;
             setTimeout(() => { this.toastVisible = false; }, 3000);
+        },
+
+        withCsInfo(message) {
+            return `${message} Jika kendala berlanjut, hubungi CS Kuotaumroh via WhatsApp +62 8112-994-499.`;
         },
 
         showErrorModal(title, message) {

@@ -18,28 +18,15 @@
       </div>
 
       <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
-        <!-- Saldo Tersedia -->
+        <!-- Komisi Toko -->
         <div class="rounded-lg border bg-white shadow-sm p-6">
           <div class="flex items-center gap-4">
             <div class="rounded-full bg-primary/10 p-3">
               <svg class="h-6 w-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             </div>
             <div class="flex-1">
-              <p class="text-sm font-medium text-muted-foreground">Saldo Profit Tersedia</p>
+              <p class="text-sm font-medium text-muted-foreground">Komisi Toko</p>
               <h3 class="text-2xl font-bold" x-text="formatRupiah(walletBalance.balance)"></h3>
-            </div>
-          </div>
-        </div>
-
-        <!-- Saldo Diproses -->
-        <div class="rounded-lg border bg-white shadow-sm p-6">
-          <div class="flex items-center gap-4">
-            <div class="rounded-full bg-muted p-3">
-              <svg class="h-6 w-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            </div>
-            <div>
-              <p class="text-sm font-medium text-muted-foreground">Saldo Diproses</p>
-              <h3 class="text-2xl font-bold" x-text="formatRupiah(walletBalance.pendingWithdrawal)"></h3>
             </div>
           </div>
         </div>
@@ -51,21 +38,21 @@
               <svg class="h-5 w-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
             </div>
             <div>
-              <p class="text-sm text-muted-foreground">Total Komisi</p>
-              <p class="text-2xl font-bold" x-text="formatRupiah(referralData.totalCommission)"></p>
+              <p class="text-sm text-muted-foreground">Total Komisi Toko</p>
+              <p class="text-2xl font-bold" x-text="formatRupiah(referralData.totalStoreCommission)"></p>
             </div>
           </div>
         </div>
 
-        <!-- Komisi Pending -->
+        <!-- Total Tarik Saldo -->
         <div class="rounded-lg border bg-slate-50 border-slate-200 shadow-sm p-6">
           <div class="flex items-center gap-4">
             <div class="rounded-full bg-muted p-3">
               <svg class="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
             </div>
             <div>
-              <p class="text-sm text-muted-foreground">Komisi Pending</p>
-              <p class="text-2xl font-bold" x-text="formatRupiah(referralData.pendingCommission)"></p>
+              <p class="text-sm text-muted-foreground">Total Tarik Saldo</p>
+              <p class="text-2xl font-bold" x-text="formatRupiah(referralData.totalWithdrawn)"></p>
             </div>
           </div>
         </div>
@@ -238,7 +225,7 @@
       return {
         imageBase: @json(asset('images')),
         walletBalance: @json($walletBalance ?? ['balance' => 0, 'pendingWithdrawal' => 0]),
-        referralData: @json($referralData ?? ['totalCommission' => 0, 'pendingCommission' => 0]),
+        referralData: @json($referralData ?? ['totalStoreCommission' => 0, 'totalWithdrawn' => 0]),
         referralHistory: @json($referralHistory ?? []),
         withdrawalHistory: @json($withdrawalHistory ?? []),
         rejectReasonModal: false,
