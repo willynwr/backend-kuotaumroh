@@ -15,11 +15,21 @@ class Kernel extends ConsoleKernel
     {
         // Jalankan verifikasi pembayaran setiap menit
         // Polling otomatis untuk mencocokkan mutasi QRIS
-        $schedule->job(new VerifyWaitingPaymentsJob)->everyMinute();
+        // $schedule->job(new VerifyWaitingPaymentsJob)->everyMinute();
         
         // Sync status pembayaran dari Tokodigi API setiap 15 menit
         // Cek status INJECT/SUCCESS untuk pembayaran yang berhasil
         $schedule->command('payment:sync-status')->everyFifteenMinutes();
+        
+        // Reset saldo_bulan setiap tanggal 1 jam 00:01
+        $schedule->command('agent:reset-monthly-saldo')
+            ->monthlyOn(1, '00:01')
+            ->timezone('Asia/Jakarta');
+        
+        // Reset saldo_tahun setiap 1 Januari jam 00:02
+        $schedule->command('agent:reset-yearly-saldo')
+            ->yearlyOn(1, 1, '00:02')
+            ->timezone('Asia/Jakarta');
     }
 
     /**

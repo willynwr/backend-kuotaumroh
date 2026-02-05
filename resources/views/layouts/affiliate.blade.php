@@ -29,6 +29,9 @@
     <script src="{{ asset('shared/config.js') }}"></script>
     <script src="{{ asset('shared/utils.js') }}"></script>
 
+    <!-- Session Timeout Manager -->
+    <script src="{{ asset('shared/session-timeout.js') }}?v={{ time() }}"></script>
+
     <!-- Tailwind Config -->
     <script>
         tailwind.config = {

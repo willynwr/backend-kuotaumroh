@@ -30,6 +30,9 @@
     <script src="{{ asset('shared/utils.js') }}"></script>
     <!-- Header JS Removed - using Blade Component -->
 
+    <!-- Session Timeout Manager -->
+    <script src="{{ asset('shared/session-timeout.js') }}?v={{ time() }}"></script>
+
     <!-- Tailwind Config -->
     <script>
         tailwind.config = {

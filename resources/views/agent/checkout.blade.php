@@ -1275,7 +1275,11 @@ function checkoutApp() {
                 }
             }
 
-            window.open(`/invoice/${this.paymentId}`, '_blank');
+            // Build invoice URL with source parameter
+            const agentId = '{{ $user->id ?? "" }}';
+            const linkReferral = '{{ $linkReferral ?? "kuotaumroh" }}';
+            const invoiceUrl = `/invoice/${this.paymentId}?source=order&refCode=${agentId}&linkReferral=${linkReferral}`;
+            window.open(invoiceUrl, '_blank');
         },
 
         setPaymentActivated() {
@@ -1308,7 +1312,10 @@ function checkoutApp() {
         
         redirectToInvoice() {
             if (this.paymentId) {
-                window.open(`/invoice/${this.paymentId}`, '_blank');
+                const agentId = '{{ $user->id ?? "" }}';
+                const linkReferral = '{{ $linkReferral ?? "kuotaumroh" }}';
+                const invoiceUrl = `/invoice/${this.paymentId}?source=order&refCode=${agentId}&linkReferral=${linkReferral}`;
+                window.open(invoiceUrl, '_blank');
             }
         },
         
@@ -1344,7 +1351,7 @@ function checkoutApp() {
         redirectAfterError() {
             this.errorModalVisible = false;
             this.isForceExit = true; // Bypass beforeunload confirmation
-            window.location.href = '{{ route("agent.order") }}';
+            window.location.href = '{{ isset($linkReferral) ? url("/dash/" . $linkReferral . "/order") : route("agent.order") }}';
         },
         
         formatNumber(num) {

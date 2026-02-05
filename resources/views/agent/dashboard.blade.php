@@ -21,6 +21,25 @@
             </div>
             <div class="relative z-10 p-6 pt-0">
               <div class="text-4xl font-extrabold text-primary tracking-tight" x-text="formatRupiah(stats.monthlyProfit)"></div>
+              
+              <!-- Breakdown Komisi Toko dan Margin Bulk -->
+              <div class="mt-4 space-y-2">
+                <div class="flex items-center justify-between text-sm">
+                  <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+                    <span class="text-slate-600">Komisi Toko</span>
+                  </div>
+                  <span class="font-semibold text-blue-600" x-text="formatRupiah(stats.monthlyStoreProfit)"></span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                  <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                    <span class="text-slate-600">Margin Bulk</span>
+                  </div>
+                  <span class="font-semibold text-green-600" x-text="formatRupiah(stats.monthlyBulkProfit)"></span>
+                </div>
+              </div>
+              
               <div class="mt-6 flex items-center justify-between border-t border-slate-100 pt-4">
                 <div>
                   <p class="text-xs font-bold uppercase text-slate-400">Total akumulasi</p>
@@ -42,7 +61,7 @@
         <!-- Dynamic Link Toko Box(es) based on jenis_travel -->
         <template x-if="hasUmroh">
           <div>
-            <div class="rounded-2xl border-slate-200 bg-white shadow-sm h-full">
+            <div class="rounded-2xl border-slate-200 bg-white shadow-sm">
               <div class="flex flex-row items-center justify-between p-6 pb-4">
                 <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">Link Toko: Kuotaumroh.id</h3>
               </div>
@@ -72,7 +91,7 @@
         
         <template x-if="hasLeisure">
           <div>
-            <div class="rounded-2xl border-slate-200 bg-white shadow-sm h-full">
+            <div class="rounded-2xl border-slate-200 bg-white shadow-sm">
               <div class="flex flex-row items-center justify-between p-6 pb-4">
                 <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">Link Toko: Roamer.id</h3>
               </div>
@@ -143,6 +162,8 @@
         hasLeisure: false,
         stats: {
           monthlyProfit: 0,
+          monthlyStoreProfit: 0,
+          monthlyBulkProfit: 0,
           totalProfit: 0,
           walletBalance: 0,
           pendingWithdrawal: 0,
@@ -247,6 +268,8 @@
             
             if (result.success) {
               this.stats.monthlyProfit = parseInt(result.data.monthly_profit) || 0;
+              this.stats.monthlyStoreProfit = parseInt(result.data.monthly_store_profit) || 0;
+              this.stats.monthlyBulkProfit = parseInt(result.data.monthly_bulk_profit) || 0;
               this.stats.totalProfit = parseInt(result.data.total_profit) || 0;
               this.stats.walletBalance = parseInt(result.data.wallet_balance) || 0;
               this.stats.pendingWithdrawal = parseInt(result.data.pending_withdrawal) || 0;

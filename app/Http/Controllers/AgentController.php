@@ -321,7 +321,80 @@ class AgentController extends Controller
 
     public function history()
     {
-        return view('agent.history');
+        $user = auth()->user();
+        $transactions = [];
+        
+        if ($user instanceof \App\Models\Agent) {
+            // Ambil data pembayaran dari tabel pembayaran
+            $payments = \App\Models\Pembayaran::where('agent_id', $user->id)
+                ->with('agent:id,provinsi,kabupaten_kota')
+                ->orderBy('created_at', 'desc')
+                ->get();
+            
+            // Transform data untuk view
+            $transactions = $payments->map(function ($payment) {
+                // Parse msisdn JSON untuk hitung jumlah nomor
+                $msisdnArray = json_decode($payment->msisdn, true) ?? [];
+                $msisdnCount = is_array($msisdnArray) ? count($msisdnArray) : 0;
+                
+                // Parse detail_pesanan untuk provider/status/pricing per item (jika ada)
+                $detailPesanan = json_decode($payment->detail_pesanan, true) ?? [];
+                $detailItems = $detailPesanan['items'] ?? [];
+                $pricingDetails = $detailPesanan['pricing_details'] ?? [];
+                
+                // Build items hanya dari kolom pembayaran
+                $enrichedItems = [];
+                foreach ($msisdnArray as $index => $msisdn) {
+                    $detailItem = $detailItems[$index] ?? [];
+                    $itemProfit = $pricingDetails[$index]['bulk_potensi_profit'] ?? 0;
+
+                    $enrichedItems[] = [
+                        'msisdn' => $msisdn,
+                        'provider' => $detailItem['provider'] ?? '-',
+                        'packageName' => $payment->nama_paket ?? '-',
+                        'price' => $payment->harga_jual ?? 0,
+                        'status' => $detailItem['status'] ?? 'pending',
+                        'profit' => $itemProfit,
+                        'produk_id' => $detailItem['package_id'] ?? null,
+                    ];
+                }
+                
+                // Map status pembayaran ke format view
+                $statusMap = [
+                    'WAITING' => 'pending',
+                    'VERIFY' => 'processing',
+                    'SUCCESS' => 'completed',
+                    'FAILED' => 'failed',
+                    'EXPIRED' => 'failed',
+                ];
+                $status = $statusMap[$payment->status_pembayaran] ?? 'pending';
+                
+                // Get teritorial dari agent
+                $teritorial = '-';
+                if ($payment->agent) {
+                    if ($payment->agent->kabupaten_kota) {
+                        $teritorial = $payment->agent->kabupaten_kota;
+                    } elseif ($payment->agent->provinsi) {
+                        $teritorial = $payment->agent->provinsi;
+                    }
+                }
+                
+                return [
+                    'id' => $payment->id,
+                    'batchId' => $payment->batch_id,
+                    'batchName' => $payment->batch_name,
+                    'createdAt' => $payment->created_at->toISOString(),
+                    'teritorial' => $teritorial,
+                    'msisdnCount' => $msisdnCount,
+                    'totalAmount' => $payment->total_pembayaran,
+                    'profit' => $payment->profit ?? 0,
+                    'status' => $status,
+                    'items' => $enrichedItems,
+                ];
+            })->toArray();
+        }
+        
+        return view('agent.history', compact('transactions'));
     }
 
     public function order()
