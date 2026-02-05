@@ -344,9 +344,17 @@ class AgentController extends Controller
                 
                 // Build items hanya dari kolom pembayaran
                 $enrichedItems = [];
+                $perItemFallbackProfit = ($msisdnCount > 0 && !empty($payment->profit))
+                    ? ($payment->profit / $msisdnCount)
+                    : 0;
+
                 foreach ($msisdnArray as $index => $msisdn) {
                     $detailItem = $detailItems[$index] ?? [];
-                    $itemProfit = $pricingDetails[$index]['bulk_potensi_profit'] ?? 0;
+                    $itemProfit = $pricingDetails[$index]['bulk_potensi_profit']
+                        ?? ($detailItem['profit'] ?? null);
+                    if ($itemProfit === null || $itemProfit === '') {
+                        $itemProfit = $perItemFallbackProfit;
+                    }
 
                     $enrichedItems[] = [
                         'msisdn' => $msisdn,
