@@ -185,6 +185,9 @@
                     </svg>
                     <h3 class="text-lg font-semibold text-red-900 mb-2">Gagal Memuat Invoice</h3>
                     <p class="text-red-700 mb-4" x-text="error"></p>
+                    <p x-show="errorIsSystem" class="text-sm text-red-700 mb-4">
+                        Jika kendala berlanjut, hubungi CS Kuotaumroh via WhatsApp +62 8112-994-499.
+                    </p>
                     <button @click="fetchInvoiceData()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
                         Coba Lagi
                     </button>
@@ -604,6 +607,7 @@
                 showAllItems: false,
                 loading: true,
                 error: null,
+                errorIsSystem: false,
                 paymentPending: false,  // True if payment is not yet successful
                 paymentId: '{{ $invoiceId ?? "" }}',  // From route parameter
                 
@@ -776,6 +780,7 @@
                 async init() {
                     if (!this.paymentId) {
                         this.error = 'Payment ID tidak ditemukan';
+                        this.errorIsSystem = false;
                         this.loading = false;
                         return;
                     }
@@ -788,6 +793,7 @@
                     try {
                         this.loading = true;
                         this.error = null;
+                        this.errorIsSystem = false;
                         this.paymentPending = false;
 
                         // Get agent_id from URL or localStorage
@@ -842,6 +848,7 @@
                     } catch (error) {
                         console.error('❌ Error fetching invoice:', error);
                         this.error = error.message || 'Gagal memuat data invoice';
+                        this.errorIsSystem = true;
                         this.loading = false;
                     }
                 },
@@ -981,6 +988,7 @@
                     
                     if (!item) {
                         this.error = 'Data invoice tidak ditemukan';
+                        this.errorIsSystem = false;
                         return;
                     }
 
