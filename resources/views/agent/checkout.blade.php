@@ -1275,7 +1275,11 @@ function checkoutApp() {
                 }
             }
 
-            window.open(`/invoice/${this.paymentId}`, '_blank');
+            // Build invoice URL with source parameter
+            const agentId = '{{ $user->id ?? "" }}';
+            const linkReferral = '{{ $linkReferral ?? "kuotaumroh" }}';
+            const invoiceUrl = `/invoice/${this.paymentId}?source=order&refCode=${agentId}&linkReferral=${linkReferral}`;
+            window.open(invoiceUrl, '_blank');
         },
 
         setPaymentActivated() {
@@ -1308,7 +1312,10 @@ function checkoutApp() {
         
         redirectToInvoice() {
             if (this.paymentId) {
-                window.open(`/invoice/${this.paymentId}`, '_blank');
+                const agentId = '{{ $user->id ?? "" }}';
+                const linkReferral = '{{ $linkReferral ?? "kuotaumroh" }}';
+                const invoiceUrl = `/invoice/${this.paymentId}?source=order&refCode=${agentId}&linkReferral=${linkReferral}`;
+                window.open(invoiceUrl, '_blank');
             }
         },
         

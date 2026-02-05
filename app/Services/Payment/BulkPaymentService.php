@@ -1175,6 +1175,20 @@ class BulkPaymentService
             $detailPesanan = json_decode($detailPesanan, true);
         }
 
+        // Ambil data agent untuk invoice (dari relasi atau agent_id)
+        $agentName = 'Kuotaumroh.id';
+        $agentPic = 'Kuotaumroh.id';
+        $agentPhone = '+62 812-3456-7890';
+        
+        if ($payment->agent_id) {
+            $agent = Agent::find($payment->agent_id);
+            if ($agent) {
+                $agentName = $agent->nama_travel ?? 'Kuotaumroh.id';
+                $agentPic = $agent->nama_pic ?? 'Kuotaumroh.id';
+                $agentPhone = $agent->no_hp ?? '+62 812-3456-7890';
+            }
+        }
+
         // Format response similar to external API but with local DB data
         return [
             'success' => true,
@@ -1186,6 +1200,9 @@ class BulkPaymentService
                 'batch_id' => $payment->batch_id,
                 'batch_name' => $payment->batch_name,
                 'agent_id' => $payment->agent_id,
+                'agent_name' => $agentName,
+                'agent_pic' => $agentPic,
+                'agent_phone' => $agentPhone,
                 'status' => $payment->status_pembayaran,
                 'status_pembayaran' => $payment->status_pembayaran,
                 'payment_method' => $payment->metode_pembayaran,

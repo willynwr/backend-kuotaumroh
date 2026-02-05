@@ -26,6 +26,9 @@
   <!-- Shared Utilities -->
   <script src="{{ asset('frontend/shared/utils.js') }}"></script>
 
+  <!-- Session Timeout Manager -->
+  <script src="{{ asset('shared/session-timeout.js') }}?v={{ time() }}"></script>
+
   <!-- API Configuration -->
   <script>
     const API_BASE_URL = '{{ url('/') }}';

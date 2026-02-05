@@ -331,30 +331,39 @@ class DashboardController extends Controller
             // Profit bulan ini diambil dari kolom saldo_bulan (reset setiap bulan)
             $monthlyProfit = $user->saldo_bulan ?? 0;
             
+            // Hitung profit store (IND-) dan bulk (BATCH_) terpisah untuk bulan ini
+            $monthlyStoreProfit = \App\Models\Pembayaran::where('agent_id', $user->id)
+                ->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS'])
+                ->where('batch_id', 'LIKE', 'IND-%')
+                ->whereBetween('created_at', [$startOfMonth, $now])
+                ->sum('profit') ?? 0;
+            
+            $monthlyBulkProfit = \App\Models\Pembayaran::where('agent_id', $user->id)
+                ->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS'])
+                ->where('batch_id', 'LIKE', 'BATCH_%')
+                ->whereBetween('created_at', [$startOfMonth, $now])
+                ->sum('profit') ?? 0;
+            
             // Total akumulasi tahun ini diambil dari kolom saldo_tahun (reset setiap tahun)
             $totalProfit = $user->saldo_tahun ?? 0;
             
-            // Hitung total transaksi (jumlah pesanan) bulan ini
-            $monthlyTransactions = \App\Models\Pesanan::where('kategori_channel', 'agent')
-                ->where('channel_id', $user->id)
-                ->whereHas('pembayaran', function($query) {
-                    $query->where('status_pembayaran', 'selesai');
-                })
+            // Hitung total transaksi (jumlah pembayaran) bulan ini
+            $monthlyTransactions = \App\Models\Pembayaran::where('agent_id', $user->id)
+                ->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS'])
                 ->whereBetween('created_at', [$startOfMonth, $now])
                 ->count();
             
             // Hitung total transaksi tahun ini
             $startOfYear = $now->copy()->startOfYear();
-            $totalTransactions = \App\Models\Pesanan::where('kategori_channel', 'agent')
-                ->where('channel_id', $user->id)
-                ->whereHas('pembayaran', function($query) {
-                    $query->where('status_pembayaran', 'selesai');
-                })
+            $totalTransactions = \App\Models\Pembayaran::where('agent_id', $user->id)
+                ->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS'])
                 ->whereBetween('created_at', [$startOfYear, $now])
                 ->count();
             
             return [
                 'monthlyProfit' => $monthlyProfit,
+                'monthlyStoreProfit' => $monthlyStoreProfit,
+                'monthlyBulkProfit' => $monthlyBulkProfit,
                 'totalProfit' => $totalProfit,
                 'monthlyTransactions' => $monthlyTransactions,
                 'totalTransactions' => $totalTransactions,
@@ -550,9 +559,9 @@ class DashboardController extends Controller
 
         // Jika user adalah agent, ambil data transaksi dari database
         if ($user instanceof \App\Models\Agent) {
-            // Ambil data pembayaran (batch) beserta pesanan
+            // Ambil data pembayaran (batch) beserta pesanan dan agent
             $transactions = \App\Models\Pembayaran::where('agent_id', $user->id)
-                ->with(['pesanan.produk'])
+                ->with(['pesanan.produk', 'agent:id,provinsi,kabupaten_kota'])
                 ->orderBy('created_at', 'desc')
                 ->get()
                 ->map(function($pembayaran) {
@@ -562,18 +571,39 @@ class DashboardController extends Controller
                         $itemStatus = match($pesanan->status_aktivasi) {
                             'berhasil' => 'completed',
                             'proses' => 'processing',
-                            'gagal' => 'failed',
-                            default => 'pending'
+                            'gagal' => 'pending', // 'pending' digunakan untuk gagal di view
+                            default => 'processing'
                         };
 
                         return [
                             'msisdn' => $pesanan->msisdn,
-                            'provider' => $pesanan->produk->provider ?? 'N/A',
+                            'provider' => $this->detectProviderFromMsisdn($pesanan->msisdn),
                             'packageName' => $pesanan->nama_paket ?? ($pesanan->produk->nama_paket ?? 'N/A'),
                             'price' => $pesanan->harga_jual,
+                            'profit' => $pesanan->profit ?? 0,
                             'status' => $itemStatus
                         ];
                     })->toArray();
+
+                    // Hitung jumlah nomor HP dari items atau fallback ke kolom msisdn
+                    $msisdnCount = count($items);
+                    if ($msisdnCount === 0) {
+                        $msisdnArray = json_decode($pembayaran->msisdn, true) ?? [];
+                        $msisdnCount = is_array($msisdnArray) ? count($msisdnArray) : 0;
+                        
+                        // Fallback: build items dari kolom msisdn jika tidak ada pesanan
+                        foreach ($msisdnArray as $msisdn) {
+                            $items[] = [
+                                'msisdn' => $msisdn,
+                                'provider' => $this->detectProviderFromMsisdn($msisdn),
+                                'packageName' => $pembayaran->nama_paket ?? 'N/A',
+                                'price' => $pembayaran->harga_jual ?? 0,
+                                'profit' => 0,
+                                'status' => $this->mapPaymentStatusForItem($pembayaran->status_pembayaran)
+                            ];
+                        }
+                        $msisdnCount = count($items);
+                    }
 
                     // Tentukan status batch berdasarkan status pesanan di dalamnya
                     $statusCounts = collect($items)->countBy('status');
@@ -584,18 +614,31 @@ class DashboardController extends Controller
                     // - processing: jika ada item yang processing atau campuran
                     // - pending: jika semua item pending
                     $batchStatus = 'pending';
-                    if ($statusCounts->get('completed', 0) === $totalItems) {
+                    if ($totalItems > 0 && $statusCounts->get('completed', 0) === $totalItems) {
                         $batchStatus = 'completed';
                     } elseif ($statusCounts->get('processing', 0) > 0 || $statusCounts->get('completed', 0) > 0) {
                         $batchStatus = 'processing';
                     }
 
+                    // Get teritorial dari agent
+                    $teritorial = '-';
+                    if ($pembayaran->agent) {
+                        if ($pembayaran->agent->kabupaten_kota) {
+                            $teritorial = $pembayaran->agent->kabupaten_kota;
+                        } elseif ($pembayaran->agent->provinsi) {
+                            $teritorial = $pembayaran->agent->provinsi;
+                        }
+                    }
+
                     return [
                         'id' => (string)$pembayaran->id,
                         'batchId' => $pembayaran->batch_id,
-                        'batchName' => $pembayaran->nama_batch ?? 'Batch ' . $pembayaran->batch_id,
+                        'batchName' => $pembayaran->batch_name ?? $pembayaran->nama_batch ?? 'Batch ' . $pembayaran->batch_id,
                         'createdAt' => $pembayaran->created_at->toISOString(),
+                        'teritorial' => $teritorial,
+                        'msisdnCount' => $msisdnCount,
                         'totalAmount' => $pembayaran->total_pembayaran,
+                        'profit' => $pembayaran->profit ?? 0,
                         'status' => $batchStatus,
                         'items' => $items
                     ];
@@ -609,6 +652,56 @@ class DashboardController extends Controller
             'stats' => $this->getStats($data['user']),
             'transactions' => $transactions
         ]);
+    }
+
+    /**
+     * Detect provider dari nomor HP
+     */
+    private function detectProviderFromMsisdn($phoneNumber)
+    {
+        if (empty($phoneNumber)) return '-';
+        
+        // Normalize to 0xxx format
+        $phone = preg_replace('/^(62|0)/', '0', $phoneNumber);
+        $prefix = substr($phone, 0, 4);
+        
+        // Telkomsel
+        if (in_array($prefix, ['0811', '0812', '0813', '0821', '0822', '0823', '0851', '0852', '0853'])) {
+            return 'Telkomsel';
+        }
+        // Indosat
+        if (in_array($prefix, ['0814', '0815', '0816', '0855', '0856', '0857', '0858'])) {
+            return 'Indosat';
+        }
+        // XL
+        if (in_array($prefix, ['0817', '0818', '0819', '0859', '0877', '0878'])) {
+            return 'XL';
+        }
+        // Tri
+        if (in_array($prefix, ['0895', '0896', '0897', '0898', '0899'])) {
+            return 'Tri';
+        }
+        // Smartfren
+        if (in_array($prefix, ['0881', '0882', '0883', '0884', '0885', '0886', '0887', '0888', '0889'])) {
+            return 'Smartfren';
+        }
+        
+        return '-';
+    }
+
+    /**
+     * Map status pembayaran ke status item (fallback jika tidak ada pesanan)
+     */
+    private function mapPaymentStatusForItem($statusPembayaran)
+    {
+        $statusMap = [
+            'WAITING' => 'processing',
+            'VERIFY' => 'processing',
+            'SUCCESS' => 'completed',
+            'FAILED' => 'pending',
+            'EXPIRED' => 'pending',
+        ];
+        return $statusMap[strtoupper($statusPembayaran ?? '')] ?? 'processing';
     }
 
     /**
@@ -693,42 +786,35 @@ class DashboardController extends Controller
             $profitData['monthly_profit'] = $user->saldo_bulan ?? 0;
             $profitData['yearly_profit'] = $user->saldo_tahun ?? 0;
             
-            // Ambil history profit per bulan dari pesanan
-            $monthlyHistory = \App\Models\Pesanan::where('kategori_channel', 'agent')
-                ->where('channel_id', $user->id)
-                ->whereHas('pembayaran', function($query) {
-                    $query->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS']);
-                })
+            // Ambil history profit per bulan dari pembayaran (sama seperti di history transaksi)
+            $monthlyHistory = \App\Models\Pembayaran::where('agent_id', $user->id)
+                ->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS'])
                 ->selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month, SUM(profit) as total_profit, COUNT(*) as total_transactions')
                 ->groupBy('month')
                 ->orderBy('month', 'DESC')
-                ->limit(12)
                 ->get();
             
             // Untuk setiap bulan, ambil detail transaksinya dan restructure ke array
             $monthlyHistoryArray = [];
             foreach ($monthlyHistory as $monthData) {
-                $details = \App\Models\Pesanan::where('kategori_channel', 'agent')
-                    ->where('channel_id', $user->id)
-                    ->whereHas('pembayaran', function($query) {
-                        $query->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS']);
-                    })
-                    ->with('produk:id,nama_paket')
+                $details = \App\Models\Pembayaran::where('agent_id', $user->id)
+                    ->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS'])
                     ->whereRaw('DATE_FORMAT(created_at, "%Y-%m") = ?', [$monthData->month])
-                    ->select('id', 'produk_id', 'profit', 'created_at')
+                    ->select('id', 'nama_paket', 'profit', 'created_at', 'batch_name', 'batch_id')
                     ->orderBy('created_at', 'DESC')
                     ->get()
-                    ->map(function($pesanan) {
+                    ->map(function($pembayaran) {
                         return [
-                            'date' => $pesanan->created_at->format('d-m-Y'),
-                            'product_name' => $pesanan->produk->nama_paket ?? 'N/A',
-                            'profit' => $pesanan->profit
+                            'date' => $pembayaran->created_at->format('d-m-Y'),
+                            'batch_name' => $pembayaran->batch_name ?? $pembayaran->nama_batch ?? 'Batch ' . $pembayaran->batch_id,
+                            'product_name' => $pembayaran->nama_paket ?? 'N/A',
+                            'profit' => $pembayaran->profit ?? 0
                         ];
                     })->toArray();
                 
                 $monthlyHistoryArray[] = [
                     'month' => $monthData->month,
-                    'total_profit' => $monthData->total_profit,
+                    'total_profit' => $monthData->total_profit ?? 0,
                     'total_transactions' => $monthData->total_transactions,
                     'details' => $details
                 ];
@@ -736,12 +822,18 @@ class DashboardController extends Controller
             
             $profitData['monthly_history'] = $monthlyHistoryArray;
             
-            // Ambil history profit per tahun dari pesanan
-            $profitData['yearly_history'] = \App\Models\Pesanan::where('kategori_channel', 'agent')
-                ->where('channel_id', $user->id)
-                ->whereHas('pembayaran', function($query) {
-                    $query->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS']);
-                })
+            // Log untuk debugging
+            \Log::info('History Profit Data:', [
+                'agent_id' => $user->id,
+                'total_pembayaran' => \App\Models\Pembayaran::where('agent_id', $user->id)->count(),
+                'pembayaran_success' => \App\Models\Pembayaran::where('agent_id', $user->id)
+                    ->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS'])->count(),
+                'monthly_history_count' => count($monthlyHistoryArray)
+            ]);
+            
+            // Ambil history profit per tahun dari pembayaran
+            $profitData['yearly_history'] = \App\Models\Pembayaran::where('agent_id', $user->id)
+                ->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS'])
                 ->selectRaw('YEAR(created_at) as year, SUM(profit) as total_profit, COUNT(*) as total_transactions')
                 ->groupBy('year')
                 ->orderBy('year', 'DESC')
@@ -771,21 +863,29 @@ class DashboardController extends Controller
         
         // Jika user adalah agent, ambil detail transaksi bulan ini
         if ($user instanceof \App\Models\Agent) {
-            $details = \App\Models\Pesanan::where('kategori_channel', 'agent')
-                ->where('channel_id', $user->id)
-                ->whereHas('pembayaran', function($query) {
-                    $query->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS']);
-                })
-                ->with('produk:id,nama_paket')
+            $details = \App\Models\Pembayaran::where('agent_id', $user->id)
+                ->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS'])
                 ->whereRaw('DATE_FORMAT(created_at, "%Y-%m") = ?', [$month])
-                ->select('id', 'produk_id', 'profit', 'created_at')
+                ->select('id', 'nama_paket', 'profit', 'created_at', 'batch_name', 'batch_id', 'msisdn')
                 ->orderBy('created_at', 'DESC')
                 ->get()
-                ->map(function($pesanan) {
+                ->map(function($pembayaran) {
+                    // Parse msisdn dari JSON
+                    $msisdnArray = json_decode($pembayaran->msisdn, true) ?? [];
+                    $msisdnCount = is_array($msisdnArray) ? count($msisdnArray) : 0;
+                    
+                    // Jika individu, ambil nomor pertama
+                    $firstMsisdn = is_array($msisdnArray) && count($msisdnArray) > 0 ? $msisdnArray[0] : null;
+                    
                     return [
-                        'date' => $pesanan->created_at->format('d-m-Y H:i'),
-                        'product_name' => $pesanan->produk->nama_paket ?? 'N/A',
-                        'profit' => $pesanan->profit
+                        'date' => $pembayaran->created_at->format('d-m-Y H:i'),
+                        'batch_id' => $pembayaran->batch_id,
+                        'batch_name' => $pembayaran->batch_name ?? $pembayaran->nama_batch ?? 'Batch ' . $pembayaran->batch_id,
+                        'product_name' => $pembayaran->nama_paket ?? 'N/A',
+                        'profit' => $pembayaran->profit ?? 0,
+                        'msisdn' => $firstMsisdn,
+                        'msisdn_list' => $msisdnArray,
+                        'msisdn_count' => $msisdnCount
                     ];
                 });
         }
@@ -897,56 +997,46 @@ class DashboardController extends Controller
             $profitData['monthly_profit'] = $user->saldo_bulan ?? 0;
             $profitData['yearly_profit'] = $user->saldo_tahun ?? 0;
             
-            // Ambil history profit per bulan dari pesanan
-            $monthlyHistory = \App\Models\Pesanan::where('kategori_channel', 'agent')
-                ->where('channel_id', $user->id)
-                ->whereHas('pembayaran', function($query) {
-                    $query->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS']);
-                })
+            // Ambil history profit per bulan dari pembayaran (sama seperti di history transaksi)
+            $monthlyHistory = \App\Models\Pembayaran::where('agent_id', $user->id)
+                ->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS'])
                 ->selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month, SUM(profit) as total_profit, COUNT(*) as total_transactions')
                 ->groupBy('month')
                 ->orderBy('month', 'DESC')
-                ->limit(12)
                 ->get();
             
             // Untuk setiap bulan, ambil detail transaksinya dan restructure ke array
             $monthlyHistoryArray = [];
             foreach ($monthlyHistory as $monthData) {
-                // Simplified details fetch for graph (optional, mainly used in history-profit page, but let's keep it consistent)
-                $details = \App\Models\Pesanan::where('kategori_channel', 'agent')
-                    ->where('channel_id', $user->id)
-                    ->whereHas('pembayaran', function($query) {
-                        $query->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS']);
-                    })
-                    ->with('produk:id,nama_paket')
+                // Simplified details fetch for graph
+                $details = \App\Models\Pembayaran::where('agent_id', $user->id)
+                    ->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS'])
                     ->whereRaw('DATE_FORMAT(created_at, "%Y-%m") = ?', [$monthData->month])
-                    ->select('id', 'produk_id', 'profit', 'created_at')
+                    ->select('id', 'nama_paket', 'profit', 'created_at', 'batch_name', 'batch_id')
                     ->orderBy('created_at', 'DESC')
                     ->get()
-                    ->map(function($pesanan) {
+                    ->map(function($pembayaran) {
                         return [
-                            'id' => $pesanan->id,
-                            'product' => $pesanan->produk->nama_paket ?? '-',
-                            'profit' => $pesanan->profit,
-                            'date' => $pesanan->created_at->format('d M Y')
+                            'id' => $pembayaran->id,
+                            'batch_name' => $pembayaran->batch_name ?? $pembayaran->nama_batch ?? 'Batch ' . $pembayaran->batch_id,
+                            'product' => $pembayaran->nama_paket ?? '-',
+                            'profit' => $pembayaran->profit ?? 0,
+                            'date' => $pembayaran->created_at->format('d M Y')
                         ];
                     });
                 
                 $monthlyHistoryArray[] = [
                     'month' => $monthData->month,
-                    'total_profit' => $monthData->total_profit,
+                    'total_profit' => $monthData->total_profit ?? 0,
                     'total_transactions' => $monthData->total_transactions,
                     'details' => $details
                 ];
             }
             $profitData['monthly_history'] = $monthlyHistoryArray;
             
-            // Ambil history profit per tahun dari pesanan
-            $profitData['yearly_history'] = \App\Models\Pesanan::where('kategori_channel', 'agent')
-                ->where('channel_id', $user->id)
-                ->whereHas('pembayaran', function($query) {
-                    $query->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS']);
-                })
+            // Ambil history profit per tahun dari pembayaran
+            $profitData['yearly_history'] = \App\Models\Pembayaran::where('agent_id', $user->id)
+                ->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS'])
                 ->selectRaw('YEAR(created_at) as year, SUM(profit) as total_profit, COUNT(*) as total_transactions')
                 ->groupBy('year')
                 ->orderBy('year', 'DESC')

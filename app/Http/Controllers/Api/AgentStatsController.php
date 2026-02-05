@@ -42,6 +42,19 @@ class AgentStatsController extends Controller
         // Profit bulan ini diambil dari kolom saldo_bulan (reset setiap bulan)
         $monthlyProfit = $agent->saldo_bulan ?? 0;
         
+        // Breakdown profit store (IND-) dan bulk (BATCH_) untuk bulan ini
+        $monthlyStoreProfit = \App\Models\Pembayaran::where('agent_id', $agentId)
+            ->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS'])
+            ->where('batch_id', 'LIKE', 'IND-%')
+            ->whereBetween('created_at', [$startOfMonth, $now])
+            ->sum('profit') ?? 0;
+        
+        $monthlyBulkProfit = \App\Models\Pembayaran::where('agent_id', $agentId)
+            ->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS'])
+            ->where('batch_id', 'LIKE', 'BATCH_%')
+            ->whereBetween('created_at', [$startOfMonth, $now])
+            ->sum('profit') ?? 0;
+        
         // Total akumulasi tahun ini diambil dari kolom saldo_tahun (reset setiap tahun)
         $totalProfit = $agent->saldo_tahun ?? 0;
         
@@ -72,6 +85,8 @@ class AgentStatsController extends Controller
                 'agent_id' => $agentId,
                 'agent_name' => $agent->nama_pic,
                 'monthly_profit' => $monthlyProfit,
+                'monthly_store_profit' => $monthlyStoreProfit,
+                'monthly_bulk_profit' => $monthlyBulkProfit,
                 'total_profit' => $totalProfit,
                 'monthly_transactions' => $monthlyTransactions,
                 'total_transactions' => $totalTransactions,
