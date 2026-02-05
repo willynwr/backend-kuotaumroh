@@ -425,51 +425,37 @@ class AgentController extends Controller
         
         // Jika user adalah agent, ambil saldo dari database
         if ($user instanceof \App\Models\Agent) {
-            // Hitung profit tersedia dari pesanan yang berhasil (real-time dari database)
-            $profitFromOrders = \App\Models\Pesanan::where('kategori_channel', 'agent')
-                ->where('channel_id', $user->id)
-                ->whereHas('pembayaran', function($query) {
-                    $query->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS']);
-                })
+            // Total komisi toko (transaksi individu: batch_id IND-)
+            $totalStoreCommission = \App\Models\Pembayaran::where('agent_id', $user->id)
+                ->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS'])
+                ->where('batch_id', 'LIKE', 'IND-%')
                 ->sum('profit');
-            
-            // Hitung withdrawal yang sudah di-approve
-            $approvedWithdrawal = \App\Models\Withdraw::where('agent_id', $user->id)
+
+            // Total tarik saldo (hanya yang sudah di-approve admin)
+            $totalWithdrawn = \App\Models\Withdraw::where('agent_id', $user->id)
                 ->where('status', 'approve')
                 ->sum('jumlah');
-            
-            // Balance = profit dari orders - withdrawal yang sudah approve
-            $walletBalance['balance'] = ($profitFromOrders ?? 0) - ($approvedWithdrawal ?? 0);
+
+            // Saldo komisi toko = total komisi IND- dikurangi total withdraw
+            $walletBalance['balance'] = ($totalStoreCommission ?? 0) - ($totalWithdrawn ?? 0);
             
             // Hitung pending withdrawal dari table withdraw
             $pendingWithdrawal = \App\Models\Withdraw::where('agent_id', $user->id)
                 ->where('status', 'pending')
                 ->sum('jumlah');
             $walletBalance['pendingWithdrawal'] = $pendingWithdrawal ?? 0;
-            
-            // Data referral komisi
-            $totalCommission = \App\Models\Pesanan::where('kategori_channel', 'agent')
-                ->where('channel_id', $user->id)
-                ->whereHas('pembayaran', function($query) {
-                    $query->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS']);
-                })
-                ->sum('profit');
-                
-            $pendingCommission = \App\Models\Pesanan::where('kategori_channel', 'agent')
-                ->where('channel_id', $user->id)
-                ->whereHas('pembayaran', function($query) {
-                    $query->where('status_pembayaran', 'pending');
-                })
-                ->sum('profit');
-            
+
             $referralData = [
-                'totalCommission' => $totalCommission ?? 0,
-                'pendingCommission' => $pendingCommission ?? 0
+                'totalStoreCommission' => $totalStoreCommission ?? 0,
+                'totalWithdrawn' => $totalWithdrawn ?? 0
             ];
             
             // Ambil riwayat transaksi referral untuk tab Pemasukan
             $referralHistory = \App\Models\Pesanan::where('kategori_channel', 'agent')
                 ->where('channel_id', $user->id)
+                ->whereHas('pembayaran', function($query) {
+                    $query->where('batch_id', 'LIKE', 'IND-%');
+                })
                 ->with(['pembayaran:id,pesanan_id,status_pembayaran', 'produk:id,nama_paket,provider'])
                 ->select('id', 'produk_id', 'msisdn', 'harga_jual', 'profit', 'created_at')
                 ->orderBy('created_at', 'desc')

@@ -800,7 +800,29 @@ function checkoutApp() {
                     const s = localStorage.getItem('pendingOrder'); if (s) { const o = JSON.parse(s); o.paymentId = this.paymentId; o.batchId = this.batchId; localStorage.setItem('pendingOrder', JSON.stringify(o)); }
                     await this.fetchQrisData();
                 } else throw new Error(r.message || 'Gagal');
-            } catch(e) { console.error(e); this.showErrorModal('Error', e.message); this.isLoading = false; }
+            } catch(e) {
+                console.error(e);
+
+                const errorMessage = e.message || '';
+                const errorStr = JSON.stringify(e).toLowerCase();
+
+                if (errorMessage.includes('tidak terdaftar') || errorMessage.includes('not registered') ||
+                    errorMessage.includes('bukan nomor') || errorMessage.includes('tidak dapat diproses') ||
+                    errorMessage.includes('invalid') || errorMessage.toLowerCase().includes('msisdn') ||
+                    errorStr.includes('tidak terdaftar') || errorStr.includes('bukan nomor')) {
+                    this.showErrorModal(
+                        'Nomor Tidak Terdaftar',
+                        errorMessage || 'Terdapat nomor telepon yang tidak terdaftar atau tidak valid. Silakan periksa kembali nomor telepon yang Anda masukkan dan pastikan nomor tersebut aktif.'
+                    );
+                } else {
+                    this.showErrorModal(
+                        'Error',
+                        this.withCsInfo(errorMessage || 'Gagal membuat transaksi pembayaran. Silakan coba lagi.')
+                    );
+                }
+
+                this.isLoading = false;
+            }
             finally { this.isCreatingPayment = false; }
         },
 
@@ -849,7 +871,13 @@ function checkoutApp() {
                 else if (['pending','unpaid'].includes(st)) { if (this.paymentStatus !== 'activated') { this.paymentStatus = 'pending'; console.log('📊 Status dari API: pending'); } this.showToast('Menunggu', 'Pembayaran belum diterima'); }
                 else if (['expired','failed'].includes(st)) { this.paymentStatus = 'expired'; clearInterval(this.timerInterval); clearInterval(this.paymentCheckInterval); localStorage.removeItem('pendingOrder'); }
                 else this.showToast('Status', 'Status: ' + (d?.status || 'checking'));
-            } catch(e) { console.error(e); this.showErrorModal('Error', 'Gagal mengecek status pembayaran. Silakan coba lagi.'); }
+            } catch(e) {
+                console.error(e);
+                this.showErrorModal(
+                    'Error',
+                    this.withCsInfo('Gagal mengecek status pembayaran. Silakan coba lagi.')
+                );
+            }
         },
 
         async handleViewInvoice() {
@@ -906,6 +934,9 @@ function checkoutApp() {
         },
 
         showToast(t, m) { this.toastTitle = t; this.toastMessage = m; this.toastVisible = true; setTimeout(() => this.toastVisible = false, 3000); },
+        withCsInfo(message) {
+            return `${message} Jika kendala berlanjut, hubungi CS Kuotaumroh via WhatsApp +62 8112-994-499.`;
+        },
         showErrorModal(t, m) { 
             this.errorModalTitle = t; 
             this.errorModalMessage = m; 
