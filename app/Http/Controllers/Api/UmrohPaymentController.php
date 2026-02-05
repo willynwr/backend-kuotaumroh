@@ -37,6 +37,7 @@ class UmrohPaymentController extends Controller
      * - ref_code: legacy param (ignored, untuk backward compatibility)
      * - affiliate_id: AFTxxx untuk affiliate bulk catalog
      * - agent_id: AGTxxx untuk agent bulk catalog atau ADMxxx untuk admin
+     * - target_agent_id: AGTxxx untuk affiliate ordering untuk agent tertentu (terutama Host)
      * - context: 'store' untuk agent store publik, default 'bulk'
      * 
      * @param Request $request
@@ -48,6 +49,7 @@ class UmrohPaymentController extends Controller
             // Ambil params
             $affiliateId = $request->input('affiliate_id');
             $agentId = $request->input('agent_id');
+            $targetAgentId = $request->input('target_agent_id'); // For affiliate ordering for specific agent
             $context = $request->input('context', 'bulk'); // 'bulk' or 'store'
             
             $packages = [];
@@ -62,7 +64,19 @@ class UmrohPaymentController extends Controller
                     ], 400);
                 }
                 
-                $packages = $this->pricingService->getBulkCatalogForAffiliate($affiliateId);
+                // If target_agent_id specified, get catalog for that specific agent (e.g., Host)
+                if ($targetAgentId) {
+                    if (!str_starts_with($targetAgentId, 'AGT')) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Invalid target_agent_id format. Expected: AGTxxx',
+                        ], 400);
+                    }
+                    $packages = $this->pricingService->getBulkCatalogForAffiliateTargetAgent($affiliateId, $targetAgentId);
+                } else {
+                    // Default: get all packages for affiliate
+                    $packages = $this->pricingService->getBulkCatalogForAffiliate($affiliateId);
+                }
             }
             
             // ===== ROUTE 2: Agent/Admin Catalog =====
@@ -125,6 +139,7 @@ class UmrohPaymentController extends Controller
      * Request body:
      * - affiliate_id: AFTxxx (untuk affiliate)
      * - agent_id: AGTxxx atau ADMxxx (untuk agent/admin)
+     * - target_agent_id: AGTxxx (untuk affiliate ordering untuk agent tertentu, terutama Host)
      * - batch_id: optional
      * - batch_name: optional
      * - payment_method: QRIS atau SALDO
@@ -153,6 +168,7 @@ class UmrohPaymentController extends Controller
             'price.*' => 'nullable|numeric|min:0',
             'affiliate_id' => 'nullable|string|max:20', // AFTxxx
             'agent_id' => 'nullable|string|max:20', // AGTxxx atau ADMxxx
+            'target_agent_id' => 'nullable|string|max:20', // AGTxxx (for affiliate ordering for specific agent)
         ]);
 
         if ($validator->fails()) {
@@ -167,12 +183,14 @@ class UmrohPaymentController extends Controller
             // ===== DETECT ROLE & USER ID =====
             $affiliateId = $request->input('affiliate_id');
             $agentId = $request->input('agent_id');
+            $targetAgentId = $request->input('target_agent_id'); // For affiliate ordering for specific agent
             $role = null;
             $userId = null;
 
             Log::info('🔍 DEBUG: Received IDs', [
                 'affiliate_id' => $affiliateId,
                 'agent_id' => $agentId,
+                'target_agent_id' => $targetAgentId,
                 'ref_code' => $request->input('ref_code'),
             ]);
 
@@ -204,6 +222,7 @@ class UmrohPaymentController extends Controller
             Log::info('✅ DEBUG: Role & userId determined', [
                 'role' => $role,
                 'userId' => $userId,
+                'target_agent_id' => $targetAgentId,
             ]);
 
             // ===== GET SERVER-SIDE PRICING FROM VIEW =====
@@ -212,7 +231,18 @@ class UmrohPaymentController extends Controller
             
             if ($role && $userId) {
                 try {
-                    $serverPricing = $this->pricingService->getBulkPricesForItems($role, $userId, $packageIds);
+                    // If affiliate with target_agent_id, use special pricing method
+                    if ($role === 'affiliate' && $targetAgentId) {
+                        if (!str_starts_with($targetAgentId, 'AGT')) {
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'Invalid target_agent_id format. Expected: AGTxxx',
+                            ], 400);
+                        }
+                        $serverPricing = $this->pricingService->getBulkPricesForAffiliateTargetAgent($affiliateId, $targetAgentId, $packageIds);
+                    } else {
+                        $serverPricing = $this->pricingService->getBulkPricesForItems($role, $userId, $packageIds);
+                    }
                 } catch (\Exception $e) {
                     return response()->json([
                         'success' => false,
@@ -226,6 +256,7 @@ class UmrohPaymentController extends Controller
             $data = $request->all();
             $data['_role'] = $role; // Internal field
             $data['_user_id'] = $userId; // Internal field
+            $data['_target_agent_id'] = $targetAgentId; // Internal field for affiliate->agent order
             $data['_server_pricing'] = $serverPricing; // Internal field
             
             $result = $this->paymentService->createBulkPayment($data);
