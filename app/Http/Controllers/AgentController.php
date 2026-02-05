@@ -348,6 +348,10 @@ class AgentController extends Controller
                     ? ($payment->profit / $msisdnCount)
                     : 0;
 
+                $unitPrice = ($msisdnCount > 0 && !empty($payment->total_pembayaran))
+                    ? ($payment->total_pembayaran / $msisdnCount)
+                    : ($payment->harga_jual ?? 0);
+
                 foreach ($msisdnArray as $index => $msisdn) {
                     $detailItem = $detailItems[$index] ?? [];
                     $itemProfit = $pricingDetails[$index]['bulk_potensi_profit']
@@ -355,12 +359,16 @@ class AgentController extends Controller
                     if ($itemProfit === null || $itemProfit === '') {
                         $itemProfit = $perItemFallbackProfit;
                     }
+                    $itemPrice = $detailItem['price'] ?? ($payment->harga_jual ?? 0);
+                    if (empty($itemPrice) || $itemPrice <= 0) {
+                        $itemPrice = $unitPrice;
+                    }
 
                     $enrichedItems[] = [
                         'msisdn' => $msisdn,
                         'provider' => $detailItem['provider'] ?? '-',
                         'packageName' => $payment->nama_paket ?? '-',
-                        'price' => $payment->harga_jual ?? 0,
+                        'price' => $itemPrice,
                         'status' => $detailItem['status'] ?? 'pending',
                         'profit' => $itemProfit,
                         'produk_id' => $detailItem['package_id'] ?? null,
