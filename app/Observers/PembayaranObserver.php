@@ -63,7 +63,25 @@ class PembayaranObserver
             return;
         }
 
-        // Increment saldo, saldo_bulan, dan saldo_tahun (atomic operation)
+        // Pastikan saldo tidak null agar increment tidak menghasilkan null
+        $needsSave = false;
+        if (is_null($agent->saldo)) {
+            $agent->saldo = 0;
+            $needsSave = true;
+        }
+        if (is_null($agent->saldo_bulan)) {
+            $agent->saldo_bulan = 0;
+            $needsSave = true;
+        }
+        if (is_null($agent->saldo_tahun)) {
+            $agent->saldo_tahun = 0;
+            $needsSave = true;
+        }
+        if ($needsSave) {
+            $agent->save();
+        }
+
+        // Increment saldo, saldo_bulan, dan saldo_tahun
         $agent->increment('saldo', $pembayaran->profit);
         $agent->increment('saldo_bulan', $pembayaran->profit);
         $agent->increment('saldo_tahun', $pembayaran->profit);
