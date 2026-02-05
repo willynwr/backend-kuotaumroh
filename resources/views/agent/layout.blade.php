@@ -32,6 +32,8 @@
     <script src="{{ asset('shared/api.js') }}"></script>
     <!-- QR Code Generator Library -->
     <script src="{{ asset('shared/qrcode.min.js') }}"></script>
+    <!-- Session Timeout Manager -->
+    <script src="{{ asset('shared/session-timeout.js') }}?v={{ time() }}"></script>
 
     <!-- Tailwind Config (Matching Affiliate Theme) -->
     <script>

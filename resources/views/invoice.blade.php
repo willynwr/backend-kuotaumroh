@@ -34,6 +34,9 @@
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
+    <!-- html2canvas for Save as Image -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
     <!-- Shared Scripts -->
     <script src="{{ asset('shared/config.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('shared/utils.js') }}?v={{ time() }}"></script>
@@ -146,22 +149,6 @@
                     <img src="{{ asset('images/LOGO.png') }}" alt="Kuotaumroh.id Logo" class="h-9 w-9 object-contain">
                     <span class="text-xl font-semibold">Kuotaumroh.id</span>
                 </a>
-
-                <!-- Actions - Force ke kanan di mobile dengan ml-auto -->
-                <div class="flex items-center gap-3 ml-auto">
-                    <button @click="printInvoice()" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border hover:bg-gray-50 transition-colors">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
-                        </svg>
-                        <span class="hidden sm:inline">Cetak</span>
-                    </button>
-                    <button @click="downloadPDF()" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-                        </svg>
-                        <span class="hidden sm:inline">Download PDF</span>
-                    </button>
-                </div>
             </div>
         </header>
 
@@ -580,6 +567,42 @@
                 <p>© 2026 Kuotaumroh.id. All rights reserved.</p>
             </div>
         </footer>
+
+        <!-- Floating Action Buttons (No Print) -->
+        <div x-show="!loading && !error && !paymentPending" class="fixed bottom-6 right-6 flex flex-col gap-3 no-print z-50">
+            <!-- Save Invoice Button -->
+            <button @click="saveInvoice()" 
+                :disabled="isSaving"
+                :class="{'opacity-50 cursor-not-allowed': isSaving}"
+                class="group relative w-14 h-14 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center"
+                title="Simpan Invoice">
+                <svg x-show="!isSaving" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+                </svg>
+                <svg x-show="isSaving" class="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span x-show="!isSaving" class="absolute right-16 bg-gray-900 text-white px-3 py-1.5 rounded-lg text-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                    Simpan Invoice
+                </span>
+                <span x-show="isSaving" class="absolute right-16 bg-gray-900 text-white px-3 py-1.5 rounded-lg text-sm whitespace-nowrap opacity-100">
+                    Menyimpan...
+                </span>
+            </button>
+            
+            <!-- Print Invoice Button -->
+            <button @click="printInvoice()" 
+                class="group relative w-14 h-14 bg-white hover:bg-gray-50 text-gray-700 border-2 border-gray-300 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center"
+                title="Cetak Invoice">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                </svg>
+                <span class="absolute right-16 bg-gray-900 text-white px-3 py-1.5 rounded-lg text-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                    Cetak Invoice
+                </span>
+            </button>
+        </div>
     </div>
 
     <!-- Page Script -->
@@ -698,13 +721,13 @@
                         // Dari store -> kembali ke store dengan referral yang dipakai
                         window.location.href = `/u/${linkReferral}`;
                     } else if (source === 'order') {
-                        // Dari order -> kembali ke order page berdasarkan role
+                        // Dari order -> kembali ke order page berdasarkan role (tanpa link referral)
                         if (refCode && refCode.startsWith('AGT')) {
                             window.location.href = '/agent/order';
                         } else if (refCode && refCode.startsWith('AFT')) {
-                            window.location.href = `/dash/${linkReferral}/order`;
+                            window.location.href = '/affiliate/order';
                         } else if (refCode && refCode.startsWith('FRL')) {
-                            window.location.href = `/dash/${linkReferral}/order`;
+                            window.location.href = '/freelance/order';
                         } else {
                             window.location.href = '{{ route("welcome") }}';
                         }
@@ -1120,11 +1143,77 @@
                     window.print();
                 },
 
-                // Download PDF (placeholder)
-                downloadPDF() {
-                    alert('Fitur download PDF akan segera tersedia.');
-                    // In production, this would generate and download a PDF
-                }
+                // Save Invoice as Image (using html2canvas)
+                async saveInvoice() {
+                    // Prevent multiple clicks
+                    if (this.isSaving) return;
+                    this.isSaving = true;
+                    
+                    try {
+                        console.log('📸 Starting invoice capture...');
+                        
+                        // Get invoice element
+                        const invoiceElement = document.querySelector('.bg-white.rounded-xl.shadow-lg.print-shadow');
+                        
+                        if (!invoiceElement) {
+                            throw new Error('Invoice element not found');
+                        }
+                        
+                        console.log('✓ Invoice element found, generating canvas...');
+                        
+                        // Generate canvas from invoice element
+                        const canvas = await html2canvas(invoiceElement, {
+                            scale: 2, // Higher quality
+                            useCORS: true,
+                            logging: false,
+                            backgroundColor: '#ffffff',
+                            windowWidth: invoiceElement.scrollWidth,
+                            windowHeight: invoiceElement.scrollHeight,
+                            onclone: (clonedDoc) => {
+                                // Remove no-print elements from cloned document
+                                const noPrint = clonedDoc.querySelectorAll('.no-print');
+                                noPrint.forEach(el => el.remove());
+                            }
+                        });
+                        
+                        console.log('✓ Canvas generated, creating download...');
+                        
+                        // Convert canvas to blob and download
+                        canvas.toBlob((blob) => {
+                            if (!blob) {
+                                throw new Error('Failed to create image blob');
+                            }
+                            
+                            // Generate filename
+                            const filename = `Invoice_${this.invoice.paymentId || 'KuotaUmroh'}_${new Date().getTime()}.png`;
+                            
+                            // Create download link
+                            const link = document.createElement('a');
+                            link.href = URL.createObjectURL(blob);
+                            link.download = filename;
+                            
+                            // Trigger download
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            
+                            // Cleanup
+                            URL.revokeObjectURL(link.href);
+                            
+                            this.isSaving = false;
+                            
+                            console.log('✅ Invoice saved as image:', filename);
+                        }, 'image/png');
+                        
+                    } catch (error) {
+                        console.error('❌ Error saving invoice:', error);
+                        alert('Gagal menyimpan invoice: ' + error.message);
+                        this.isSaving = false;
+                    }
+                },
+
+                // State for save button
+                isSaving: false
             }
         }
     </script>

@@ -769,7 +769,10 @@ function checkoutApp() {
         async handleViewInvoice() {
             if (!this.paymentId) { this.showErrorModal('Error', 'Payment ID tidak ditemukan. Silakan refresh halaman.'); return; }
             if (!this.canAccessInvoice) { this.showToast('Info', 'Mengecek...'); await this.handleCheckPayment(); if (!this.canAccessInvoice) { this.showToast('Menunggu', 'Selesaikan pembayaran dulu'); return; } }
-            window.open(`/invoice/${this.paymentId}`, '_blank');
+            const freelanceId = '{{ $user->id ?? "" }}';
+            const linkReferral = '{{ $linkReferral ?? "kuotaumroh" }}';
+            const invoiceUrl = `/invoice/${this.paymentId}?source=order&refCode=${freelanceId}&linkReferral=${linkReferral}`;
+            window.open(invoiceUrl, '_blank');
         },
 
         setPaymentActivated() {

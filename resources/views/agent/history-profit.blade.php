@@ -3,6 +3,12 @@
 @section('title', 'History Profit - Kuotaumroh.id')
 
 @section('content')
+  {{-- Debug Output --}}
+  <div style="background: #f0f0f0; padding: 10px; margin: 10px; border: 2px solid #000;">
+    <h3>DEBUG DATA:</h3>
+    <pre>{{ json_encode($profitData, JSON_PRETTY_PRINT) }}</pre>
+  </div>
+  
   <div x-data="historyProfitApp()">
     <main class="container mx-auto py-6 animate-fade-in px-4">
       <div class="mb-6">
@@ -116,8 +122,6 @@
                   </tbody>
                 </table>
               </div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -150,6 +154,12 @@
         
         init() {
           console.log('historyProfitApp initialized');
+          console.log('profitData:', this.profitData);
+          console.log('monthlyHistory:', this.monthlyHistory);
+          console.log('yearlyHistory:', this.yearlyHistory);
+          console.log('availableYears:', this.availableYears);
+          console.log('filteredMonthlyHistory:', this.filteredMonthlyHistory);
+          
           // Start watcher to ensure we have a valid year selected
           this.$watch('monthlyHistory', (value) => {
              if (this.availableYears.length > 0 && !this.availableYears.includes(this.selectedYear)) {
