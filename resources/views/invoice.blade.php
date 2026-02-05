@@ -202,7 +202,7 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
                         </svg>
-                        Kembali ke Checkout
+                        Kembali
                     </button>
                 </div>
 
@@ -547,15 +547,6 @@
                     </div>
                 </div>
 
-                <!-- Back Button (No Print) -->
-                <div class="mt-6 text-center no-print">
-                    <a href="{{ route('checkout') }}" class="inline-flex items-center gap-2 text-gray-600 hover:text-primary transition-colors">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                        </svg>
-                        Kembali ke Halaman Checkout
-                    </a>
-                </div>
                     </div>
                 </div>
             </div>
@@ -713,75 +704,72 @@
                     // Get URL parameters
                     const urlParams = new URLSearchParams(window.location.search);
                     const source = urlParams.get('source');
-                    const refCode = urlParams.get('refCode');
-                    const linkReferral = urlParams.get('linkReferral') || 'kuotaumroh';
-                    
+                    const refCode = (urlParams.get('refCode') || '').toUpperCase();
+                    const rawLinkReferral = urlParams.get('linkReferral');
+                    const linkReferral = rawLinkReferral && rawLinkReferral !== 'null' && rawLinkReferral !== 'undefined' ? rawLinkReferral : '';
+                    const linkReferralOrDefault = linkReferral || 'kuotaumroh';
+
                     console.log('🔙 handleBack called - source:', source, 'refCode:', refCode, 'linkReferral:', linkReferral);
                     console.log('🔙 window.opener exists:', !!window.opener);
                     console.log('🔙 window.history.length:', window.history.length);
-                    
+
+                    let targetUrl = '';
+
+                    if (source === 'store') {
+                        // Dari store -> kembali ke landing page agent
+                        targetUrl = `/u/${linkReferralOrDefault}`;
+                    } else if (source === 'order') {
+                        // Dari order (bulk dashboard) -> kembali ke halaman order
+                        if (refCode.startsWith('ADM')) {
+                            targetUrl = '{{ route("admin.orders") }}';
+                        } else if (refCode.startsWith('AGT')) {
+                            targetUrl = linkReferral ? `/dash/${linkReferral}/order` : '{{ route("agent.order") }}';
+                        } else if (refCode.startsWith('AFT')) {
+                            targetUrl = linkReferral ? `/dash/${linkReferral}/order` : '{{ route("affiliate.order") }}';
+                        } else if (refCode.startsWith('FRL')) {
+                            targetUrl = linkReferral ? `/dash/${linkReferral}/order` : '{{ route("freelance.order") }}';
+                        } else if (linkReferral) {
+                            targetUrl = `/dash/${linkReferral}/order`;
+                        } else {
+                            targetUrl = '{{ route("welcome") }}';
+                        }
+                    }
+
                     // Priority 1: If opened in new tab (window.opener exists)
                     if (window.opener && !window.opener.closed) {
                         console.log('🔙 Tab opened from parent window');
-                        
-                        // If from order/checkout, redirect parent to correct checkout URL before closing
-                        if (source === 'order') {
-                            let checkoutUrl = '';
-                            if (refCode && refCode.startsWith('AGT')) {
-                                checkoutUrl = `/dash/${linkReferral}/checkout`;
-                            } else if (refCode && refCode.startsWith('AFT')) {
-                                checkoutUrl = `/dash/${linkReferral}/checkout`;
-                            } else if (refCode && refCode.startsWith('FRL')) {
-                                checkoutUrl = `/dash/${linkReferral}/checkout`;
-                            }
-                            
-                            if (checkoutUrl) {
-                                console.log('🔙 Redirecting parent to:', checkoutUrl);
-                                try {
-                                    window.opener.location.href = checkoutUrl;
-                                } catch (e) {
-                                    console.error('🔙 Cannot redirect parent (cross-origin?):', e);
-                                }
+
+                        if (targetUrl) {
+                            console.log('🔙 Redirecting parent to:', targetUrl);
+                            try {
+                                window.opener.location.href = targetUrl;
+                            } catch (e) {
+                                console.error('🔙 Cannot redirect parent (cross-origin?):', e);
                             }
                         }
-                        
+
                         console.log('🔙 Closing tab');
                         window.close();
                         return;
                     }
-                    
-                    // Priority 2: If has history, go back
+
+                    // Priority 2: Redirect based on source (if available)
+                    if (targetUrl) {
+                        console.log('🔙 Redirecting to:', targetUrl);
+                        window.location.href = targetUrl;
+                        return;
+                    }
+
+                    // Priority 3: If has history, go back
                     if (window.history.length > 1) {
                         console.log('🔙 Going back in history');
                         window.history.back();
                         return;
                     }
-                    
-                    // Priority 3: Redirect based on source
-                    if (source === 'store') {
-                        // Dari store -> kembali ke store dengan referral yang dipakai
-                        console.log('🔙 Redirecting to store:', `/u/${linkReferral}`);
-                        window.location.href = `/u/${linkReferral}`;
-                    } else if (source === 'order') {
-                        // Dari order -> kembali ke checkout page dengan link referral
-                        if (refCode && refCode.startsWith('AGT')) {
-                            console.log('🔙 Redirecting to agent checkout:', `/dash/${linkReferral}/checkout`);
-                            window.location.href = `/dash/${linkReferral}/checkout`;
-                        } else if (refCode && refCode.startsWith('AFT')) {
-                            console.log('🔙 Redirecting to affiliate checkout:', `/dash/${linkReferral}/checkout`);
-                            window.location.href = `/dash/${linkReferral}/checkout`;
-                        } else if (refCode && refCode.startsWith('FRL')) {
-                            console.log('🔙 Redirecting to freelance checkout:', `/dash/${linkReferral}/checkout`);
-                            window.location.href = `/dash/${linkReferral}/checkout`;
-                        } else {
-                            console.log('🔙 Redirecting to welcome');
-                            window.location.href = '{{ route("welcome") }}';
-                        }
-                    } else {
-                        // Fallback ke welcome
-                        console.log('🔙 Fallback to welcome');
-                        window.location.href = '{{ route("welcome") }}';
-                    }
+
+                    // Fallback ke welcome
+                    console.log('🔙 Fallback to welcome');
+                    window.location.href = '{{ route("welcome") }}';
                 },
 
                 // Init
