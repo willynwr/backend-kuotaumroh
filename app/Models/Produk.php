@@ -57,6 +57,7 @@ class Produk extends Model
         'harga_tp_host',
         'poin',
         'profit',
+        'is_active',
     ];
 
     protected $casts = [
@@ -81,5 +82,6 @@ class Produk extends Model
         'harga_tp_host' => 'integer',
         'poin' => 'integer',
         'profit' => 'integer',
+        'is_active' => 'boolean',
     ];
 }
