@@ -565,8 +565,11 @@ class DashboardController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->get()
                 ->map(function($pembayaran) {
+                    // Hitung jumlah nomor dari pesanan terlebih dahulu (untuk harga per item)
+                    $msisdnCount = $pembayaran->pesanan->count();
+
                     // Map items pesanan terlebih dahulu
-                    $items = $pembayaran->pesanan->map(function($pesanan) {
+                    $items = $pembayaran->pesanan->map(function($pesanan) use ($pembayaran, $msisdnCount) {
                         // Map status aktivasi pesanan
                         $itemStatus = match($pesanan->status_aktivasi) {
                             'berhasil' => 'completed',
@@ -575,11 +578,19 @@ class DashboardController extends Controller
                             default => 'processing'
                         };
 
+                        $fallbackUnitPrice = ($msisdnCount > 0 && !empty($pembayaran->total_pembayaran))
+                            ? ($pembayaran->total_pembayaran / $msisdnCount)
+                            : ($pembayaran->harga_jual ?? 0);
+                        $itemPrice = $pesanan->harga_jual ?? 0;
+                        if (empty($itemPrice) || $itemPrice <= 0) {
+                            $itemPrice = $fallbackUnitPrice;
+                        }
+
                         return [
                             'msisdn' => $pesanan->msisdn,
                             'provider' => $this->detectProviderFromMsisdn($pesanan->msisdn),
                             'packageName' => $pesanan->nama_paket ?? ($pesanan->produk->nama_paket ?? 'N/A'),
-                            'price' => $pesanan->harga_jual,
+                            'price' => $itemPrice,
                             'profit' => $pesanan->profit ?? 0,
                             'status' => $itemStatus
                         ];
@@ -597,11 +608,15 @@ class DashboardController extends Controller
                             : 0;
 
                         foreach ($msisdnArray as $msisdn) {
+                            $unitPrice = ($msisdnCount > 0 && !empty($pembayaran->total_pembayaran))
+                                ? ($pembayaran->total_pembayaran / $msisdnCount)
+                                : ($pembayaran->harga_jual ?? 0);
+
                             $items[] = [
                                 'msisdn' => $msisdn,
                                 'provider' => $this->detectProviderFromMsisdn($msisdn),
                                 'packageName' => $pembayaran->nama_paket ?? 'N/A',
-                                'price' => $pembayaran->harga_jual ?? 0,
+                                'price' => $unitPrice,
                                 'profit' => $perItemFallbackProfit,
                                 'status' => $this->mapPaymentStatusForItem($pembayaran->status_pembayaran)
                             ];
