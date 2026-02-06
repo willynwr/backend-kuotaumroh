@@ -90,6 +90,7 @@ function orderApp() {
 
     // Dialogs
     invalidDialogOpen: false,
+    invalidCheckoutWarningOpen: false,
     numberListDialogOpen: false,
     packagePickerOpen: false,
     numberSelectionOpen: false,
@@ -935,6 +936,20 @@ function orderApp() {
         this.showToast('Validasi Gagal', 'Silakan lengkapi pesanan Anda');
         return;
       }
+
+      // Check for invalid numbers in bulk mode - show warning dialog
+      if (this.mode === 'bulk' && this.invalidCount > 0) {
+        this.invalidCheckoutWarningOpen = true;
+        return;
+      }
+
+      // If no invalid numbers, proceed directly
+      this.proceedToCheckout();
+    },
+
+    proceedToCheckout() {
+      // Close warning dialog if open
+      this.invalidCheckoutWarningOpen = false;
 
       // Check for unpaired numbers in bulk mode
       if (this.mode === 'bulk') {
