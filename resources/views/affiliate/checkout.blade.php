@@ -58,21 +58,21 @@
                     <div class="hidden lg:flex items-center gap-1">
                         <div class="flex items-center">
                             <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs bg-green-500 text-white"><i class="fas fa-check"></i></div>
-                            <span class="text-[10px] ml-1 text-gray-600">Pilih</span>
+                            <span class="text-[10px] ml-1 text-gray-600">Pilih Paket</span>
                         </div>
                         <div class="w-4 h-0.5 bg-green-500"></div>
                         <div class="flex items-center">
                             <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs" :class="paymentStatus === 'pending' ? 'bg-yellow-500 text-white animate-pulse' : 'bg-green-500 text-white'">
                                 <i class="fas" :class="paymentStatus === 'pending' ? 'fa-clock' : 'fa-check'"></i>
                             </div>
-                            <span class="text-[10px] ml-1 text-gray-600">Bayar</span>
+                            <span class="text-[10px] ml-1 text-gray-600">Menunggu Pembayaran</span>
                         </div>
                         <div class="w-4 h-0.5" :class="['verifying', 'activated'].includes(paymentStatus) ? 'bg-green-500' : 'bg-gray-300'"></div>
                         <div class="flex items-center">
                             <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs" :class="paymentStatus === 'verifying' ? 'bg-yellow-500 text-white animate-pulse' : (paymentStatus === 'activated' ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-500')">
                                 <i class="fas" :class="paymentStatus === 'verifying' ? 'fa-spinner fa-spin' : (paymentStatus === 'activated' ? 'fa-check' : 'fa-shield-alt')"></i>
                             </div>
-                            <span class="text-[10px] ml-1 text-gray-600">Verifikasi</span>
+                            <span class="text-[10px] ml-1 text-gray-600">Verifikasi Pembayaran</span>
                         </div>
                         <div class="w-4 h-0.5" :class="paymentStatus === 'activated' ? 'bg-green-500' : 'bg-gray-300'"></div>
                         <div class="flex items-center">
@@ -119,21 +119,21 @@
                                 <div class="flex justify-between items-center px-2">
                                     <div class="text-center flex-1">
                                         <div class="w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-1 bg-green-500 text-white"><i class="fas fa-check text-xs"></i></div>
-                                        <span class="text-[10px] font-medium text-gray-600">Pilih</span>
+                                        <span class="text-[10px] font-medium text-gray-600">Pilih Paket</span>
                                     </div>
                                     <div class="flex-1 h-0.5 bg-green-500 -mt-4"></div>
                                     <div class="text-center flex-1">
                                         <div class="w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-1" :class="paymentStatus === 'pending' ? 'bg-yellow-500 text-white animate-pulse' : 'bg-green-500 text-white'">
                                             <i class="fas text-xs" :class="paymentStatus === 'pending' ? 'fa-clock' : 'fa-check'"></i>
                                         </div>
-                                        <span class="text-[10px] font-medium text-gray-600">Bayar</span>
+                                        <span class="text-[10px] font-medium text-gray-600">Menunggu Pembayaran</span>
                                     </div>
                                     <div class="flex-1 h-0.5 -mt-4" :class="['verifying', 'activated'].includes(paymentStatus) ? 'bg-green-500' : 'bg-gray-300'"></div>
                                     <div class="text-center flex-1">
                                         <div class="w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-1" :class="paymentStatus === 'verifying' ? 'bg-yellow-500 text-white animate-pulse' : (paymentStatus === 'activated' ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-500')">
                                             <i class="fas text-xs" :class="paymentStatus === 'verifying' ? 'fa-spinner fa-spin' : (paymentStatus === 'activated' ? 'fa-check' : 'fa-shield-alt')"></i>
                                         </div>
-                                        <span class="text-[10px] font-medium text-gray-600">Verifikasi</span>
+                                        <span class="text-[10px] font-medium text-gray-600">Verifikasi Pembayaran</span>
                                     </div>
                                     <div class="flex-1 h-0.5 -mt-4" :class="paymentStatus === 'activated' ? 'bg-green-500' : 'bg-gray-300'"></div>
                                     <div class="text-center flex-1">
