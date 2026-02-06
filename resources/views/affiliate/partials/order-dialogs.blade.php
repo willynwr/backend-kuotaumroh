@@ -47,6 +47,69 @@
   </div>
 </div>
 
+<!-- Invalid Numbers Checkout Warning Dialog -->
+<div
+  x-show="invalidCheckoutWarningOpen"
+  x-cloak
+  role="dialog"
+  aria-labelledby="invalid-checkout-warning-title"
+  aria-modal="true"
+  class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+  @click.self="invalidCheckoutWarningOpen = false"
+  @keydown.escape="invalidCheckoutWarningOpen = false"
+>
+  <div class="relative bg-white rounded-lg shadow-lg w-full max-w-md animate-fade-in">
+    <div class="p-6 border-b bg-gradient-to-r from-orange-50 to-red-50">
+      <div class="flex items-start gap-3">
+        <div class="flex-shrink-0 w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center">
+          <svg class="h-6 w-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        <div class="flex-1">
+          <h2 id="invalid-checkout-warning-title" class="text-lg font-semibold text-gray-900">Peringatan Nomor Tidak Valid</h2>
+          <p class="text-sm text-gray-600 mt-1">
+            Ada <span class="font-bold text-orange-600" x-text="invalidCount"></span> nomor yang tidak valid
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-6">
+      <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
+        <div class="flex gap-3">
+          <svg class="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div class="flex-1">
+            <p class="text-sm font-medium text-orange-900">Nomor tidak valid tidak akan masuk ke checkout</p>
+            <p class="text-sm text-orange-700 mt-1">
+              Hanya <span class="font-semibold" x-text="validCount"></span> nomor valid yang akan diproses.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-6 border-t bg-gray-50 flex gap-3">
+      <button
+        type="button"
+        @click="invalidCheckoutWarningOpen = false"
+        class="flex-1 inline-flex items-center justify-center rounded-md border bg-background h-10 px-4 py-2 hover:bg-muted transition-colors"
+      >
+        Batal
+      </button>
+      <button
+        type="button"
+        @click="proceedToCheckout()"
+        class="flex-1 inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground h-10 px-4 py-2 hover:bg-primary/90 transition-colors font-medium"
+      >
+        Lanjutkan
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- Invalid Numbers Dialog -->
 <div
   x-show="invalidDialogOpen"
@@ -239,7 +302,7 @@
             @click="uploadValidationDialogOpen = false" 
             class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground h-10 px-6 hover:bg-primary/90 font-medium"
           >
-            Mengerti
+            Lanjutkan
           </button>
         </div>
       </div>
