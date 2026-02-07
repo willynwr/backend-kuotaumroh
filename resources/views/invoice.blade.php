@@ -533,7 +533,7 @@
                             <div>
                                 <h4 class="font-semibold text-gray-700 mb-2">Hubungi Kami</h4>
                                 <div class="space-y-1 text-sm text-gray-600">
-                                    <p>📧 info@digilabsmitrasolusi.com</p>
+                                    <p>📧 info@kuotaumroh.id</p>
                                     <p>📱 +62 8112-994-499</p>
                                     <p>🌐 www.kuotaumroh.id</p>
                                 </div>
