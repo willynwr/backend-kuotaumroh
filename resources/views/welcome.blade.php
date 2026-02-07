@@ -221,7 +221,7 @@
     </div>
 
     <!-- Hero Background Image -->
-    <div class="relative w-full min-h-[400px] lg:min-h-[600px] overflow-hidden bg-gradient-to-br from-teal-50 via-blue-50 to-cyan-50">
+    {{-- <div class="relative w-full min-h-[400px] lg:min-h-[600px] overflow-hidden bg-gradient-to-br from-teal-50 via-blue-50 to-cyan-50">
         <div class="absolute inset-0 bg-cover bg-center opacity-30" style="background-image: url('{{ asset('images/image.png') }}');"></div>
         <!-- Gradient Overlay - fades to transparent at bottom -->
         <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background"></div>
@@ -237,18 +237,28 @@
                     perjalanan ibadah Anda. Proses cepat,<br>
                     harga terjangkau.
                 </p>
-            
-                {{-- <!-- Checkmark Feature -->
-                <a href="#pilih-provider" 
-                    class="inline-flex items-center justify-center rounded-md bg-teal-600 text-white h-8 px-8 text-lg font-semibold hover:bg-teal-700 transition-colors shadow-lg">
-                    Lihat Paket
-                </a> --}}
+            </div>
+        </div>
+    </div> --}}
+    <div class="relative w-full min-h-[400px] lg:min-h-[600px] overflow-hidden bg-gradient-to-br from-teal-50 via-blue-50 to-cyan-50">
+        <div class="absolute inset-0 bg-cover bg-center opacity-30" style="background-image: url('{{ asset('images/image.png') }}');"></div>
+        <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background"></div>
+        
+        <div class="relative z-10 container mx-auto px-4 py-8 lg:py-16 flex flex-col items-start justify-start min-h-[400px] lg:min-h-[600px] pt-23 lg:pt-30">
+            <div class="max-w-2xl">
+                <h1 class="text-5xl md:text-6xl font-bold tracking-tight mb-6 text-gray-900">
+                    Paket Internet<br>Umroh & Haji
+                </h1>
+                <p class="text-xl md:text-2xl mb-6 text-gray-700">
+                    Dapatkan kuota internet terbaik untuk<br>
+                    perjalanan ibadah Anda. Proses cepat,<br>
+                    harga terjangkau.
+                </p>
             </div>
         </div>
     </div>
-
     <!-- Main Content -->
-    <main class="container mx-auto pt-1 pb-8 lg:py-16 px-4 max-w-7xl">
+    <main class="container mx-auto pt-0 pb-8 lg:pt-8 lg:pb-16 px-4 max-w-7xl">
 
         @if(session('pending_agent_link'))
         {{-- <!-- Agent Info Banner -->
@@ -265,7 +275,7 @@
         @endif
 
         <!-- Promo Carousel Section -->
-        <div class="mb-6 md:mb-10" x-data="promoCarousel()" @mouseenter="stopAutoSlide" @mouseleave="startAutoSlide">
+        <div class="relative z-10 -mt-32 md:-mt-50 mb-6 md:mb-10" x-data="promoCarousel()" @mouseenter="stopAutoSlide" @mouseleave="startAutoSlide">
             
             <div class="flex items-center justify-between mb-8 px-1">
                 <div class="flex items-center gap-3">
@@ -382,7 +392,7 @@
                 </template>
                 
                 <template x-if="!loading">
-                    <div class="overflow-hidden py-4 -my-4 px-1 -mx-1">
+                    <div class="overflow-hidden py-4 my-4 px-1 -mx-1">
                         <div class="flex transition-transform duration-500 ease-out" :style="`transform: translateX(-${currentSlide * 100}%)`">
                             <!-- Generate slides dynamically -->
                             <template x-for="slideIndex in totalSlides" :key="slideIndex">

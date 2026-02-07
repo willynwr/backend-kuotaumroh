@@ -100,8 +100,8 @@
                             <th class="h-10 px-4 text-left text-sm font-medium text-muted-foreground">Provider</th>
                             <th class="h-10 px-4 text-center text-sm font-medium text-muted-foreground">Jumlah</th>
                             <th class="h-10 px-4 text-left text-sm font-medium text-muted-foreground">Paket</th>
-                            <th class="h-10 px-4 text-right text-sm font-medium text-muted-foreground">Harga Paket</th>
-                            <th class="h-10 px-4 text-right text-sm font-medium text-muted-foreground">Harga Jual</th>
+                            <th class="h-10 px-4 text-right text-sm font-medium text-muted-foreground">Harga Jual Jamaah</th>
+                            <th class="h-10 px-4 text-right text-sm font-medium text-muted-foreground">Harga Beli Paket</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -150,9 +150,6 @@
                                   </button>
                                 </div>
                               </td>
-                              <td class="p-4 text-right font-medium">
-                                <span x-text="getProviderSubtotal(provider) > 0 ? formatRupiah(getProviderSubtotal(provider)) : '-'"></span>
-                              </td>
                               <td class="p-4 text-right">
                                 <template x-if="getProviderSellTotal(provider) > 0">
                                   <div class="space-y-0.5">
@@ -165,6 +162,9 @@
                                 <template x-if="getProviderSellTotal(provider) === 0">
                                   <span>-</span>
                                 </template>
+                              </td>
+                              <td class="p-4 text-right font-medium">
+                                <span x-text="getProviderSubtotal(provider) > 0 ? formatRupiah(getProviderSubtotal(provider)) : '-'"></span>
                               </td>
                             </tr>
                           </template>
@@ -376,16 +376,23 @@
                   <span class="text-muted-foreground">Biaya Platform</span>
                   <span x-text="formatRupiah(platformFee)"></span>
                 </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-muted-foreground">Keuntungan</span>
-                  <span class="font-medium text-primary">+<span x-text="formatRupiah(profit)"></span></span>
-                </div>
               </div>
               <div class="border-t pt-4">
                 <div class="flex justify-between">
                   <span class="font-medium">Total Pembayaran</span>
                   <span class="text-xl font-bold" x-text="formatRupiah(totalWithFee)"></span>
                 </div>
+              </div>
+              <div class="rounded-md border border-dashed bg-muted/30 p-3 text-sm">
+                <div class="flex justify-between">
+                  <span class="text-muted-foreground">Harga Rekomendasi</span>
+                  <span class="font-medium" x-text="formatRupiah(subtotal + profit)"></span>
+                </div>
+                <div class="flex justify-between mt-1">
+                  <span class="text-muted-foreground">Keuntungan</span>
+                  <span class="font-medium text-primary">+<span x-text="formatRupiah(profit)"></span></span>
+                </div>
+                <p class="mt-2 text-xs text-muted-foreground">Informasi ini bukan bagian dari pembayaran.</p>
               </div>
               <button
                 @click="handleConfirmOrder()"

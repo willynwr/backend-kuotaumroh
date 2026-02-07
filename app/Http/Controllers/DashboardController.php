@@ -449,11 +449,76 @@ class DashboardController extends Controller
             return redirect()->route('login')->with('error', 'Login gagal. Akun Anda belum terdaftar. Silakan daftar terlebih dahulu atau hubungi tim support.');
         }
 
+        // Get agents data for Fee Agent tab
+        $agents = [];
+        if ($data['portalType'] === 'affiliate') {
+            // Get agents under this affiliate
+            $agents = Agent::where('affiliate_id', $data['user']->id)
+                ->where('is_active', 1)
+                ->select('id', 'nama_pic', 'no_hp', 'nama_travel', 'saldo_tahun')
+                ->get()
+                ->map(function ($agent) {
+                    // Get payment details for this agent
+                    $payments = \DB::table('pembayaran')
+                        ->where('agent_id', $agent->id)
+                        ->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS'])
+                        ->select('id', 'batch_id', 'created_at', 'profit')
+                        ->orderBy('created_at', 'desc')
+                        ->get();
+
+                    return [
+                        'id' => $agent->id,
+                        'name' => $agent->nama_pic,
+                        'phone' => $agent->no_hp,
+                        'travelName' => $agent->nama_travel ?? '-',
+                        'totalFee' => $agent->saldo_tahun ?? 0,
+                        'feeDetails' => $payments->map(function ($payment) {
+                            return [
+                                'date' => $payment->created_at,
+                                'description' => 'Fee transaksi batch #' . $payment->batch_id,
+                                'amount' => $payment->profit ?? 0,
+                            ];
+                        })->toArray()
+                    ];
+                });
+        } elseif ($data['portalType'] === 'freelance') {
+            // Get agents under this freelance
+            $agents = Agent::where('freelance_id', $data['user']->id)
+                ->where('is_active', 1)
+                ->select('id', 'nama_pic', 'no_hp', 'nama_travel', 'saldo_tahun')
+                ->get()
+                ->map(function ($agent) {
+                    // Get payment details for this agent
+                    $payments = \DB::table('pembayaran')
+                        ->where('agent_id', $agent->id)
+                        ->whereIn('status_pembayaran', ['selesai', 'berhasil', 'SUCCESS'])
+                        ->select('id', 'batch_id', 'created_at', 'profit')
+                        ->orderBy('created_at', 'desc')
+                        ->get();
+
+                    return [
+                        'id' => $agent->id,
+                        'name' => $agent->nama_pic,
+                        'phone' => $agent->no_hp,
+                        'travelName' => $agent->nama_travel ?? '-',
+                        'totalFee' => $agent->saldo_tahun ?? 0,
+                        'feeDetails' => $payments->map(function ($payment) {
+                            return [
+                                'date' => $payment->created_at,
+                                'description' => 'Fee transaksi batch #' . $payment->batch_id,
+                                'amount' => $payment->profit ?? 0,
+                            ];
+                        })->toArray()
+                    ];
+                });
+        }
+
         return view($data['viewPath'] . '.points-history', [
             'user' => $data['user'],
             'linkReferral' => $linkReferral,
             'portalType' => $data['portalType'],
-            'stats' => $this->getStats($data['user'])
+            'stats' => $this->getStats($data['user']),
+            'agents' => $agents
         ]);
     }
 

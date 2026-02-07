@@ -79,6 +79,7 @@ function orderApp() {
 
     // Dialogs
     invalidDialogOpen: false,
+    invalidCheckoutWarningOpen: false,
     showInvalidNumbersCheckout: false,
     invalidNumbersForCheckout: [],
     uploadValidationDialogOpen: false,
@@ -298,6 +299,12 @@ function orderApp() {
               promo: pkg.promo || null,
             };
           });
+          const uniqueMap = new Map();
+          this.allPackages.forEach(pkg => {
+            const key = pkg.id || pkg.package_id || `${pkg.provider}-${pkg.name}-${pkg.days}-${pkg.price}`;
+            if (!uniqueMap.has(key)) uniqueMap.set(key, pkg);
+          });
+          this.allPackages = Array.from(uniqueMap.values());
           // Set packages to allPackages for compatibility
           this.packages = this.allPackages;
           console.log('📦 Mapped packages:', this.packages.length);
@@ -1010,6 +1017,20 @@ function orderApp() {
         this.showToast('Validasi Gagal', 'Silakan lengkapi pesanan Anda');
         return;
       }
+
+      // Check for invalid numbers in bulk mode - show warning dialog
+      if (this.mode === 'bulk' && this.invalidCount > 0) {
+        this.invalidCheckoutWarningOpen = true;
+        return;
+      }
+
+      // If no invalid numbers, proceed directly
+      this.proceedToCheckout();
+    },
+
+    proceedToCheckout() {
+      // Close warning dialog if open
+      this.invalidCheckoutWarningOpen = false;
 
       // Check for unpaired numbers in bulk mode
       if (this.mode === 'bulk') {

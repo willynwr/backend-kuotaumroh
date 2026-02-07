@@ -58,21 +58,21 @@
                     <div class="hidden lg:flex items-center gap-1">
                         <div class="flex items-center">
                             <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs bg-green-500 text-white"><i class="fas fa-check"></i></div>
-                            <span class="text-[10px] ml-1 text-gray-600">Pilih</span>
+                            <span class="text-[10px] ml-1 text-gray-600">Pilih Paket</span>
                         </div>
                         <div class="w-4 h-0.5 bg-green-500"></div>
                         <div class="flex items-center">
                             <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs" :class="paymentStatus === 'pending' ? 'bg-yellow-500 text-white animate-pulse' : 'bg-green-500 text-white'">
                                 <i class="fas" :class="paymentStatus === 'pending' ? 'fa-clock' : 'fa-check'"></i>
                             </div>
-                            <span class="text-[10px] ml-1 text-gray-600">Bayar</span>
+                            <span class="text-[10px] ml-1 text-gray-600">Menunggu Pembayaran</span>
                         </div>
                         <div class="w-4 h-0.5" :class="['verifying', 'activated'].includes(paymentStatus) ? 'bg-green-500' : 'bg-gray-300'"></div>
                         <div class="flex items-center">
                             <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs" :class="paymentStatus === 'verifying' ? 'bg-yellow-500 text-white animate-pulse' : (paymentStatus === 'activated' ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-500')">
                                 <i class="fas" :class="paymentStatus === 'verifying' ? 'fa-spinner fa-spin' : (paymentStatus === 'activated' ? 'fa-check' : 'fa-shield-alt')"></i>
                             </div>
-                            <span class="text-[10px] ml-1 text-gray-600">Verifikasi</span>
+                            <span class="text-[10px] ml-1 text-gray-600">Verifikasi Pembayaran</span>
                         </div>
                         <div class="w-4 h-0.5" :class="paymentStatus === 'activated' ? 'bg-green-500' : 'bg-gray-300'"></div>
                         <div class="flex items-center">
@@ -119,21 +119,21 @@
                                 <div class="flex justify-between items-center px-2">
                                     <div class="text-center flex-1">
                                         <div class="w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-1 bg-green-500 text-white"><i class="fas fa-check text-xs"></i></div>
-                                        <span class="text-[10px] font-medium text-gray-600">Pilih</span>
+                                        <span class="text-[10px] font-medium text-gray-600">Pilih Paket</span>
                                     </div>
                                     <div class="flex-1 h-0.5 bg-green-500 -mt-4"></div>
                                     <div class="text-center flex-1">
                                         <div class="w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-1" :class="paymentStatus === 'pending' ? 'bg-yellow-500 text-white animate-pulse' : 'bg-green-500 text-white'">
                                             <i class="fas text-xs" :class="paymentStatus === 'pending' ? 'fa-clock' : 'fa-check'"></i>
                                         </div>
-                                        <span class="text-[10px] font-medium text-gray-600">Bayar</span>
+                                        <span class="text-[10px] font-medium text-gray-600">Menunggu Pembayaran</span>
                                     </div>
                                     <div class="flex-1 h-0.5 -mt-4" :class="['verifying', 'activated'].includes(paymentStatus) ? 'bg-green-500' : 'bg-gray-300'"></div>
                                     <div class="text-center flex-1">
                                         <div class="w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-1" :class="paymentStatus === 'verifying' ? 'bg-yellow-500 text-white animate-pulse' : (paymentStatus === 'activated' ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-500')">
                                             <i class="fas text-xs" :class="paymentStatus === 'verifying' ? 'fa-spinner fa-spin' : (paymentStatus === 'activated' ? 'fa-check' : 'fa-shield-alt')"></i>
                                         </div>
-                                        <span class="text-[10px] font-medium text-gray-600">Verifikasi</span>
+                                        <span class="text-[10px] font-medium text-gray-600">Verifikasi Pembayaran</span>
                                     </div>
                                     <div class="flex-1 h-0.5 -mt-4" :class="paymentStatus === 'activated' ? 'bg-green-500' : 'bg-gray-300'"></div>
                                     <div class="text-center flex-1">
@@ -316,13 +316,8 @@
             x-transition:leave-start="opacity-100 scale-100 translate-y-0"
             x-transition:leave-end="opacity-0 scale-95 translate-y-4">
             
-            <div class="p-4 border-b flex items-center gap-3 bg-red-50">
-                <div class="bg-red-100 p-2 rounded-full">
-                    <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                    </svg>
-                </div>
-                <h3 class="font-bold text-lg text-red-900" x-text="errorModalTitle"></h3>
+            <div class="p-4 border-b">
+                <h3 class="font-bold text-lg text-gray-900" x-text="errorModalTitle"></h3>
             </div>
             
             <div class="p-6">
@@ -331,7 +326,7 @@
             
             <div class="p-4 bg-gray-50 flex justify-end">
                 <button @click="errorModalVisible = false" 
-                    class="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium">
+                    class="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium">
                     Tutup
                 </button>
             </div>
@@ -433,11 +428,6 @@
                  x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                  class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
                 <div class="sm:flex sm:items-start">
-                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                        <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
-                    </div>
                     <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
                         <h3 class="text-lg leading-6 font-medium text-gray-900" x-text="errorModalTitle"></h3>
                         <div class="mt-2">
@@ -447,7 +437,7 @@
                     </div>
                 </div>
                 <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
-                    <button @click="errorModalVisible = false" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
+                    <button @click="errorModalVisible = false" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:ml-3 sm:w-auto sm:text-sm">
                         Tutup
                     </button>
                 </div>
@@ -935,11 +925,13 @@ function checkoutApp() {
 
         showToast(t, m) { this.toastTitle = t; this.toastMessage = m; this.toastVisible = true; setTimeout(() => this.toastVisible = false, 3000); },
         withCsInfo(message) {
-            return `${message} Jika kendala berlanjut, hubungi CS Kuotaumroh via WhatsApp +62 8112-994-499.`;
+            const csInfo = 'Jika ada kendala, hubungi CS Kuotaumroh via WhatsApp +62 8112-994-499.';
+            const detail = (message || 'Terjadi kendala pada proses.').toString().trim();
+            return detail.includes('CS Kuotaumroh') ? detail : `${detail} ${csInfo}`;
         },
         showErrorModal(t, m) { 
-            this.errorModalTitle = t; 
-            this.errorModalMessage = m; 
+            this.errorModalTitle = 'Terjadi Kendala'; 
+            this.errorModalMessage = this.withCsInfo(m); 
             this.errorModalVisible = true; 
             this.errorModalCountdown = 5;
             const countdownInterval = setInterval(() => { 
