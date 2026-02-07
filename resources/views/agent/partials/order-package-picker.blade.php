@@ -163,7 +163,7 @@
             <!-- Pricing Section -->
             <div class="space-y-2 mb-4 mt-auto">
               <!-- Harga Coret (Price App / Harga Rekomendasi) -->
-              <template x-if="pkg.price_app && pkg.price_app > 0">
+              <template x-if="pkg.price_app && pkg.price_app > 0 && pkg.price_app > (pkg.price_bulk || pkg.price || 0)">
                 <div class="text-xs text-gray-400 line-through mb-1" x-text="formatRupiah(pkg.price_app)"></div>
               </template>
 
