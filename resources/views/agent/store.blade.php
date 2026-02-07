@@ -786,6 +786,12 @@
                                     promo: pkg.promo || null,
                                 };
                             });
+                            const uniqueMap = new Map();
+                            this.allPackages.forEach(pkg => {
+                                const key = pkg.id || pkg.package_id || `${pkg.provider}-${pkg.name}-${pkg.days}-${pkg.price}`;
+                                if (!uniqueMap.has(key)) uniqueMap.set(key, pkg);
+                            });
+                            this.allPackages = Array.from(uniqueMap.values());
                             console.log('📦 Mapped packages:', this.allPackages.length);
                         }
                         this.packagesLoading = false;

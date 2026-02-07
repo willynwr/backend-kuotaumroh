@@ -177,18 +177,17 @@ class PackagePricingService
         if ($info['kategori_agent'] === self::KATEGORI_SUPER_HOST) {
             return false;
         }
-        
-        // Non Referral (affiliate_id = AFT00001) tidak dapat fee
+
+        // Non Referral tidak dapat fee
         if ($info['kategori_agent'] === self::KATEGORI_NON_REFERRAL) {
             return false;
         }
-        
-        // Host TIDAK memberikan fee ke affiliate (Host keeps all fee)
-        // Host hanya bisa beli via affiliate, tapi fee affiliate = 0
+
+        // Host tidak memberikan fee ke affiliate (Host keeps all fee)
         if ($info['kategori_agent'] === self::KATEGORI_HOST) {
             return false;
         }
-        
+
         // Hanya Referral yang dapat affiliate fee
         return true;
     }
