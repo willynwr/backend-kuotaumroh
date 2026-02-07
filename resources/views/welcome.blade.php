@@ -891,7 +891,7 @@
                         <div>
                             <h3 class="font-bold text-lg mb-2">Customer Service</h3>
                             <div class="space-y-1">
-                                <p>Email: info@digilabsmitrasolusi.com</p>
+                                <p>Email: info@kuotaumroh.id</p>
                                 <p>Wa: +62 8112-994-499</p>
                             </div>
                         </div>
